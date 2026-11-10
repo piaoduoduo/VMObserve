@@ -1,0 +1,6 @@
+{
+  "data_origin": "real_execution",
+  "source": "work/openeuler-vm/guest-runs/20261110T091621.439041Z",
+  "copied_without_modification": true,
+  "purpose": "historical replay regression fixture; modifications in unit tests are synthetic only"
+}

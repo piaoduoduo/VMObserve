@@ -1,0 +1,10 @@
+{"kind":"environment","kernel":"6.6.0-28.0.0.34.oe2403.x86_64","arch":"x86_64","page_bytes":4096,"mib":16,"thp_policy":"MADV_NOHUGEPAGE"}
+{"kind":"sample","phase":"untouched","role":"parent","pid":8175,"size_kib":16384,"rss_kib":0,"pss_kib":0,"private_dirty_kib":0,"shared_dirty_kib":0,"huge_kib":0,"swap_kib":0,"kernel_page_kib":4,"action_minor":0,"action_major":0}
+{"kind":"sample","phase":"read_all","role":"parent","pid":8175,"size_kib":16384,"rss_kib":0,"pss_kib":0,"private_dirty_kib":0,"shared_dirty_kib":0,"huge_kib":0,"swap_kib":0,"kernel_page_kib":4,"action_minor":4096,"action_major":0}
+{"kind":"sample","phase":"write_quarter","role":"parent","pid":8175,"size_kib":16384,"rss_kib":4096,"pss_kib":4096,"private_dirty_kib":4096,"shared_dirty_kib":0,"huge_kib":0,"swap_kib":0,"kernel_page_kib":4,"action_minor":1024,"action_major":0}
+{"kind":"sample","phase":"write_all","role":"parent","pid":8175,"size_kib":16384,"rss_kib":16384,"pss_kib":16384,"private_dirty_kib":16384,"shared_dirty_kib":0,"huge_kib":0,"swap_kib":0,"kernel_page_kib":4,"action_minor":3072,"action_major":0}
+{"kind":"sample","phase":"fork_shared","role":"parent","pid":8175,"size_kib":16384,"rss_kib":16384,"pss_kib":8192,"private_dirty_kib":0,"shared_dirty_kib":16384,"huge_kib":0,"swap_kib":0,"kernel_page_kib":4,"action_minor":0,"action_major":0}
+{"kind":"sample","phase":"fork_shared","role":"child","pid":8176,"size_kib":16384,"rss_kib":16384,"pss_kib":8192,"private_dirty_kib":0,"shared_dirty_kib":16384,"huge_kib":0,"swap_kib":0,"kernel_page_kib":4,"action_minor":0,"action_major":0}
+{"kind":"sample","phase":"child_write_quarter","role":"parent","pid":8175,"size_kib":16384,"rss_kib":16384,"pss_kib":10240,"private_dirty_kib":4096,"shared_dirty_kib":12288,"huge_kib":0,"swap_kib":0,"kernel_page_kib":4,"action_minor":0,"action_major":0}
+{"kind":"sample","phase":"child_write_quarter","role":"child","pid":8176,"size_kib":16384,"rss_kib":16384,"pss_kib":10240,"private_dirty_kib":4096,"shared_dirty_kib":12288,"huge_kib":0,"swap_kib":0,"kernel_page_kib":4,"action_minor":1024,"action_major":0}
+{"kind":"isolation","parent_sum":4096,"child_sum":5120,"ok":true}

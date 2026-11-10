@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>虚拟内存实验观察台</title><link rel="stylesheet" href="/style.css"><script type="module" src="/app.js"></script></head>
+<body>
+<header><div class="brand"><svg aria-hidden="true" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="11" height="11" rx="1"/><rect x="18" y="2" width="11" height="11" rx="1"/><rect x="2" y="18" width="11" height="11" rx="1"/><rect x="18" y="18" width="11" height="11" rx="1"/></g></svg>虚拟内存实验观察台</div><div class="actions"><button id="run" class="primary">运行完整实验</button><button id="export">导出报告</button></div></header>
+<div class="shell"><aside class="history"><h2>实验记录</h2><label class="filter">环境：<select id="environment"><option value="all">全部</option><option value="openeuler">openEuler</option><option value="local">本地 / WSL</option></select></label><nav id="runs" aria-label="历史实验记录"></nav><p class="local-note">仅在本机运行 / 原始记录只读</p></aside>
+<main><h1>从程序动作到内存证据</h1><p id="mode" class="mode">正在读取实验记录</p><p id="metadata" class="muted"></p><p class="notice">机制与功能验证，不代表实机性能。</p><div id="job" role="status" aria-live="polite" hidden></div><div id="error" role="alert" hidden></div>
+<div class="tabs" role="tablist" aria-label="实验主题"><button role="tab" data-tab="baseline" aria-selected="false">按需分配与写时复制</button><button role="tab" data-tab="thp" aria-selected="true">透明大页对照</button><button role="tab" data-tab="evidence" aria-selected="false">证据与环境</button></div>
+<section id="content" aria-live="polite"></section>
+<details class="manifest"><summary>原始记录与源码哈希</summary><p id="integrity"></p><pre id="manifest"></pre></details>
+</main></div>
+<dialog id="raw-dialog"><div class="dialog-head"><h2 id="dialog-title">原始证据</h2><button id="close-dialog">关闭</button></div><div id="dialog-body"></div></dialog>
+</body></html>

@@ -1,0 +1,4 @@
+{"kind":"condition","thp_requested":"on","pattern":"sparse","page_bytes":4096,"huge_bytes":2097152,"region_bytes":33554432,"stride_bytes":2097152,"writes":16,"huge_aligned":true}
+{"kind":"sample","phase":"untouched","role":"parent","pid":8197,"size_kib":32768,"rss_kib":0,"pss_kib":0,"private_dirty_kib":0,"shared_dirty_kib":0,"huge_kib":0,"swap_kib":0,"kernel_page_kib":4,"action_minor":0,"action_major":0}
+{"kind":"sample","phase":"after_write","role":"parent","pid":8197,"size_kib":32768,"rss_kib":32768,"pss_kib":32768,"private_dirty_kib":32768,"shared_dirty_kib":0,"huge_kib":32768,"swap_kib":0,"kernel_page_kib":4,"action_minor":16,"action_major":0}
+{"kind":"values","sum":16,"ok":true}
