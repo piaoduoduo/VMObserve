@@ -58,7 +58,7 @@ python3 work/launch.py --executor local
 
 ## 怎样更新代码和文档
 
-目前尚未取得两位队友的 GitHub 用户名，未添加协作权限。任何人都可以查看和下载；注册账号后可先通过 Fork 提交改动：
+任何人都可以查看和下载；直接写入需要收到并接受协作邀请。尚未接受邀请的队友，注册账号后可以先通过 Fork 提交改动：
 
 1. 打开仓库，点击 **Fork**，复制到自己的 GitHub 账号。
 2. 克隆自己的 Fork。下面的 `<你的用户名>` 需要替换为实际用户名：
@@ -91,7 +91,7 @@ git push origin main
 git switch -c feat/下一项改动
 ```
 
-拿到 GitHub 用户名并接受仓库协作邀请后，可以直接克隆项目仓库，在自己的分支推送，再向 `main` 发 Pull Request，无需 Fork。协作邀请发出前不要按已有写权限操作。
+把 GitHub 用户名发给队长，收到邀请后登录该账号打开[仓库邀请页](https://github.com/piaoduoduo/VMObserve/invitations)并接受。之后可以直接克隆项目仓库，在自己的分支推送，再向 `main` 发 Pull Request，无需 Fork。邀请尚未接受时，直接推送可能提示没有权限。
 
 ## 提交时保留哪些信息
 
