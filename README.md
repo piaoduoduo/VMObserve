@@ -1,5 +1,12 @@
 # 虚拟内存实验观察与诊断工具
 
+## 0.7.1 · cdh_version 工作台
+
+- Windows 双击 `启动交互网页.cmd`，打开 <http://127.0.0.1:8766>。首次打开可以直接回放内置样例。
+- Linux / WSL 运行 `python3 -B work/launch.py --executor local --port 8766`。新的「运行课内全套」使用第 3 组原课例、地址映射和 12 项按需分配入门，共 36 项。命令行也可运行 `python3 -B work/run_all.py --suite course-all`。
+- 第 3 组需要 GCC、静态 libc、binutils、file、ldd 和 strace。strace 不在 PATH 时，可通过启动或运行命令的 `--strace` 指定路径。
+- 「连续分配」支持时间线和原始调用行号。「静态与动态链接」「栈增长对照」按运行轮次比较原始课例记录。第 4 组保持独立运行和回放入口。
+
 2026-11-16 第1、2组补齐：六项基础实验已在openEuler实跑，Git两类补丁在干净副本还原一致，原Dockerfile构建/运行及宿主进程观察通过；能力赛16/64 MiB COW案例在容器内2/2通过。先看[11月18日速查](docs/ACCEPTANCE_20261118.md)和[本轮完成记录](docs/GROUP12_COMPLETION_20261116.md)，命令入口 `work/course-labs/group12/demo.ps1`。
 
 公开仓库：[piaoduoduo/VMObserve](https://github.com/piaoduoduo/VMObserve)。包含 C 实验程序、Python 运行器、本地交互网页、课程任务单和测试。报名资料、个人证件、联系方式、私钥及虚拟机镜像不在仓库中。
@@ -10,7 +17,7 @@
 
 完整本机历史和验证附件保留在开发机；文档中的 `output/`、`outputs/`、`work/runs/`、`guest-runs/` 路径是本地证据索引。内置回归夹具在 `tests/fixtures/`；尚未完成代码及文档许可证定稿，见 [参赛准则](docs/COMPETITION_COMMITMENTS.md)。
 
-最新 `0.7.0`：第4组4.1—4.4的五份骨架和缺失child_prog已补齐，支持按验收范围运行、进程/线程事件回放、原文与三格式导出。WSL和openEuler各42/42案例通过，合并后60项自动检查通过；保留v0.6.1连续malloc专项。[第4组完成记录](docs/GROUP4_COMPLETION_20261116.md)；[11月18日验收速查](docs/ACCEPTANCE_20261118.md)。本轮服务入口 <http://127.0.0.1:8766>。
+主分支此前的 `0.7.0`：第4组4.1—4.4的五份骨架和缺失child_prog已补齐，支持按验收范围运行、进程/线程事件回放、原文与三格式导出。WSL和openEuler各42/42案例通过，合并后60项自动检查通过；保留v0.6.1连续malloc专项。[第4组完成记录](docs/GROUP4_COMPLETION_20261116.md)；[11月18日验收速查](docs/ACCEPTANCE_20261118.md)。本轮服务入口 <http://127.0.0.1:8766>。
 
 此前 `0.6.1`：连续三次 malloc 已有独立页面和运行入口，展示系统调用原文行号、返回地址与去重后的相关映射。WSL / openEuler 新增各 3/3 真实案例通过，52 项自动检查通过。[本轮结果与复现](docs/V06_SEQUENCE_20261116.md)；[课程任务单](work/lessons/sequence/WORKSHEET.md)。
 

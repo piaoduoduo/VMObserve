@@ -28,6 +28,7 @@ def read_optional(path):
 
 
 def environment():
+    system = platform.system()
     release = read_optional("/etc/os-release")
     parsed = {}
     for line in (release or "").splitlines():
@@ -35,16 +36,16 @@ def environment():
             key, value = line.split("=", 1)
             parsed[key] = value.strip('"')
     thp = Path("/sys/kernel/mm/transparent_hugepage")
-    return {"system": platform.system(), "kernel": platform.release(), "machine": platform.machine(),
+    return {"system": system, "kernel": platform.release(), "machine": platform.machine(),
             "os_release": release, "distribution": parsed, "python": platform.python_version(),
-            "libc": list(platform.libc_ver()),
+            "libc": list(platform.libc_ver()) if system == "Linux" else [],
             "allocator_environment": {key: os.environ.get(key) for key in ("GLIBC_TUNABLES", "MALLOC_MMAP_THRESHOLD_", "MALLOC_TRIM_THRESHOLD_", "MALLOC_PERTURB_", "LD_PRELOAD")},
             "page_bytes": os.sysconf("SC_PAGE_SIZE") if hasattr(os, "sysconf") else None,
             "thp_enabled": read_optional(thp / "enabled"), "thp_defrag": read_optional(thp / "defrag"),
             "pmd_size": read_optional(thp / "hpage_pmd_size"),
             "thp_sizes": {p.parent.name: read_optional(p) for p in thp.glob("hugepages-*/enabled")},
             "meminfo": read_optional("/proc/meminfo"), "captured_at": timestamp(),
-            "execution_context": os.environ.get("VMOBSERVE_CONTEXT", "linux-local" if platform.system() == "Linux" else "unsupported-host")}
+            "execution_context": os.environ.get("VMOBSERVE_CONTEXT", "linux-local" if system == "Linux" else "unsupported-host")}
 
 
 def source_files():
@@ -61,14 +62,14 @@ def source_files():
 
 
 def plan_cases(args):
-    cases = group3.plan(args.repeats) if args.suite == "group3" else group4.plan(args.repeats, args.group4_task) if args.suite == "group4" else []
+    cases = group3.plan(args.repeats) if args.suite in ("group3", "course-all") else group4.plan(args.repeats, args.group4_task) if args.suite == "group4" else []
     if args.suite == "sequence":
         cases = [c for c in group3.plan(args.repeats) if c["suite"] == "sequence"]
-    if args.suite in ("all", "layout", "group3"):
+    if args.suite in ("all", "layout", "group3", "course-all"):
         for repeat in range(1, args.repeats + 1):
             cases.append({"id": f"layout-{repeat}", "suite": "layout",
                           "parameters": {"repeat": repeat}, "arguments": []})
-    if args.suite in ("all", "course"):
+    if args.suite in ("all", "course", "course-all"):
         implementation = getattr(args, "course_code", "reference")
         for kib in (1, 256, 1024, 16384):
             for repeat in range(1, args.repeats + 1):
@@ -149,7 +150,7 @@ def run(args):
             if report["builds"]["child_prog"]["status"] != "completed":
                 raise ValueError("child_prog compilation failed; see build logs")
         if any(c["suite"] == "sequence" for c in planned):
-            report["trace_tool"] = execute(["strace", "--version"], out / "build/strace.stdout.log", out / "build/strace.stderr.log", 10)
+            report["trace_tool"] = execute([args.strace, "--version"], out / "build/strace.stdout.log", out / "build/strace.stderr.log", 10)
             report["trace_tool"]["version"] = read_optional(out / "build/strace.stdout.log")
         for suite in dict.fromkeys(c["suite"] for c in planned):
             command = [args.compiler, "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror",
@@ -161,9 +162,9 @@ def run(args):
             if suite == "layout":
                 command += ["-fPIE", "-pie", "-ldl"]
             if suite == "link-dynamic":
-                command += ["-fPIE", "-pie"]
+                command += ["-fPIE", "-pie", "-ldl"]
             elif suite == "link-static":
-                command += ["-static", "-no-pie", '-DLINK_MODE="static"']
+                command += ["-static", "-no-pie", '-DLINK_MODE="static"', "-DSTATIC_LINK_BUILD"]
             elif suite == "stack":
                 command += ["-O0", "-fno-optimize-sibling-calls", "-fno-omit-frame-pointer"]
             build = execute(command, out / "build" / f"{suite}.stdout.log", out / "build" / f"{suite}.stderr.log", 30)
@@ -184,7 +185,7 @@ def run(args):
                 case["artifacts"] = {"jsonl": raw.relative_to(out).as_posix(), "kernel" if suite in group4.SOURCES else "smaps": smaps.relative_to(out).as_posix()}
                 case["status"] = "running"
                 checkpoint()
-                command = group3.prepare(case, folder, out / "build" / suite, execute, args.timeout) if suite in group3.SUITES else group4.command(case, out / "build" / suite) if suite in group4.SOURCES else [str(out / "build" / suite), *case["arguments"]]
+                command = group3.prepare(case, folder, out / "build" / suite, execute, args.timeout, strace=args.strace) if suite in group3.SUITES else group4.command(case, out / "build" / suite) if suite in group4.SOURCES else [str(out / "build" / suite), *case["arguments"]]
                 case["execution"] = execute(command, raw, smaps, args.timeout)
                 case["status"] = case["execution"]["status"]
                 case["error"] = case["execution"]["error"]
@@ -231,7 +232,8 @@ def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--require-openeuler", action="store_true")
     p.add_argument("--output", type=Path, default=WORK / "runs")
-    p.add_argument("--suite", choices=("all", "baseline", "thp", "course", "layout", "group3", "group4", "sequence"), default="all")
+    p.add_argument("--suite", choices=("all", "baseline", "thp", "course", "layout", "group3", "group4", "sequence", "course-all"), default="all")
+    p.add_argument("--strace", default="strace", help="strace executable for sequence capture")
     p.add_argument("--group4-task", choices=("all", "4.1", "4.2", "4.3", "4.4"), default="all")
     p.add_argument("--repeats", type=int, choices=range(1, 6), default=3)
     p.add_argument("--cow-fraction", choices=COW_CHOICES, default="1/4",

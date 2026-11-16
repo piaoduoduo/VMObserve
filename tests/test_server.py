@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import threading
 import unittest
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -60,6 +61,16 @@ class ServerTests(unittest.TestCase):
             with self.assertRaises(HTTPError) as error:
                 urlopen(self.base + suffix)
             self.assertEqual(error.exception.code, 400)
+
+    def test_raw_view_does_not_rebuild_the_report(self):
+        with patch("vmobserve.server.load_run", side_effect=AssertionError("unexpected replay")):
+            path = "/api/evidence?id=test--legacy-run&case=baseline-16MiB-run1&kind=smaps"
+            with urlopen(self.base + path) as response:
+                self.assertIn(b"BEGIN phase=untouched", response.read())
+
+    def test_default_catalog_includes_builtin_sample(self):
+        app = Workbench("local")
+        self.assertTrue(any(item["id"] == "sample--legacy-run" for item in app.catalog()))
 
     def test_full_recheck_keeps_selected_pattern(self):
         command = self.app.command(ROOT / "tests/fixtures/legacy-run", "full")

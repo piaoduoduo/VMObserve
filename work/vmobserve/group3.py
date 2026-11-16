@@ -20,12 +20,12 @@ def plan(repeats):
     return cases
 
 
-def prepare(case, folder, binary, execute, timeout):
+def prepare(case, folder, binary, execute, timeout, *, strace="strace"):
     """Collect tools from our freshly built binary; never run historical source."""
     command = [str(binary), *case["arguments"]]
     if case["suite"] == "sequence":
         case["artifacts"]["syscalls"] = (folder / "syscalls.txt").relative_to(folder.parents[1]).as_posix()
-        command = ["strace", "-qq", "-s", "256", "-e", "trace=brk,mmap,munmap,mremap,write",
+        command = [strace, "-qq", "-s", "256", "-e", "trace=brk,mmap,munmap,mremap,write",
                    "-o", str(folder / "syscalls.txt"), *command]
     if case["suite"].startswith("link-"):
         case["inspection"] = {}
@@ -85,9 +85,16 @@ def parse(records, raw, suite, parameters, folder):
         result["file"] = (folder / "file.txt").read_text()
         result["ldd"] = (folder / "ldd.txt").read_text() + (folder / "ldd.stderr.txt").read_text()
         result["interpreter"] = bool(re.search(r"^\s*INTERP\s", elf, re.M))
+        interpreter = re.search(r"\[Requesting program interpreter: ([^\]\r\n]+)\]", elf)
+        result["interpreter_path"] = interpreter[1] if interpreter else None
         result["needed"] = re.findall(r"\(NEEDED\).*?\[(.*?)\]", elf)
         symbols = [r for r in records if r["kind"] == "symbol"]
-        if [s["name"] for s in symbols] != ["function", "readonly", "initialized", "uninitialized", "heap", "stack"]:
+        expected = ["function", "readonly", "initialized", "uninitialized", "heap", "stack"]
+        if "binary_bytes" in condition:
+            if type(condition["binary_bytes"]) is not int or condition["binary_bytes"] <= 0:
+                raise ValueError("invalid executable byte count")
+            expected.append("libc_malloc")
+        if [s["name"] for s in symbols] != expected:
             raise ValueError("missing symbols")
         result["symbols"] = [{**s, "mapping": containing(mappings[0], s["address"])} for s in symbols]
         if any(s["mapping"] is None for s in result["symbols"]):
@@ -151,6 +158,10 @@ def validate(suite, data):
         check("runtime_shared_libraries", bool(data["library_mappings"]), dynamic)
         permissions = {x["name"]:x["mapping"]["permissions"] for x in data["symbols"]}
         check("code_executable", "x" in permissions["function"], True)
+        if "libc_malloc" in permissions:
+            owners = {x["name"]: x["mapping"]["pathname"] for x in data["symbols"]}
+            check("malloc_in_executable", owners["libc_malloc"] == owners["function"], not dynamic)
+            check("malloc_executable_permission", "x" in permissions["libc_malloc"], True)
         check("readonly_not_writable", "w" in permissions["readonly"], False)
         check("data_heap_stack_writable", all("w" in permissions[k] for k in ("initialized","uninitialized","heap","stack")), True)
     elif suite == "sequence":

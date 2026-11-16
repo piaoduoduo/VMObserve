@@ -18,6 +18,16 @@ class Group3Tests(unittest.TestCase):
         self.assertEqual(command[command.index('--suite')+1],'group3')
         self.assertEqual(command[command.index('--timeout')+1],'120')
 
+    def test_combined_course_plan_keeps_group_three_and_intro(self):
+        args = parser().parse_args(['--suite', 'course-all'])
+        cases = plan_cases(args)
+        self.assertEqual(len(cases), 36)
+        self.assertEqual(sum(case['suite'] == 'course' for case in cases), 12)
+        app = Workbench('local', strace='/tools/strace')
+        command = app.command(course_all=True)
+        self.assertEqual(command[command.index('--suite') + 1], 'course-all')
+        self.assertEqual(command[-2:], ['--strace', '/tools/strace'])
+
     def test_overflow_requires_sigsegv_and_normal_return_is_distinct(self):
         data={'condition':{'mode':'overflow'},'samples':[{'size_kib':132},{'size_kib':480}],
               'outcome':{'signal':11,'exit_code':-1,'minor':130},'returned':[]}

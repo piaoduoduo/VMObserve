@@ -1,5 +1,4 @@
 """Read-only reconstruction. Never execute saved source or trust cached diagnoses."""
-import copy
 from pathlib import Path
 
 from . import SCHEMA_VERSION
@@ -33,13 +32,20 @@ def legacy_report(root, old):
     return report
 
 
+def read_saved_report(root):
+    """Read record metadata for raw file selection, without reconstructing a report."""
+    report = read_json(root / "report.json")
+    if "schema_version" not in report:
+        return legacy_report(root, report)
+    if report["schema_version"] != SCHEMA_VERSION:
+        raise ValueError("unsupported result schema")
+    return report
+
+
 def load_run(directory):
     root = Path(directory).resolve()
-    original = read_json(root / "report.json")
-    legacy = "schema_version" not in original
-    if not legacy and original["schema_version"] != SCHEMA_VERSION:
-        raise ValueError("unsupported result schema")
-    report = legacy_report(root, original) if legacy else copy.deepcopy(original)
+    report = read_saved_report(root)
+    legacy = report.get("original_schema") == "legacy-unversioned"
     report.update(view_mode="historical_replay", replayed_at=timestamp(), original_report_sha256=digest(root / "report.json"))
     source_errors = []
     for rel, sha in report.get("sources", {}).items():

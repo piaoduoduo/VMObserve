@@ -1,19 +1,85 @@
 const $ = (selector) => document.querySelector(selector);
+const sequencePhases = {
+  before_alloc: '申请前', alloc_1KiB: '申请 1 KiB', alloc_256KiB: '申请 256 KiB',
+  alloc_1MiB: '申请 1 MiB', freed: '释放全部'
+};
+
 function renderSequence() {
-  const intro = `<div class="course-intro"><h2>课内 3.2 · 连续三次 malloc，内核做了什么？</h2><p>同一个进程依次申请 1 KiB、256 KiB、1 MiB，保留三个块，再全部释放。对应 lab3_2/malloc.c；本课例不写入用户数据。</p><p class="course-question">先预测：调用三次 malloc，就一定会进入内核三次吗？free 之后，映射一定消失吗？</p><button id="run-sequence" class="primary">运行连续 malloc 与跟踪</button><p class="detail-copy">独立重复 3 次，生成新记录。下面是所选历史的五个阶段。</p></div>`;
-  const cases = state.report.cases.filter(c=>c.suite==='sequence');
-  if (!cases.length) { $('#content').innerHTML=intro+'<p class="empty">这轮没有连续分配记录，点击上方按钮采集。</p>'; return; }
-  state.selected=Math.min(state.selected,cases.length-1);
-  const c=cases[state.selected], d=c.data;
-  const names={before_alloc:'申请之前',alloc_1KiB:'第1次：1 KiB',alloc_256KiB:'第2次：256 KiB',alloc_1MiB:'第3次：1 MiB',freed:'释放全部'};
-  const sources={new_brk_range:'返回块位于本步 brk 新增范围',new_mmap_range:'返回块位于本步 mmap 返回范围',no_memory_syscall:'本步无内存管理系统调用',unresolved:'调用与返回块的来源对应关系证据不足'};
-  const selector=`<label class="selector">重复运行：<select id="case-select">${cases.map((x,i)=>`<option value="${i}" ${i===state.selected?'selected':''}>第 ${x.parameters.repeat} 次 · ${esc(labels[x.status]||x.status)}</option>`).join('')}</select></label>`;
-  const stages=d?table(['阶段','存活块数','去重后相关映射数','相关映射大小','相关映射 RSS','program break'],d.samples.map(s=>[names[s.phase],s.count,s.related_vma_count,kib(s.related_size_kib),kib(s.related_rss_kib),'0x'+s.program_break])):'';
-  const actions=d?table(['动作','malloc 返回地址','调用及返回值（原始行号）','地址对应证据'],d.actions.map(a=>[names[a.phase],a.returned_address?'0x'+a.returned_address:'释放全部',a.events.map(e=>`L${e.line}: ${e.text}`).join('\n')||'该动作内无内存管理调用',sources[a.allocation_source]||'查看释放调用与释放后映射'])):'';
-  const details=d?`<details><summary>查看每块地址、存活状态与完整映射</summary><pre>${esc(JSON.stringify(d.samples.map(s=>({phase:s.phase,blocks:s.blocks})),null,2))}</pre></details>`:'';
-  const links=c.artifacts?Object.keys(c.artifacts).map(k=>`<button data-raw="${esc(c.id)}" data-kind="${esc(k)}">查看 ${esc(k)}</button>`).join(''):'';
-  $('#content').innerHTML=intro+`<div class="experiment sequence-experiment"><div class="observation">${selector}<p>历史回放 · PID ${esc(d?.condition.pid)} · 检查 ${esc(c.validation.status)}</p>${stages}${actions}<p>RSS 统计与各申请范围相交的完整映射，每段只计一次。释放后查看原地址范围，存活块数为 0；映射保留不能直接判为泄漏。</p><p>这里只跟踪 brk、mmap、munmap、mremap；启动和读取快照的调用不计入 malloc 动作。没有这些调用时，分配器复用已有空间是可能解释，不能据此推断具体内部路径。</p><details><summary>跟踪工具版本</summary><pre>${esc(state.report.trace_tool?.version||'旧记录未单独采集版本')}</pre></details>${details}${c.error?`<pre>${esc(JSON.stringify(c.error,null,2))}</pre>`:''}<div class="raw-links">${links}</div></div>${diagnosisHTML(findingFor([c.id],['group3','incomplete_evidence']))}</div>`;
+  const intro = `<div class="course-intro sequence-toolbar">
+    <p>同一进程连续申请 1 KiB、256 KiB 和 1 MiB，最后释放全部。</p>
+    <button id="run-sequence" class="primary">运行连续分配</button>
+    <p class="sequence-prompt">先预测：每次 malloc 都会触发系统调用吗？释放后的原地址还有映射吗？</p></div>`;
+  const cases = state.report?.cases.filter(c => c.suite === 'sequence') ?? [];
+  if (!cases.length) {
+    $('#content').innerHTML = intro + '<p class="empty">这条记录没有连续分配实验。</p>';
+    return;
+  }
+  state.selected = Math.min(state.selected, cases.length - 1);
+  const current = cases[state.selected], data = current.data;
+  const links = [['jsonl', '动作数据'], ['smaps', '完整 smaps'], ['syscalls', '完整 strace']]
+    .filter(([kind]) => current.artifacts?.[kind])
+    .map(([kind, label]) => `<button data-raw="${esc(current.id)}" data-kind="${kind}">${label}</button>`).join('');
+  const selector = `<label class="selector">实验轮次<select id="case-select">${cases.map((entry, index) =>
+    `<option value="${index}" ${index === state.selected ? 'selected' : ''}>第 ${esc(entry.parameters.repeat)} 次 · ${esc(labels[entry.status] || entry.status)}</option>`).join('')}
+    </select></label>`;
+  if (!data?.samples?.length) {
+    $('#content').innerHTML = intro + `<section class="observation">${selector}
+      <p>${esc(current.error?.message || '本案例没有可回放的采样。')}</p><div class="raw-links">${links}</div></section>`;
+    return;
+  }
+
+  const actionFor = phase => data.actions.find(action => action.phase === phase);
+  const samples = data.samples;
+  state.phase = Math.min(state.phase, samples.length - 1);
+  const sample = samples[state.phase];
+  const action = actionFor(sample.phase);
+  const title = step => sequencePhases[step.phase] || step.phase;
+  const sourceLabels = {new_brk_range: '返回块落在本次 brk 新增范围', new_mmap_range: '返回块落在本次 mmap 返回范围',
+    no_memory_syscall: '该动作窗口没有记录到内存管理调用', unresolved: '现有调用无法确认返回块来源'};
+  const timeline = samples.map((step, index) => {
+    const calls = [...new Set((actionFor(step.phase)?.events ?? []).map(event => event.text.split('(')[0]))];
+    return `<button data-sequence-step="${index}" ${index === state.phase ? 'aria-current="step"' : ''}>
+      <span class="step-number">${String(index + 1).padStart(2, '0')}</span>
+      <strong>${esc(title(step))}</strong><span class="step-call">${esc(calls.join(' · ') || '—')}</span></button>`;
+  }).join('');
+  const blocks = data.condition.sizes.map((size, index) => {
+    const block = sample.blocks[index];
+    const active = block?.alive;
+    const released = block && !block.alive;
+    const status = active ? '已分配' : released ? '已释放' : '尚未申请';
+    const mapName = block?.mapping?.pathname || (block?.mapping ? '匿名映射' : '');
+    return `<li class="${active ? 'live' : released ? 'released' : ''}"><strong>${kib(size / 1024)}</strong>
+      <span>${status}${mapName ? ' · ' + esc(mapName) : ''}</span></li>`;
+  }).join('');
+  const calls = action?.events?.length
+    ? `<pre>${esc(action.events.map(event => 'L' + event.line + '  ' + event.text).join('\n'))}</pre>`
+    : `<p class="detail-copy">${sample.phase === 'before_alloc' ? '此时尚未执行分配动作。' : '当前窗口内没有观测到内存管理调用。'}</p>`;
+  const blockMappings = table(['块', '保留的地址', '动作后映射'], sample.blocks.map(block => [
+    kib(block.requested_bytes / 1024), block.address ? '0x' + block.address : '—',
+    block.mapping?.header || '—'
+  ]));
+  $('#content').innerHTML = intro + `<nav class="timeline" aria-label="分配与释放阶段">${timeline}</nav>
+    <div class="experiment sequence-body"><section class="observation">
+      ${selector}<div class="sequence-heading"><h2>${esc(title(sample))}</h2><span class="muted mono">PID ${esc(data.condition.pid)} · ${state.phase + 1} / ${samples.length}</span></div>
+      <dl class="sequence-data"><div><dt>存活块数</dt><dd>${esc(sample.count)} / 3</dd></div>
+        <div><dt>Program break</dt><dd class="mono">0x${esc(sample.program_break)}</dd></div>
+        <div><dt>去重后相关映射</dt><dd>${esc(sample.related_vma_count)} 个</dd></div>
+        <div><dt>相关映射 RSS</dt><dd>${kib(sample.related_rss_kib)}</dd></div></dl>
+      <h4>块状态</h4><ul class="block-grid">${blocks}</ul>
+      <div class="course-navigation">
+        <button data-sequence-step="${state.phase - 1}" ${state.phase === 0 ? 'disabled' : ''}>上一步</button>
+        <button data-sequence-step="${state.phase + 1}" ${state.phase === samples.length - 1 ? 'disabled' : ''}>下一步</button></div>
+      <details><summary>本阶段的完整映射</summary>${blockMappings}</details>
+    </section><aside class="sequence-evidence" aria-label="当前阶段证据">
+      <section><h3>动作窗口内的系统调用</h3>${calls}
+        ${action?.allocation_source ? `<p class="detail-copy">${esc(sourceLabels[action.allocation_source])}</p>` : ''}</section>
+      <section><h3>原始记录</h3><div class="raw-links">${links}</div>
+       <details><summary>统计口径和跟踪工具</summary>
+         <p>RSS 按相交的完整映射去重。释放后使用保存的地址查询映射。</p>
+         <pre>${esc(state.report.trace_tool?.version || '这条记录未单独采集工具版本。')}</pre></details></section>
+    </aside></div>`;
 }
+
 function renderLayout() {
   const intro = `<div class="course-intro"><h2>课内 3.1 · 程序里的地址在哪里？</h2><p>先看第七章 9、12、43–49 页，区分虚拟地址、页和地址转换，再对照程序与动态库的映射。</p><p class="course-question">先预测：程序函数与栈局部变量能放在同一个可写区域吗？只读常量应该有什么权限？</p><button id="run-layout" class="primary">运行地址空间实验</button><p class="detail-copy">新建三个独立进程，保存各自地址、装载段和完整 smaps。下方显示已选历史记录。</p></div>`;
   const cases = state.report.cases.filter(c=>c.suite==='layout');
@@ -28,7 +94,7 @@ function renderLayout() {
   const findings = findingFor([c.id],['address_mapping','layout_permissions','incomplete_evidence']);
   $('#content').innerHTML = intro + `<div class="experiment"><div class="observation">${selector}<p class="muted">历史回放 · 检查 ${esc(c.validation.status)} · PID ${esc(d?.condition.pid)}</p><details><summary>展开真实对应关系（先做预测）</summary>${points}<p>r / w / x 分别表示读、写、执行权限；p 表示私有映射，不表示这些页已经全部驻留。这里展示虚拟地址。</p></details><details><summary>进一步：程序和动态库怎样装入地址空间？</summary><p>装载后的段起点 = 装载基址 + ELF 段虚拟地址。PT_LOAD 是装载段，一个段可能跨多条映射；装载器还可能收紧部分页面的权限。</p>${segments}${d?`<details><summary>逐段查看相交映射原文</summary><pre>${esc(d.segments.map(s=>short(s.object)+' #'+s.index+'\n'+s.mappings.join('\n')).join('\n\n'))}</pre></details>`:''}</details><details><summary>比较三次独立运行的地址</summary>${table(['重复','函数地址','栈变量地址'],repeats)}<p>观察地址是否变化，再比较对象归属和权限是否稳定。这里只比较本轮进程。</p></details><p class="course-question">现在用自己的话解释：知道变量的虚拟地址和所属映射，是否就知道它的物理页框？</p>${c.error?`<pre>${esc(JSON.stringify(c.error,null,2))}</pre>`:''}${c.artifacts?`<div class="raw-links"><button data-raw="${esc(c.id)}" data-kind="smaps">查看原始映射与 smaps</button><button data-raw="${esc(c.id)}" data-kind="jsonl">查看地址与装载段记录</button></div>`:''}</div>${diagnosisHTML(findings)}</div>`;
 }
-const state = {runs:[], id:null, report:null, tab:'layout', selected:0, phase:0, timer:null, job:null, config:null, cowFraction:'all', group4Task:'all'};
+const state = {runs:[], id:null, report:null, tab:'layout', selected:0, phase:0, timer:null, job:null, pendingJobId:null, config:null, cowFraction:'all', group4Task:'all'};
 const labels={completed:'完成',completed_with_deviations:'完成 · 有偏差',failed:'失败',timeout:'超时',cancelled:'中断',unsupported:'环境不支持',running:'记录未结束',not_run:'未运行'};
 const confidence={confirmed:'已确认（受控观测）',probable:'可能原因',insufficient_evidence:'证据不足'};
 const phases={untouched:'创建映射，尚未访问',read_all:'逐页只读',write_quarter:'每四页写一页',write_all:'写入每个基础页',fork_shared:'fork 后暂停，尚未改写',child_write_quarter:'子进程改写四分之一',after_write:'按步长写入后'};
@@ -39,10 +105,96 @@ async function api(route,options){const res=await fetch(route,options);const val
 function error(message){$('#error').hidden=!message;$('#error').textContent=message||'';}
 function stop(){clearInterval(state.timer);state.timer=null;}
 function table(headers,rows){return `<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;}
-function history(){const filter=$('#environment').value;$('#runs').innerHTML=state.runs.filter(r=>filter==='all'||r.group===filter).map(r=>`<button class="run-row" data-run="${esc(r.id)}" aria-current="${r.id===state.id}"><strong>${esc(r.distribution)}</strong><span>${esc(r.run_id.slice(0,8))} · ${r.count} 项实验</span><span>${esc(labels[r.status]||r.status)}${r.legacy?' · 旧格式':''} · ${esc(r.run_id.slice(9,15))} UTC</span></button>`).join('');}
-async function refresh(selectNew=false){state.runs=await api('/api/runs');history();if(!state.id||selectNew){const preferred=state.runs.find(r=>r.group==='openeuler'&&!r.legacy&&r.status==='completed')||state.runs[0];if(preferred)await select(preferred.id);else $('#content').innerHTML='<p class="empty">尚无实验记录。点击“运行完整实验”采集第一轮真实数据。</p>';}}
-async function select(id){stop();state.id=id;state.selected=0;state.phase=0;error('');history();$('#content').innerHTML='<p class="empty">正在校验原始记录与源码哈希…</p>';try{const report=await api(url('/api/report',{id}));if(state.id!==id)return;state.report=report;render();}catch(e){state.report=null;$('#mode').textContent='历史回放失败';$('#content').innerHTML='<p class="empty">无法读取本记录；没有用其他记录替代。</p>';error(e.message);}}
-function render(){const r=state.report;if(!r)return;const env=r.environment;$('#mode').textContent=`历史回放 · ${r.data_origin==='real_execution'?'真实运行记录':'合成测试数据'} · ${labels[r.status]||r.status}`;$('#metadata').textContent=`kernel ${env.kernel||'未知'} · ${env.execution_context==='qemu-tcg'?'QEMU TCG':env.execution_context||'历史环境'} · ${r.run_id}`;$('#integrity').textContent=`证据校验：${r.integrity.status}。${r.integrity.note}`;$('#manifest').textContent=JSON.stringify({source_sha256:r.sources,integrity_errors:r.integrity.errors,related_run:r.related_run},null,2);document.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===state.tab));if(r.integrity.status==='failed')error('存在证据校验失败，请查看逐项状态。失败案例不用于确认机制结论，其余案例按各自证据判断。');if(state.tab==='layout')renderLayout();else if(state.tab==='sequence')renderSequence();else if(state.tab==='group4')renderGroup4();else if(state.tab==='group3')renderGroup3();else if(state.tab==='course')renderCourse();else if(state.tab==='thp')renderTHP();else if(state.tab==='baseline')renderBaseline();else renderEvidence();bindContent();jobUI();}
+function topicInRun(tab, suites) {
+  if (tab === 'group3') return suites.some(suite => ['link-dynamic','link-static','sequence','demand512','stack'].includes(suite));
+  if (tab === 'group4') return suites.some(suite => suite.startsWith('g4-'));
+  if (tab === 'linkage') return suites.includes('link-dynamic') || suites.includes('link-static');
+  return suites.includes(tab);
+}
+
+function history() {
+  const filter = $('#environment').value;
+  const records = state.runs.filter(run => filter === 'all' || filter === run.group);
+  $('#runs').innerHTML = records.map(run => {
+    const date = run.run_id.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})/);
+    const clock = date ? `${date[1]}-${date[2]}-${date[3]} · ${date[4]}:${date[5]} UTC` : run.run_id;
+    const name = run.group === 'sample' ? '内置样例' : run.distribution;
+    return `<button class="run-row" data-run="${esc(run.id)}" aria-current="${run.id === state.id}">
+      <strong>${esc(name)}</strong><span>${esc(labels[run.status] || run.status)}</span>
+      <span class="run-date">${esc(clock)} · ${esc(run.count)} 项</span></button>`;
+  }).join('') || '<p class="empty">该环境暂无记录</p>';
+}
+
+async function refresh() {
+  state.runs = await api('/api/runs');
+  history();
+  if (state.id) return;
+  const preferred = state.runs.find(run => run.group !== 'sample' && run.status === 'completed' && run.suites?.includes('layout'))
+    || state.runs[0];
+  if (preferred) {
+    if (!preferred.suites?.includes('layout')) state.tab = preferred.suites?.includes('sequence') ? 'sequence' : 'evidence';
+    await select(preferred.id);
+  } else {
+    $('#content').innerHTML = '<p class="empty">尚无实验记录。</p>';
+  }
+}
+
+async function select(id) {
+  stop();
+  state.id = id;
+  state.report = null;
+  state.selected = 0;
+  state.phase = 0;
+  error('');
+  history();
+  renderHeading();
+  $('#mode').textContent = '校验中';
+  delete $('#mode').dataset.integrity;
+  $('#metadata').textContent = '';
+  $('#content').innerHTML = '<p class="empty">正在校验证据与源码哈希…</p>';
+  try {
+    const report = await api(url('/api/report', {id}));
+    if (state.id !== id) return;
+    state.report = report;
+    render();
+  } catch (e) {
+    if (state.id !== id) return;
+    $('#mode').textContent = '回放失败';
+    $('#content').innerHTML = '<p class="empty">无法读取这条记录。</p>';
+    error(e.message);
+  }
+}
+
+function renderHeading() {
+  document.querySelectorAll('[data-tab]').forEach(button => {
+    if (button.dataset.tab === state.tab) {
+      button.setAttribute('aria-current', 'page');
+      $('#topic-title').textContent = button.textContent;
+    } else button.removeAttribute('aria-current');
+  });
+  $('#export').disabled = !state.report;
+}
+
+function render() {
+  renderHeading();
+  const r = state.report;
+  if (!r) return;
+  const env = r.environment;
+  const provenance = r.original_schema ? '历史样例' : r.data_origin === 'real_execution' ? '实测回放' : '合成数据';
+  const status = r.integrity.status === 'failed' ? '校验失败' : labels[r.status] || r.status;
+  $('#mode').textContent = `${provenance} · ${status}`;
+  $('#mode').dataset.integrity = r.integrity.status;
+  $('#metadata').textContent = [env.distribution?.PRETTY_NAME || env.system, env.kernel, r.run_id].filter(Boolean).join(' · ');
+  $('#integrity').textContent = `证据校验：${r.integrity.status}。 ${r.integrity.note}`;
+  $('#manifest').textContent = JSON.stringify({source_sha256:r.sources, integrity_errors:r.integrity.errors, related_run:r.related_run}, null, 2);
+  if (r.integrity.status === 'failed') error('这条记录有证据校验失败，请查看逐项状态。');
+  const views = {layout: renderLayout, sequence: renderSequence, group3: renderGroup3, group4: renderGroup4,
+    linkage: renderGroup3, stack: renderGroup3, course: renderCourse, thp: renderTHP, baseline: renderBaseline};
+  (views[state.tab] || renderEvidence)();
+  bindContent();
+  jobUI();
+}
+
 function diagnosisHTML(findings,recheck=false){return `<aside class="diagnostic"><h2>诊断与复验</h2>${findings.length?findings.map(f=>`<p class="confidence ${esc(f.confidence)}">${esc(confidence[f.confidence])}</p><h3>${esc(f.title)}</h3><p>${esc(f.explanation)}</p>${f.next_steps?`<ol>${f.next_steps.map(step=>`<li>${esc(step)}</li>`).join('')}</ol>`:''}<details><summary>查看判断依据</summary><pre>${esc(JSON.stringify(f.evidence,null,2))}</pre></details>`).join(''):'<p class="confidence insufficient_evidence">证据不足</p><p>没有满足规则前提的完整证据，暂不确定原因。</p>'}${recheck?'<button id="recheck">重新运行开/关对照</button>':''}<div class="boundary"><h3>证据边界</h3>${findings.length?findings.map(f=>`<p>${esc(f.limitations)}</p>`).join(''):'<p>缺页计数属于整个进程；没有逐页物理跟踪。</p>'}</div></aside>`;}
 function chart(rows){const max=Math.max(1,...rows.map(r=>r[1]||0));return `<div class="chart" role="img" aria-label="目标区域 RSS 对照"><p class="chart-caption">RSS / 目标区域</p>${rows.map(([name,value,kind])=>`<div class="bar-row"><span>${esc(name)}</span><div class="track"><div class="bar ${kind||''}" style="width:${Math.max(0,(value||0)/max*100)}%"></div></div><span class="bar-value">${kib(value)}</span></div>`).join('')}</div>`;}
 function findingFor(cases,rules){return state.report.diagnosis.findings.filter(f=>rules.includes(f.rule)&&f.evidence.some(e=>e&&cases.includes(e.case_id)));}
@@ -103,13 +255,24 @@ function renderCourse() {
 }
 
 function renderEvidence(){const r=state.report;$('#content').innerHTML=`<h2>证据与环境</h2><p>诊断根据原始 JSONL 与 smaps 重新计算，旧报告保持原样。旧格式缺少原始文件哈希时明确标注为部分校验。</p><dl class="info"><dt>数据来源 / 当前模式</dt><dd>${esc(r.data_origin)} / ${esc(r.view_mode)}</dd><dt>执行状态 / 完整性</dt><dd>${esc(r.status)} / ${esc(r.integrity.status)}</dd><dt>系统与内核</dt><dd>${esc(r.environment.os_release)} / ${esc(r.environment.kernel)}</dd><dt>全局 THP 策略</dt><dd>${esc(r.environment.thp_enabled||'旧格式未统一采集；请查看原始子报告')}</dd></dl><details><summary>完整环境记录</summary><pre>${esc(JSON.stringify(r.environment,null,2))}</pre></details><h3>逐项执行与原始记录</h3>${r.cases.map(c=>`<div class="evidence-row"><span>${esc(c.id)} · ${esc(labels[c.status]||c.status)} · ${esc(c.validation?.status)}</span>${c.artifacts?`<button data-raw="${esc(c.id)}" data-kind="jsonl">JSONL</button><button data-raw="${esc(c.id)}" data-kind="smaps">smaps</button>`:''}</div>${c.error?`<pre>${esc(JSON.stringify(c.error,null,2))}</pre>`:''}`).join('')}`;}
-function bindContent(){$('#run-group4')?.addEventListener('click',()=>run('group4'));$('#group4-task')?.addEventListener('change',e=>{state.group4Task=e.target.value;});$('#run-sequence')?.addEventListener('click',()=>run('sequence'));$('#run-group3')?.addEventListener('click',()=>run('group3'));$('#run-layout')?.addEventListener('click',()=>run('layout'));$('#run-policy')?.addEventListener('click',()=>run('policy'));$('#policy-recheck')?.addEventListener('click',()=>run('policy-recheck'));$('#run-course')?.addEventListener('click',()=>run('course'));document.querySelectorAll('[data-course-step]').forEach(b=>b.addEventListener('click',()=>{state.phase=Number(b.dataset.courseStep);render();}));$('#cow-fraction')?.addEventListener('change',e=>{state.cowFraction=e.target.value;});$('#run-cow')?.addEventListener('click',()=>run('cow'));$('#case-select')?.addEventListener('change',e=>{stop();state.selected=Number(e.target.value);state.phase=0;render();});$('#view-raw')?.addEventListener('click',()=>{$('#raw-links').hidden=!$('#raw-links').hidden;});$('#recheck')?.addEventListener('click',()=>run('recheck'));$('#phase')?.addEventListener('input',e=>{stop();state.phase=Number(e.target.value);render();});$('#play')?.addEventListener('click',()=>{if(state.timer){stop();render();return;}state.timer=setInterval(()=>{const c=state.report.cases.filter(c=>c.suite==='baseline')[state.selected];state.phase=(state.phase+1)%c.data.samples.length;render();},1400);render();});document.querySelectorAll('[data-raw]').forEach(button=>button.addEventListener('click',()=>raw(button.dataset.raw,button.dataset.kind)));}
+function bindContent(){bindSequenceSteps();$('#run-group4')?.addEventListener('click',()=>run('group4'));$('#group4-task')?.addEventListener('change',e=>{state.group4Task=e.target.value;});$('#run-sequence')?.addEventListener('click',()=>run('sequence'));$('#run-group3')?.addEventListener('click',()=>run('group3'));$('#run-layout')?.addEventListener('click',()=>run('layout'));$('#run-policy')?.addEventListener('click',()=>run('policy'));$('#policy-recheck')?.addEventListener('click',()=>run('policy-recheck'));$('#run-course')?.addEventListener('click',()=>run('course'));document.querySelectorAll('[data-course-step]').forEach(b=>b.addEventListener('click',()=>{state.phase=Number(b.dataset.courseStep);render();}));$('#cow-fraction')?.addEventListener('change',e=>{state.cowFraction=e.target.value;});$('#run-cow')?.addEventListener('click',()=>run('cow'));$('#case-select')?.addEventListener('change',e=>{stop();state.selected=Number(e.target.value);state.phase=0;render();});$('#view-raw')?.addEventListener('click',()=>{$('#raw-links').hidden=!$('#raw-links').hidden;});$('#recheck')?.addEventListener('click',()=>run('recheck'));$('#phase')?.addEventListener('input',e=>{stop();state.phase=Number(e.target.value);render();});$('#play')?.addEventListener('click',()=>{if(state.timer){stop();render();return;}state.timer=setInterval(()=>{const c=state.report.cases.filter(c=>c.suite==='baseline')[state.selected];state.phase=(state.phase+1)%c.data.samples.length;render();},1400);render();});document.querySelectorAll('[data-raw]').forEach(button=>button.addEventListener('click',()=>raw(button.dataset.raw,button.dataset.kind)));}
 function dialog(title,html){$('#dialog-title').textContent=title;$('#dialog-body').innerHTML=html;$('#raw-dialog').showModal();}
 async function raw(caseId,kind){try{const res=await fetch(url('/api/evidence',{id:state.id,case:caseId,kind}));const text=await res.text();if(!res.ok)throw new Error(text);dialog(`${caseId} · ${kind}`,`<pre>${esc(text)}</pre>`);}catch(e){error(e.message);}}
-async function run(mode){stop();error('');try{state.job=await api('/api/run',{method:'POST',headers:{'Content-Type':'application/json','X-VMObserve-Token':state.config.token},body:JSON.stringify({mode,id:state.id,group4_task:state.group4Task,cow_fraction:state.cowFraction,pattern:mode.includes('policy')?'sparse':state.tab==='thp'?[...new Set(state.report?.cases.filter(c=>c.suite==='thp' && !['allow','disable'].includes(c.parameters.process_thp)).map(c=>`${c.parameters.pattern}:${c.parameters.repeat}`))][state.selected]?.split(':')[0]||'sparse':'sparse'})});jobUI();}catch(e){error(e.message);}}
-function jobUI(){const job=state.job;$('#run').disabled=job?.status==='running';for(const id of ['recheck','run-cow','cow-fraction','run-course','run-policy','policy-recheck','run-layout','run-group3','run-sequence','run-group4','group4-task'])if($('#'+id))$('#'+id).disabled=job?.status==='running';$('#job').hidden=!job;if(!job)return;$('#job').innerHTML=job.status==='running'?`真实执行中 · ${esc(job.target)}${job.cow_fraction?` · COW 比例 ${esc(job.cow_fraction)}`:''} · 本页下方仍是已选历史记录，完成后会刷新。`:`最近任务 ${esc(job.id)}：${esc(labels[job.status]||job.status)}${job.new_run_ids?.includes(state.id)?' · 当前显示该任务结果':' · 当前显示其他历史记录'}<details><summary>执行日志</summary><pre>${esc(job.log||job.error?.message||'')}</pre></details>`;}
-$('#runs').addEventListener('click',e=>{const button=e.target.closest('[data-run]');if(button)select(button.dataset.run);});$('#environment').addEventListener('change',history);document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',()=>{stop();state.tab=b.dataset.tab;state.selected=0;state.phase=0;render();jobUI();}));$('#run').addEventListener('click',()=>run('complete'));$('#close-dialog').addEventListener('click',()=>$('#raw-dialog').close());$('#export').addEventListener('click',()=>{if(!state.report)return;dialog('导出历史回放报告',`<p>保留真实运行来源、校验状态与证据边界；导出不会重新执行实验。</p><div class="export-links">${['html','json','csv'].map(format=>`<a download href="${url('/api/export',{id:state.id,format})}">${format.toUpperCase()} 报告</a>`).join('')}</div>`);});
-try{state.config=await api('/api/config');$('#run').title=`目标：${state.config.executor}`;await refresh();state.job=await api('/api/job');jobUI();setInterval(async()=>{try{const previous=state.job;state.job=await api('/api/job');jobUI();if(previous?.status==='running'&&state.job?.status!=='running'){await refresh();if(state.job.new_run_ids?.length)await select(state.job.new_run_ids[0]);}}catch(e){error('本地服务连接中断：'+e.message);}},1500);}catch(e){error(e.message);}
+async function run(mode){stop();error('');try{state.job=await api('/api/run',{method:'POST',headers:{'Content-Type':'application/json','X-VMObserve-Token':state.config.token},body:JSON.stringify({mode,id:state.id,group4_task:state.group4Task,cow_fraction:state.cowFraction,pattern:mode.includes('policy')?'sparse':state.tab==='thp'?[...new Set(state.report?.cases.filter(c=>c.suite==='thp' && !['allow','disable'].includes(c.parameters.process_thp)).map(c=>`${c.parameters.pattern}:${c.parameters.repeat}`))][state.selected]?.split(':')[0]||'sparse':'sparse'})});state.pendingJobId=state.job.id;jobUI();}catch(e){error(e.message);}}
+function jobUI(){const job=state.job;const disabled=job?.status==='running'||!state.config?.live_available;$('#run').disabled=disabled;$('#run-course-all').hidden=!state.config?.live_available;$('#run-course-all').disabled=disabled;for(const id of ['recheck','run-cow','cow-fraction','run-course','run-policy','policy-recheck','run-layout','run-group3','run-sequence','run-group4','group4-task'])if($('#'+id))$('#'+id).disabled=disabled;$('#job').hidden=!job;if(!job)return;$('#job').innerHTML=job.status==='running'?`真实执行中 · ${esc(job.target)}${job.cow_fraction?` · COW 比例 ${esc(job.cow_fraction)}`:''} · 本页下方仍是已选历史记录，完成后会刷新。`:`最近任务 ${esc(job.id)}：${esc(labels[job.status]||job.status)}${job.new_run_ids?.includes(state.id)?' · 当前显示该任务结果':' · 当前显示其他历史记录'}<details><summary>执行日志</summary><pre>${esc(job.log||job.error?.message||'')}</pre></details>`;}
+$('#runs').addEventListener('click',e=>{const button=e.target.closest('[data-run]');if(button)select(button.dataset.run);});$('#environment').addEventListener('change',history);document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => {
+  stop();
+  state.tab = button.dataset.tab;
+  state.selected = 0;
+  state.phase = 0;
+  const current = state.report?.cases.map(item => item.suite) || [];
+  const matches = state.runs.filter(run => topicInRun(state.tab, run.suites || []));
+  const preferred = matches.find(run => run.status === 'completed') || matches[0];
+  if (state.tab !== 'evidence' && !topicInRun(state.tab, current) && preferred && preferred.id !== state.id) select(preferred.id);
+  else render();
+}));
+if (matchMedia('(max-width: 700px)').matches) $('#history').open = false;$('#run').addEventListener('click',()=>run('complete'));$('#run-course-all').addEventListener('click',()=>run('course-all'));$('#close-dialog').addEventListener('click',()=>$('#raw-dialog').close());$('#export').addEventListener('click',()=>{if(!state.report)return;dialog('导出历史回放报告',`<p>保留真实运行来源、校验状态与证据边界；导出不会重新执行实验。</p><div class="export-links">${['html','json','csv'].map(format=>`<a download href="${url('/api/export',{id:state.id,format})}">${format.toUpperCase()} 报告</a>`).join('')}</div>`);});
+try{state.config=await api('/api/config');$('#run').title=`目标：${state.config.executor}`;await refresh();await pollJob();setTimeout(pollJobLoop,1500);}catch(e){error(e.message);}
 
 function policyHTML(){
   const cases=state.report.cases.filter(c=>c.suite==='thp' && ['allow','disable'].includes(c.parameters.process_thp));
@@ -119,11 +282,85 @@ function policyHTML(){
   return `<section class="course-intro"><h2>诊断练习：为什么请求大页，仍没有大页？</h2><p>人为设置一个可解释的反例：两组都请求大页，只改变当前进程是否允许使用。全局系统策略保持不变。每组稀疏写，重复三次。</p><button id="run-policy">运行进程策略对照</button> ${canRecheck?'<button id="policy-recheck">关联当前记录再复验</button>':''}<p class="detail-copy">新运行会保存独立证据。下表是所选历史，不会把它冒充这次运行的结果。</p>${cases.length?table(['访问 / 重复','进程策略','内核 THP_enabled','大页驻留','建议调用','检查'],cases.map(c=>{const d=c.data,ct=d?.condition;return [c.parameters.pattern+' / '+c.parameters.repeat,c.parameters.process_thp==='allow'?'允许':'禁止',ct?.status_thp_enabled??'未采集',kib(d?.samples.at(-1)?.huge_kib),ct?.madvise_result===0?'成功':'未确认',c.validation?.status||'未完成'];})): '<p>本轮尚无进程策略对照，先写下预测，再运行。</p>'}${paired.map(c=>`<p>${c.pattern==='sparse'?'稀疏写':'逐页写'} · 第 ${c.repeat} 次：${c.control_valid?'配对条件满足，观测支持本次策略干预的影响':'尚不足以确认干预效果；允许组也可能没有获得大页'}。</p>`).join('')}<div class="raw-links">${cases.filter(c=>c.artifacts).map(c=>`<button data-raw="${esc(c.id)}" data-kind="smaps">${esc(c.id)} · 原始状态</button>`).join('')}</div>${findings.length?`<details><summary>展开诊断、证据与限制</summary>${diagnosisHTML(findings)}</details>`:''}</section>`;
 }
 
+function bindSequenceSteps() {
+  const timeline = $('.timeline');
+  timeline?.addEventListener('keydown', event => {
+    const buttons = [...timeline.querySelectorAll('button')];
+    const index = buttons.indexOf(event.target);
+    const indexFor = {ArrowLeft: index - 1, ArrowRight: index + 1, Home: 0, End: buttons.length - 1};
+    if (index < 0 || !Object.hasOwn(indexFor, event.key)) return;
+    event.preventDefault();
+    buttons[indexFor[event.key]]?.click();
+  });
+  document.querySelectorAll('[data-sequence-step]').forEach(button => button.addEventListener('click', () => {
+    state.phase = Number(button.dataset.sequenceStep);
+    render();
+    const current = $('.timeline [aria-current="step"]');
+    current?.focus({preventScroll: true});
+    current?.scrollIntoView({block: 'nearest', inline: 'nearest'});
+  }));
+}
+
+async function pollJob() {
+  const job = await api('/api/job');
+  state.job = job;
+  jobUI();
+  if (!job) return;
+  if (job.status === 'running') state.pendingJobId = job.id;
+  else if (job.id === state.pendingJobId) {
+    state.pendingJobId = null;
+    await refresh();
+    if (job.new_run_ids?.length) {
+      const record = state.runs.find(run => run.id === job.new_run_ids[0]);
+      if (record && !topicInRun(state.tab, record.suites || []) && state.tab !== 'evidence') {
+        const tabFor = {'course-all': 'group3', group3: 'group3', group4: 'group4', sequence: 'sequence',
+          layout: 'layout', cow: 'baseline', course: 'course', policy: 'thp', recheck: 'thp', 'policy-recheck': 'thp'};
+        state.tab = tabFor[job.mode] || 'evidence';
+      }
+      await select(job.new_run_ids[0]);
+    }
+  }
+}
+
+async function pollJobLoop() {
+  try { await pollJob(); }
+  catch (e) { error('本地服务连接中断：' + e.message); }
+  finally { setTimeout(pollJobLoop, 1500); }
+}
+
+function group3Comparison(cases, repeat) {
+  const group = cases.filter(item => item.parameters.repeat === repeat);
+  if (state.tab === 'linkage') {
+    const rows = group.map(item => {
+      const d = item.data;
+      const malloc = d?.symbols.find(symbol => symbol.name === 'libc_malloc');
+      const owner = malloc?.mapping.pathname?.split('/').at(-1);
+      return [item.suite === 'link-dynamic' ? '动态链接' : '静态链接',
+        d?.interpreter ? d.interpreter_path || '有' : d ? '无' : '—',
+        d?.needed.join('、') || '—', d?.condition.binary_bytes ? d.condition.binary_bytes.toLocaleString('zh-CN') + ' B' : '—',
+        owner || '—'];
+    });
+    return `<section class="observation group-comparison"><h3>第 ${esc(repeat)} 轮链接对照</h3>
+      ${table(['构建方式','ELF 解释器','动态依赖','主程序大小','malloc 所在对象'], rows)}</section>`;
+  }
+  if (state.tab === 'stack') {
+    const rows = group.map(item => {
+      const samples = item.data?.samples;
+      const outcome = item.data?.outcome;
+      return [item.parameters.limit_kib + ' KiB', samples?.at(-1)?.count,
+        samples?.length ? kib(samples[0].size_kib) + ' → ' + kib(samples.at(-1).size_kib) : '—',
+        outcome?.signal ? '信号 ' + outcome.signal : outcome ? '退出码 ' + outcome.exit_code : '—'];
+    });
+    return `<section class="observation group-comparison"><h3>第 ${esc(repeat)} 轮栈对照</h3>
+      ${table(['软限制','最后采样深度','初始 → 末次映射大小','子进程结果'], rows)}</section>`;
+  }
+  return '';
+}
+
 function renderGroup3() {
-  const suites=['link-dynamic','link-static','sequence','demand512','stack'];
   const names={'link-dynamic':'3.1 动态链接','link-static':'3.1 静态链接','sequence':'3.2 连续 malloc','demand512':'3.3 按需调页512 MiB','stack':'3.3 栈增长 / 溢出'};
   const intro='<div class="course-intro"><h2>第3组 · 从程序装入到栈溢出</h2><p>同一组源码比较静态与动态链接；在同一进程依次分配1 KiB、256 KiB、1 MiB；按原课例访问512 MiB；比较正常递归与512 / 2048 KiB栈限制。</p><button id="run-group3" class="primary">运行第3组完整实验</button><p>每项重复3次，共24个案例。下方为已选历史记录；运行后会生成新证据。开始前先预测：申请成功、首次访问和越界终止会分别发生什么？</p></div>';
-  const cases=state.report.cases.filter(c=>suites.includes(c.suite));
+  const cases = state.report.cases.filter(c => topicInRun(state.tab, [c.suite]));
   if(!cases.length){$('#content').innerHTML=intro+'<p class="empty">本轮历史没有第3组新增案例。</p>';return;}
   state.selected=Math.min(state.selected,cases.length-1);
   const c=cases[state.selected],d=c.data;
@@ -135,7 +372,7 @@ function renderGroup3() {
   const countLabel=c.suite==='sequence'?'已分配块数':c.suite==='stack'?'递归深度':c.suite==='demand512'?'已写入位置数':'动作计数';
   const samples=d?table(['阶段',countLabel,'区域大小','区域RSS','本步次缺页','累计次缺页'],d.samples.map(s=>[s.phase,s.count,kib(s.size_kib),kib(s.rss_kib),s.action_minor,s.total_minor])):'';
   const links=c.artifacts?Object.keys(c.artifacts).filter(k=>!k.endsWith('_stderr')).map(k=>`<button data-raw="${esc(c.id)}" data-kind="${esc(k)}">${esc(k)}</button>`).join(''):'';
-  $('#content').innerHTML=intro+`<div class="experiment"><div class="observation">${selector}<p>历史回放 · ${esc(c.validation.status)}</p>${samples}${detail}<p class="detail-copy">RSS为地址所在整个映射；缺页计数受采样、分配器和大页影响。原课例的暂停点在这里保存为自动快照。</p>${c.error?`<pre>${esc(JSON.stringify(c.error,null,2))}</pre>`:''}<div class="raw-links">${links}</div></div>${diagnosisHTML(findingFor([c.id],['group3','incomplete_evidence']))}</div>`;
+  $('#content').innerHTML=intro+group3Comparison(cases,c.parameters.repeat)+`<div class="experiment"><div class="observation">${selector}<p>历史回放 · ${esc(c.validation.status)}</p>${samples}${detail}<p class="detail-copy">RSS为地址所在整个映射；缺页计数受采样、分配器和大页影响。原课例的暂停点在这里保存为自动快照。</p>${c.error?`<pre>${esc(JSON.stringify(c.error,null,2))}</pre>`:''}<div class="raw-links">${links}</div></div>${diagnosisHTML(findingFor([c.id],['group3','incomplete_evidence']))}</div>`;
 }
 
 
