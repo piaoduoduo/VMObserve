@@ -1,0 +1,2150 @@
+{
+  "origin": "WSL development run 20261116T090642.336982Z; tests mutate copies, not new Linux execution",
+  "cases": [
+    {
+      "id": "g4-fork-normal-1",
+      "suite": "g4-fork",
+      "parameters": {
+        "mode": "normal",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 606,
+          "tid": 606,
+          "time_ns": 2864164662937,
+          "lab": "4.1",
+          "mode": "normal",
+          "ppid": 594,
+          "value": 7,
+          "address": "0x59e84944d010"
+        },
+        {
+          "kind": "event",
+          "event": "before_exec",
+          "pid": 607,
+          "tid": 607,
+          "time_ns": 2864165246677,
+          "role": "child",
+          "ppid": 606,
+          "fork_return": 0,
+          "value": 99,
+          "address": "0x59e84944d010"
+        },
+        {
+          "kind": "event",
+          "event": "parent_after_fork",
+          "pid": 606,
+          "tid": 606,
+          "time_ns": 2864165547284,
+          "role": "parent",
+          "child_pid": 607,
+          "fork_return": 607,
+          "value": 7,
+          "address": "0x59e84944d010"
+        },
+        {
+          "kind": "event",
+          "event": "after_exec",
+          "pid": 607,
+          "tid": 607,
+          "time_ns": 2864189876435,
+          "role": "child",
+          "ppid": 606,
+          "message": "course-demo",
+          "requested_exit": 7
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 606,
+          "tid": 606,
+          "time_ns": 2864204665168,
+          "role": "parent",
+          "child_pid": 607,
+          "wait_return": 607,
+          "exit_code": 7,
+          "signal": 0,
+          "value": 7
+        }
+      ],
+      "kernel": "BEGIN status=before_exec pid=607\nName:\tg4-fork\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t607\nNgid:\t0\nPid:\t607\nPPid:\t606\nTracerPid:\t0\nUid:\t0\t0\t0\t0\nGid:\t0\t0\t0\t0\nFDSize:\t64\nGroups:\t0 \nNStgid:\t607\nNSpid:\t607\nNSpgid:\t606\nNSsid:\t606\nKthread:\t0\nVmPeak:\t    2648 kB\nVmSize:\t    2648 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t     528 kB\nVmRSS:\t     528 kB\nRssAnon:\t       0 kB\nRssFile:\t     528 kB\nRssShmem:\t       0 kB\nVmData:\t      92 kB\nVmStk:\t     136 kB\nVmExe:\t       4 kB\nVmLib:\t    1796 kB\nVmPTE:\t      40 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t2/30427\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000000000\nSigCgt:\t0000000000000000\nCapInh:\t0000000000000000\nCapPrm:\t000001ffffffffff\nCapEff:\t000001ffffffffff\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\t3fffff\nCpus_allowed_list:\t0-21\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t2\nnonvoluntary_ctxt_switches:\t0\nEND status\n  PID  PPID STAT COMMAND\n  607   606 S    g4-fork\nBEGIN status=after_exec pid=607\nName:\tchild_prog\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t607\nNgid:\t0\nPid:\t607\nPPid:\t606\nTracerPid:\t0\nUid:\t0\t0\t0\t0\nGid:\t0\t0\t0\t0\nFDSize:\t64\nGroups:\t0 \nNStgid:\t607\nNSpid:\t607\nNSpgid:\t606\nNSsid:\t606\nKthread:\t0\nVmPeak:\t    2672 kB\nVmSize:\t    2644 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t    1408 kB\nVmRSS:\t    1408 kB\nRssAnon:\t       0 kB\nRssFile:\t    1408 kB\nRssShmem:\t       0 kB\nVmData:\t      92 kB\nVmStk:\t     132 kB\nVmExe:\t       4 kB\nVmLib:\t    1796 kB\nVmPTE:\t      44 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t2/30427\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000000000\nSigCgt:\t0000000000000000\nCapInh:\t0000000000000000\nCapPrm:\t000001ffffffffff\nCapEff:\t000001ffffffffff\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\t3fffff\nCpus_allowed_list:\t0-21\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t13\nnonvoluntary_ctxt_switches:\t0\nEND status\n  PID  PPID STAT COMMAND\n  607   606 S    child_prog\n"
+    },
+    {
+      "id": "g4-fork-exec-failure-1",
+      "suite": "g4-fork",
+      "parameters": {
+        "mode": "exec-failure",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 610,
+          "tid": 610,
+          "time_ns": 2864304319908,
+          "lab": "4.1",
+          "mode": "exec-failure",
+          "ppid": 594,
+          "value": 7,
+          "address": "0x56b59641d010"
+        },
+        {
+          "kind": "event",
+          "event": "before_exec",
+          "pid": 611,
+          "tid": 611,
+          "time_ns": 2864304857421,
+          "role": "child",
+          "ppid": 610,
+          "fork_return": 0,
+          "value": 99,
+          "address": "0x56b59641d010"
+        },
+        {
+          "kind": "event",
+          "event": "parent_after_fork",
+          "pid": 610,
+          "tid": 610,
+          "time_ns": 2864305116929,
+          "role": "parent",
+          "child_pid": 611,
+          "fork_return": 611,
+          "value": 7,
+          "address": "0x56b59641d010"
+        },
+        {
+          "kind": "event",
+          "event": "exec_error",
+          "pid": 611,
+          "tid": 611,
+          "time_ns": 2864317916067,
+          "role": "child",
+          "errno": 2
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 610,
+          "tid": 610,
+          "time_ns": 2864318340778,
+          "role": "parent",
+          "child_pid": 611,
+          "wait_return": 611,
+          "exit_code": 127,
+          "signal": 0,
+          "value": 7
+        }
+      ],
+      "kernel": "BEGIN status=before_exec pid=611\nName:\tg4-fork\nUmask:\t0022\nState:\tS (sleeping)\nTgid:\t611\nNgid:\t0\nPid:\t611\nPPid:\t610\nTracerPid:\t0\nUid:\t0\t0\t0\t0\nGid:\t0\t0\t0\t0\nFDSize:\t64\nGroups:\t0 \nNStgid:\t611\nNSpid:\t611\nNSpgid:\t610\nNSsid:\t610\nKthread:\t0\nVmPeak:\t    2648 kB\nVmSize:\t    2648 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t     528 kB\nVmRSS:\t     528 kB\nRssAnon:\t       0 kB\nRssFile:\t     528 kB\nRssShmem:\t       0 kB\nVmData:\t      92 kB\nVmStk:\t     136 kB\nVmExe:\t       4 kB\nVmLib:\t    1796 kB\nVmPTE:\t      36 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t2/30427\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000000000\nSigCgt:\t0000000000000000\nCapInh:\t0000000000000000\nCapPrm:\t000001ffffffffff\nCapEff:\t000001ffffffffff\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\t3fffff\nCpus_allowed_list:\t0-21\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t2\nnonvoluntary_ctxt_switches:\t0\nEND status\n  PID  PPID STAT COMMAND\n  611   610 S    g4-fork\n"
+    },
+    {
+      "id": "g4-pthread-unsafe-1",
+      "suite": "g4-pthread",
+      "parameters": {
+        "mode": "unsafe",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 618,
+          "tid": 618,
+          "time_ns": 2864763519340,
+          "lab": "4.2",
+          "mode": "unsafe",
+          "expected": 2000000,
+          "address": "0x5ef72dd260b4",
+          "heap_address": "0x5ef739ad22a0"
+        },
+        {
+          "kind": "event",
+          "event": "worker_start",
+          "pid": 618,
+          "tid": 619,
+          "time_ns": 2864763949541,
+          "worker": 1,
+          "address": "0x5ef72dd260b4",
+          "heap_address": "0x5ef739ad22a0",
+          "stack_address": "0x7ebcc59fee24"
+        },
+        {
+          "kind": "event",
+          "event": "worker_start",
+          "pid": 618,
+          "tid": 620,
+          "time_ns": 2864763976560,
+          "worker": 2,
+          "address": "0x5ef72dd260b4",
+          "heap_address": "0x5ef739ad22a0",
+          "stack_address": "0x7ebcc51fde24"
+        },
+        {
+          "kind": "event",
+          "event": "worker_end",
+          "pid": 618,
+          "tid": 620,
+          "time_ns": 2864777903352,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "worker_end",
+          "pid": 618,
+          "tid": 619,
+          "time_ns": 2864777933390,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 618,
+          "tid": 618,
+          "time_ns": 2864778608121,
+          "value": 1006475,
+          "expected": 2000000,
+          "mode": "unsafe",
+          "heap_value": 42
+        }
+      ],
+      "kernel": "BEGIN status=pthread_ready pid=618\nName:\tg4-pthread\nUmask:\t0022\nState:\tR (running)\nTgid:\t618\nNgid:\t0\nPid:\t618\nPPid:\t594\nTracerPid:\t0\nUid:\t0\t0\t0\t0\nGid:\t0\t0\t0\t0\nFDSize:\t64\nGroups:\t0 \nNStgid:\t618\nNSpid:\t618\nNSpgid:\t618\nNSsid:\t618\nKthread:\t0\nVmPeak:\t   19168 kB\nVmSize:\t   19168 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t    1408 kB\nVmRSS:\t    1408 kB\nRssAnon:\t       0 kB\nRssFile:\t    1408 kB\nRssShmem:\t       0 kB\nVmData:\t   16608 kB\nVmStk:\t     132 kB\nVmExe:\t       4 kB\nVmLib:\t    1796 kB\nVmPTE:\t      52 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t3\nSigQ:\t2/30427\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000000000\nSigCgt:\t0000000100000000\nCapInh:\t0000000000000000\nCapPrm:\t000001ffffffffff\nCapEff:\t000001ffffffffff\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\t3fffff\nCpus_allowed_list:\t0-21\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t14\nnonvoluntary_ctxt_switches:\t0\nEND status\n  PID  PPID   TID STAT COMMAND\n  618   594   618 Ssl  g4-pthread\n  618   594   619 Ssl  g4-pthread\n  618   594   620 Ssl  g4-pthread\n"
+    },
+    {
+      "id": "g4-pthread-mutex-1",
+      "suite": "g4-pthread",
+      "parameters": {
+        "mode": "mutex",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 622,
+          "tid": 622,
+          "time_ns": 2864852728243,
+          "lab": "4.2",
+          "mode": "mutex",
+          "expected": 2000000,
+          "address": "0x63af75e410b4",
+          "heap_address": "0x63af9256a2a0"
+        },
+        {
+          "kind": "event",
+          "event": "worker_start",
+          "pid": 622,
+          "tid": 623,
+          "time_ns": 2864853178617,
+          "worker": 1,
+          "address": "0x63af75e410b4",
+          "heap_address": "0x63af9256a2a0",
+          "stack_address": "0x7a0a331fee24"
+        },
+        {
+          "kind": "event",
+          "event": "worker_start",
+          "pid": 622,
+          "tid": 624,
+          "time_ns": 2864853239635,
+          "worker": 2,
+          "address": "0x63af75e410b4",
+          "heap_address": "0x63af9256a2a0",
+          "stack_address": "0x7a0a329fde24"
+        },
+        {
+          "kind": "event",
+          "event": "worker_end",
+          "pid": 622,
+          "tid": 623,
+          "time_ns": 2864978722737,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "worker_end",
+          "pid": 622,
+          "tid": 624,
+          "time_ns": 2864980420792,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 622,
+          "tid": 622,
+          "time_ns": 2864980939587,
+          "value": 2000000,
+          "expected": 2000000,
+          "mode": "mutex",
+          "heap_value": 42
+        }
+      ],
+      "kernel": "BEGIN status=pthread_ready pid=622\nName:\tg4-pthread\nUmask:\t0022\nState:\tR (running)\nTgid:\t622\nNgid:\t0\nPid:\t622\nPPid:\t594\nTracerPid:\t0\nUid:\t0\t0\t0\t0\nGid:\t0\t0\t0\t0\nFDSize:\t64\nGroups:\t0 \nNStgid:\t622\nNSpid:\t622\nNSpgid:\t622\nNSsid:\t622\nKthread:\t0\nVmPeak:\t   19168 kB\nVmSize:\t   19168 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t    1408 kB\nVmRSS:\t    1408 kB\nRssAnon:\t       0 kB\nRssFile:\t    1408 kB\nRssShmem:\t       0 kB\nVmData:\t   16608 kB\nVmStk:\t     132 kB\nVmExe:\t       4 kB\nVmLib:\t    1796 kB\nVmPTE:\t      56 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t3\nSigQ:\t2/30427\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000000000\nSigCgt:\t0000000100000000\nCapInh:\t0000000000000000\nCapPrm:\t000001ffffffffff\nCapEff:\t000001ffffffffff\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\t3fffff\nCpus_allowed_list:\t0-21\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t14\nnonvoluntary_ctxt_switches:\t0\nEND status\n  PID  PPID   TID STAT COMMAND\n  622   594   622 Ssl  g4-pthread\n  622   594   623 Ssl  g4-pthread\n  622   594   624 Ssl  g4-pthread\n"
+    },
+    {
+      "id": "g4-uthread-round-robin-1",
+      "suite": "g4-uthread",
+      "parameters": {
+        "mode": "round-robin",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865465107493,
+          "lab": "4.3",
+          "mode": "round-robin"
+        },
+        {
+          "kind": "event",
+          "event": "created",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865465378109,
+          "worker": 0,
+          "stack_base": "0x79b56a724010",
+          "stack_bytes": 1048576
+        },
+        {
+          "kind": "event",
+          "event": "created",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865465531299,
+          "worker": 1,
+          "stack_base": "0x79b56a2ff010",
+          "stack_bytes": 1048576
+        },
+        {
+          "kind": "event",
+          "event": "created",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865465661122,
+          "worker": 2,
+          "stack_base": "0x79b56a1fe010",
+          "stack_bytes": 1048576
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865477355926,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865477790944,
+          "worker": 0,
+          "step": 1,
+          "stack_address": "0x79b56a823f9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865477982875,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865478136261,
+          "worker": 1,
+          "step": 1,
+          "stack_address": "0x79b56a3fef9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865478290003,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865478508846,
+          "worker": 2,
+          "step": 1,
+          "stack_address": "0x79b56a2fdf9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865478704965,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865478846845,
+          "worker": 0,
+          "step": 2,
+          "stack_address": "0x79b56a823f9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865478980335,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865479122729,
+          "worker": 1,
+          "step": 2,
+          "stack_address": "0x79b56a3fef9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865479248477,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865479369889,
+          "worker": 2,
+          "step": 2,
+          "stack_address": "0x79b56a2fdf9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865479503113,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865479641101,
+          "worker": 0,
+          "step": 3,
+          "stack_address": "0x79b56a823f9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865479773749,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865479905998,
+          "worker": 1,
+          "step": 3,
+          "stack_address": "0x79b56a3fef9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865480071941,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865480213178,
+          "worker": 2,
+          "step": 3,
+          "stack_address": "0x79b56a2fdf9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865480338215,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "finished",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865480466265,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865480599017,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "finished",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865480727918,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865480870421,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "finished",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865480996947,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 631,
+          "tid": 631,
+          "time_ns": 2865481128642,
+          "value": 3,
+          "expected": 3
+        }
+      ],
+      "kernel": "BEGIN status=uthread_ready pid=631\nName:\tg4-uthread\nUmask:\t0022\nState:\tR (running)\nTgid:\t631\nNgid:\t0\nPid:\t631\nPPid:\t594\nTracerPid:\t0\nUid:\t0\t0\t0\t0\nGid:\t0\t0\t0\t0\nFDSize:\t64\nGroups:\t0 \nNStgid:\t631\nNSpid:\t631\nNSpgid:\t631\nNSsid:\t631\nKthread:\t0\nVmPeak:\t    5860 kB\nVmSize:\t    5860 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t    1408 kB\nVmRSS:\t    1408 kB\nRssAnon:\t       0 kB\nRssFile:\t    1408 kB\nRssShmem:\t       0 kB\nVmData:\t    3308 kB\nVmStk:\t     132 kB\nVmExe:\t       4 kB\nVmLib:\t    1796 kB\nVmPTE:\t      56 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t2/30427\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000000000\nSigCgt:\t0000000000000000\nCapInh:\t0000000000000000\nCapPrm:\t000001ffffffffff\nCapEff:\t000001ffffffffff\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\t3fffff\nCpus_allowed_list:\t0-21\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t16\nnonvoluntary_ctxt_switches:\t0\nEND status\n  PID  PPID   TID STAT COMMAND\n  631   594   631 Ss   g4-uthread\n"
+    },
+    {
+      "id": "g4-uthread-blocking-1",
+      "suite": "g4-uthread",
+      "parameters": {
+        "mode": "blocking",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865570459748,
+          "lab": "4.3",
+          "mode": "blocking"
+        },
+        {
+          "kind": "event",
+          "event": "created",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865570794215,
+          "worker": 0,
+          "stack_base": "0x7c2abe4dc010",
+          "stack_bytes": 1048576
+        },
+        {
+          "kind": "event",
+          "event": "created",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865570993095,
+          "worker": 1,
+          "stack_base": "0x7c2abe0ff010",
+          "stack_bytes": 1048576
+        },
+        {
+          "kind": "event",
+          "event": "created",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865571154159,
+          "worker": 2,
+          "stack_base": "0x7c2abdffe010",
+          "stack_bytes": 1048576
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865582811898,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865583235895,
+          "worker": 0,
+          "step": 1,
+          "stack_address": "0x7c2abe5dbf9c"
+        },
+        {
+          "kind": "event",
+          "event": "block_begin",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865583412418,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "block_end",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865783736830,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865784134436,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865784325370,
+          "worker": 1,
+          "step": 1,
+          "stack_address": "0x7c2abe1fef9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865784446688,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865784560911,
+          "worker": 2,
+          "step": 1,
+          "stack_address": "0x7c2abe0fdf9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865784695631,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865784860638,
+          "worker": 0,
+          "step": 2,
+          "stack_address": "0x7c2abe5dbf9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865785084223,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865785347024,
+          "worker": 1,
+          "step": 2,
+          "stack_address": "0x7c2abe1fef9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865785575464,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865785739969,
+          "worker": 2,
+          "step": 2,
+          "stack_address": "0x7c2abe0fdf9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865785915342,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865786118655,
+          "worker": 0,
+          "step": 3,
+          "stack_address": "0x7c2abe5dbf9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865786262116,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865786387619,
+          "worker": 1,
+          "step": 3,
+          "stack_address": "0x7c2abe1fef9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865786493341,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "step",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865786582051,
+          "worker": 2,
+          "step": 3,
+          "stack_address": "0x7c2abe0fdf9c"
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865786715328,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "finished",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865786843961,
+          "worker": 0
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865786946238,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "finished",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865787031395,
+          "worker": 1
+        },
+        {
+          "kind": "event",
+          "event": "dispatch",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865787145775,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "finished",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865787284519,
+          "worker": 2
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 633,
+          "tid": 633,
+          "time_ns": 2865787464422,
+          "value": 3,
+          "expected": 3
+        }
+      ],
+      "kernel": "BEGIN status=uthread_ready pid=633\nName:\tg4-uthread\nUmask:\t0022\nState:\tR (running)\nTgid:\t633\nNgid:\t0\nPid:\t633\nPPid:\t594\nTracerPid:\t0\nUid:\t0\t0\t0\t0\nGid:\t0\t0\t0\t0\nFDSize:\t64\nGroups:\t0 \nNStgid:\t633\nNSpid:\t633\nNSpgid:\t633\nNSsid:\t633\nKthread:\t0\nVmPeak:\t    5860 kB\nVmSize:\t    5860 kB\nVmLck:\t       0 kB\nVmPin:\t       0 kB\nVmHWM:\t    1408 kB\nVmRSS:\t    1408 kB\nRssAnon:\t       0 kB\nRssFile:\t    1408 kB\nRssShmem:\t       0 kB\nVmData:\t    3308 kB\nVmStk:\t     132 kB\nVmExe:\t       4 kB\nVmLib:\t    1796 kB\nVmPTE:\t      56 kB\nVmSwap:\t       0 kB\nHugetlbPages:\t       0 kB\nCoreDumping:\t0\nTHP_enabled:\t1\nuntag_mask:\t0xffffffffffffffff\nThreads:\t1\nSigQ:\t2/30427\nSigPnd:\t0000000000000000\nShdPnd:\t0000000000000000\nSigBlk:\t0000000000000000\nSigIgn:\t0000000000000000\nSigCgt:\t0000000000000000\nCapInh:\t0000000000000000\nCapPrm:\t000001ffffffffff\nCapEff:\t000001ffffffffff\nCapBnd:\t000001ffffffffff\nCapAmb:\t0000000000000000\nNoNewPrivs:\t0\nSeccomp:\t0\nSeccomp_filters:\t0\nSpeculation_Store_Bypass:\tthread vulnerable\nSpeculationIndirectBranch:\tconditional enabled\nCpus_allowed:\t3fffff\nCpus_allowed_list:\t0-21\nMems_allowed:\t00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001\nMems_allowed_list:\t0\nvoluntary_ctxt_switches:\t16\nnonvoluntary_ctxt_switches:\t0\nEND status\n  PID  PPID   TID STAT COMMAND\n  633   594   633 Ss   g4-uthread\n"
+    },
+    {
+      "id": "g4-pipe-basic-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "basic",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 640,
+          "tid": 640,
+          "time_ns": 2866223962811,
+          "lab": "4.4-pipe",
+          "mode": "basic"
+        },
+        {
+          "kind": "event",
+          "event": "sent",
+          "pid": 640,
+          "tid": 640,
+          "time_ns": 2866224323593,
+          "role": "parent",
+          "write_bytes": 26,
+          "message": "Hello from Parent Process!"
+        },
+        {
+          "kind": "event",
+          "event": "received",
+          "pid": 641,
+          "tid": 641,
+          "time_ns": 2866224507166,
+          "role": "child",
+          "read_bytes": 26,
+          "message": "Hello from Parent Process!",
+          "eof": true
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 640,
+          "tid": 640,
+          "time_ns": 2866224714102,
+          "child_pid": 641,
+          "exit_code": 0,
+          "signal": 0
+        }
+      ],
+      "kernel": ""
+    },
+    {
+      "id": "g4-pipe-eof-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "eof",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 642,
+          "tid": 642,
+          "time_ns": 2866296285910,
+          "lab": "4.4-pipe",
+          "mode": "eof"
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 642,
+          "tid": 642,
+          "time_ns": 2866296601967,
+          "read_bytes": 0,
+          "errno": 0,
+          "writers_remaining": 0
+        }
+      ],
+      "kernel": ""
+    },
+    {
+      "id": "g4-pipe-eagain-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "eagain",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 643,
+          "tid": 643,
+          "time_ns": 2866365000551,
+          "lab": "4.4-pipe",
+          "mode": "eagain"
+        },
+        {
+          "kind": "event",
+          "event": "empty_with_writer",
+          "pid": 643,
+          "tid": 643,
+          "time_ns": 2866365203678,
+          "read_bytes": -1,
+          "errno": 11
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 643,
+          "tid": 643,
+          "time_ns": 2866365386196,
+          "read_bytes": 0,
+          "errno": 0,
+          "writers_remaining": 0
+        }
+      ],
+      "kernel": ""
+    },
+    {
+      "id": "g4-pipe-epipe-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "epipe",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 644,
+          "tid": 644,
+          "time_ns": 2866440691927,
+          "lab": "4.4-pipe",
+          "mode": "epipe"
+        },
+        {
+          "kind": "event",
+          "event": "before_write",
+          "pid": 645,
+          "tid": 645,
+          "time_ns": 2866441098742,
+          "role": "child",
+          "readers_remaining": 0
+        },
+        {
+          "kind": "event",
+          "event": "write_result",
+          "pid": 645,
+          "tid": 645,
+          "time_ns": 2866441260495,
+          "role": "child",
+          "write_bytes": -1,
+          "errno": 32
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 644,
+          "tid": 644,
+          "time_ns": 2866441482453,
+          "child_pid": 645,
+          "exit_code": 0,
+          "signal": 0
+        }
+      ],
+      "kernel": ""
+    },
+    {
+      "id": "g4-pipe-sigpipe-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "sigpipe",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 646,
+          "tid": 646,
+          "time_ns": 2866517392731,
+          "lab": "4.4-pipe",
+          "mode": "sigpipe"
+        },
+        {
+          "kind": "event",
+          "event": "before_write",
+          "pid": 647,
+          "tid": 647,
+          "time_ns": 2866517933485,
+          "role": "child",
+          "readers_remaining": 0
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 646,
+          "tid": 646,
+          "time_ns": 2866518242562,
+          "child_pid": 647,
+          "exit_code": -1,
+          "signal": 13
+        }
+      ],
+      "kernel": ""
+    },
+    {
+      "id": "g4-bank-comparison-1",
+      "suite": "g4-bank",
+      "parameters": {
+        "mode": "comparison",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 653,
+          "tid": 653,
+          "time_ns": 2866967939747,
+          "lab": "4.4-bank",
+          "mode": "comparison"
+        },
+        {
+          "kind": "event",
+          "event": "deposit_worker",
+          "pid": 653,
+          "tid": 654,
+          "time_ns": 2866968364349,
+          "worker": 1,
+          "variant": "unsafe"
+        },
+        {
+          "kind": "event",
+          "event": "deposit_worker",
+          "pid": 653,
+          "tid": 655,
+          "time_ns": 2866968426951,
+          "worker": 2,
+          "variant": "unsafe"
+        },
+        {
+          "kind": "event",
+          "event": "counter_result",
+          "pid": 653,
+          "tid": 653,
+          "time_ns": 2866969048103,
+          "variant": "unsafe",
+          "value": 55411,
+          "expected": 100000
+        },
+        {
+          "kind": "event",
+          "event": "deposit_worker",
+          "pid": 653,
+          "tid": 656,
+          "time_ns": 2866969314795,
+          "worker": 1,
+          "variant": "mutex"
+        },
+        {
+          "kind": "event",
+          "event": "deposit_worker",
+          "pid": 653,
+          "tid": 657,
+          "time_ns": 2866969469020,
+          "worker": 2,
+          "variant": "mutex"
+        },
+        {
+          "kind": "event",
+          "event": "counter_result",
+          "pid": 653,
+          "tid": 653,
+          "time_ns": 2866975152051,
+          "variant": "mutex",
+          "value": 100000,
+          "expected": 100000
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 653,
+          "tid": 653,
+          "time_ns": 2866975362960,
+          "value": 100000,
+          "expected": 100000,
+          "unsafe_value": 55411
+        }
+      ],
+      "kernel": ""
+    },
+    {
+      "id": "g4-bank-condition-1",
+      "suite": "g4-bank",
+      "parameters": {
+        "mode": "condition",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 658,
+          "tid": 658,
+          "time_ns": 2867052282155,
+          "lab": "4.4-bank",
+          "mode": "condition"
+        },
+        {
+          "kind": "event",
+          "event": "waiting",
+          "pid": 658,
+          "tid": 659,
+          "time_ns": 2867052932291,
+          "worker": 1,
+          "amount": 80,
+          "balance": 30
+        },
+        {
+          "kind": "event",
+          "event": "waiting",
+          "pid": 658,
+          "tid": 660,
+          "time_ns": 2867053242808,
+          "worker": 2,
+          "amount": 50,
+          "balance": 30
+        },
+        {
+          "kind": "event",
+          "event": "deposited",
+          "pid": 658,
+          "tid": 661,
+          "time_ns": 2867053498797,
+          "amount": 200,
+          "balance": 230,
+          "waiters": 2
+        },
+        {
+          "kind": "event",
+          "event": "withdrawn",
+          "pid": 658,
+          "tid": 659,
+          "time_ns": 2867053725780,
+          "worker": 1,
+          "amount": 80,
+          "balance": 150
+        },
+        {
+          "kind": "event",
+          "event": "withdrawn",
+          "pid": 658,
+          "tid": 660,
+          "time_ns": 2867053972792,
+          "worker": 2,
+          "amount": 50,
+          "balance": 100
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 658,
+          "tid": 658,
+          "time_ns": 2867054394157,
+          "value": 100,
+          "expected": 100,
+          "waiters": 2
+        }
+      ],
+      "kernel": ""
+    },
+    {
+      "id": "g4-bank-transfer-1",
+      "suite": "g4-bank",
+      "parameters": {
+        "mode": "transfer",
+        "repeat": 1
+      },
+      "events": [
+        {
+          "kind": "event",
+          "event": "begin",
+          "pid": 662,
+          "tid": 662,
+          "time_ns": 2867134382114,
+          "lab": "4.4-bank",
+          "mode": "transfer"
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867135271559,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 990,
+          "to_balance": 1010
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867135584806,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 980,
+          "to_balance": 1020
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867135836944,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 970,
+          "to_balance": 1030
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867136376207,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 985,
+          "to_balance": 1045
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867136577861,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 970,
+          "to_balance": 1060
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867136747004,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 955,
+          "to_balance": 1075
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867137017739,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 940,
+          "to_balance": 1090
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867137169358,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 925,
+          "to_balance": 1105
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867137338291,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 910,
+          "to_balance": 1120
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867137498272,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 895,
+          "to_balance": 1135
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867137666929,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 880,
+          "to_balance": 1150
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867137826859,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 865,
+          "to_balance": 1165
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 666,
+          "time_ns": 2867137963722,
+          "worker": 4,
+          "from": 4,
+          "to": 3,
+          "amount": 15,
+          "first_lock": 3,
+          "second_lock": 4,
+          "from_balance": 850,
+          "to_balance": 1180
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867138152824,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 960,
+          "to_balance": 1190
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867138324983,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 950,
+          "to_balance": 1200
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867138495986,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 940,
+          "to_balance": 1210
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867138646491,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 930,
+          "to_balance": 1220
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867138779969,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 920,
+          "to_balance": 1230
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867138921764,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 910,
+          "to_balance": 1240
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867139075003,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 900,
+          "to_balance": 1250
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867139221787,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 890,
+          "to_balance": 1260
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867139405600,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 880,
+          "to_balance": 1270
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867139570852,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 870,
+          "to_balance": 1280
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867139718635,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 860,
+          "to_balance": 1290
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867139854100,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 850,
+          "to_balance": 1300
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867139992590,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 840,
+          "to_balance": 1310
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867140171266,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 830,
+          "to_balance": 1320
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867140343983,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 820,
+          "to_balance": 1330
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867140480027,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 810,
+          "to_balance": 1340
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 663,
+          "time_ns": 2867140621179,
+          "worker": 1,
+          "from": 2,
+          "to": 3,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 800,
+          "to_balance": 1350
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867140749014,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 780,
+          "to_balance": 870
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867140937025,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 760,
+          "to_balance": 890
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867141078878,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 740,
+          "to_balance": 910
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867141216181,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 720,
+          "to_balance": 930
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867141371387,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 700,
+          "to_balance": 950
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867141515903,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 680,
+          "to_balance": 970
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867141653445,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 660,
+          "to_balance": 990
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867141796510,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 640,
+          "to_balance": 1010
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867141936213,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 620,
+          "to_balance": 1030
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 665,
+          "time_ns": 2867142054942,
+          "worker": 3,
+          "from": 2,
+          "to": 4,
+          "amount": 20,
+          "first_lock": 2,
+          "second_lock": 4,
+          "from_balance": 600,
+          "to_balance": 1050
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867142220822,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1340,
+          "to_balance": 610
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867142375293,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1330,
+          "to_balance": 620
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867142516736,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1320,
+          "to_balance": 630
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867142657337,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1310,
+          "to_balance": 640
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867142793652,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1300,
+          "to_balance": 650
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867142909960,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1290,
+          "to_balance": 660
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867143039924,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1280,
+          "to_balance": 670
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867143172621,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1270,
+          "to_balance": 680
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867143316496,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1260,
+          "to_balance": 690
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867143501579,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1250,
+          "to_balance": 700
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867143795022,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1240,
+          "to_balance": 710
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867144092882,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1230,
+          "to_balance": 720
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867144351309,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1220,
+          "to_balance": 730
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867144575220,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1210,
+          "to_balance": 740
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867144787739,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1200,
+          "to_balance": 750
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867144960049,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1190,
+          "to_balance": 760
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867145137324,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1180,
+          "to_balance": 770
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867145276811,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1170,
+          "to_balance": 780
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867145469360,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1160,
+          "to_balance": 790
+        },
+        {
+          "kind": "event",
+          "event": "transferred",
+          "pid": 662,
+          "tid": 664,
+          "time_ns": 2867145659636,
+          "worker": 2,
+          "from": 3,
+          "to": 2,
+          "amount": 10,
+          "first_lock": 2,
+          "second_lock": 3,
+          "from_balance": 1150,
+          "to_balance": 800
+        },
+        {
+          "kind": "event",
+          "event": "summary",
+          "pid": 662,
+          "tid": 662,
+          "time_ns": 2867145902926,
+          "value": 3000,
+          "expected": 3000,
+          "success": 60,
+          "account2": 800,
+          "account3": 1150,
+          "account4": 1050
+        }
+      ],
+      "kernel": ""
+    }
+  ]
+}

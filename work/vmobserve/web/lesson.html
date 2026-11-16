@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>动手任务 · 按需分配</title><link rel="stylesheet" href="/style.css"><script type="module" src="/lesson.js"></script></head>
+<body><header><div class="brand">虚拟内存 · 动手任务</div><a href="/">返回实验观察台</a></header>
+<main class="lesson-page"><h1>申请了内存，就已经用上物理页了吗？</h1><p>这次只做一个问题。先预测，补一小段访问循环，再对照真实记录解释。</p><p class="notice">笔记是你的回答；下方数据来自所选真实运行的历史回放。自动检查不代表已经掌握原理。</p>
+<section class="course-intro"><h2>1. 先写下预测</h2>
+<label for="prediction">申请 16 MiB 后，RSS 会立刻增加 16 MiB 吗？逐步写入时呢？</label><textarea id="prediction" rows="4" placeholder="写下你的预测和理由；允许猜错。"></textarea>
+<p id="save-status" role="status"></p></section>
+<section class="course-intro"><h2>2. 亲手补访问循环</h2><p>只修改下面这个文件，从上一阶段停下的位置继续写，到当前目标为止。每隔一个基础页写 1 字节，值为 7，返回累计位置数。</p><pre id="student-path"></pre><details><summary>查看载入时的学生代码</summary><pre id="student-code"></pre></details><details><summary>需要时再看参考解</summary><pre id="reference-code"></pre></details><details><summary>任务说明与检查标准</summary><pre id="worksheet"></pre></details>
+<p>保存文件后，点击检查。未填写的起始版本应该失败；每次执行都会保存当时源码。页面不会自动改写你的代码。</p><div class="actions"><button id="run-student" class="primary">检查我的代码</button><button id="run-reference">运行参考实验</button></div><p id="job" role="status" aria-live="polite"></p><p id="error" role="alert"></p><details><summary>本次执行日志</summary><pre id="job-log"></pre></details></section>
+<section class="course-intro"><h2>3. 读真实证据，核对预测</h2><label for="lesson-run">选择实验记录</label><select id="lesson-run"></select><button id="refresh">刷新记录</button><p id="provenance"></p><div id="checks"></div><div id="observations"></div><p>不要把缺页数固定写成访问次数；小块可能已驻留。这里 RSS 统计整个相关映射，可能包含其他对象。</p><a id="report-download" hidden>下载所选完整证据报告</a></section>
+<section class="course-intro"><h2>4. 用自己的话解释</h2><label for="explanation">选一个与你预测不同的样本，写清动作、观测、解释和还缺什么证据。</label><textarea id="explanation" rows="6" placeholder="例如：哪种尺寸、哪个阶段？RSS 和缺页实际是多少？为什么？"></textarea><button id="save-record">保存本轮学习记录</button><button id="export-notes">导出学习记录</button><p id="record-status" role="status"></p><p class="detail-copy">草稿只存在当前浏览器。保存时绑定所选运行 ID、原报告哈希及源码哈希；之后切换记录不会改写已保存的回答。导出含草稿与已保存记录，个人解释不自动评分。</p></section>
+</main></body></html>

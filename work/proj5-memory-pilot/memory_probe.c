@@ -9,7 +9,10 @@
  */
 #include "../common/probe.h"
 
-struct reply { struct faults faults; unsigned long checksum; };
+struct reply {
+    struct faults faults;
+    unsigned long checksum, written_pages, mismatches;
+};
 
 static void transfer(int fd, void *data, size_t n, int writing) {
     char *cursor = data;
@@ -28,23 +31,49 @@ static unsigned long checksum(volatile unsigned char *p, size_t bytes, size_t pa
     return sum;
 }
 
+/* Check every page's value, not only a sum that could hide offsetting errors. */
+static unsigned long mismatches(volatile unsigned char *p, size_t pages, size_t page,
+                                size_t cow_stride) {
+    unsigned long count = 0;
+    for (size_t i = 0; i < pages; ++i) {
+        unsigned char expected = cow_stride && i % cow_stride == 0 ? 2 : 1;
+        if (p[i * page] != expected) ++count;
+    }
+    return count;
+}
+
 int main(int argc, char **argv) {
     unsigned long mib = 16;
-    if (argc > 2) { fprintf(stderr, "usage: memory_probe [MiB: 4..64]\n"); return 2; }
-    if (argc == 2) {
+    if (argc > 3) {
+        fprintf(stderr, "usage: memory_probe [MiB: 4..64] [COW: 0|1/8|1/4|1/2|1]\n");
+        return 2;
+    }
+    if (argc >= 2) {
         char *end;
         mib = strtoul(argv[1], &end, 10);
-        if (*end || mib < 4 || mib > 64) return 2;
+        if (end == argv[1] || *end || mib < 4 || mib > 64) return 2;
     }
+    const char *fraction = argc == 3 ? argv[2] : "1/4";
+    size_t cow_stride;
+    if (!strcmp(fraction, "0")) cow_stride = 0;
+    else if (!strcmp(fraction, "1/8")) cow_stride = 8;
+    else if (!strcmp(fraction, "1/4")) cow_stride = 4;
+    else if (!strcmp(fraction, "1/2")) cow_stride = 2;
+    else if (!strcmp(fraction, "1")) cow_stride = 1;
+    else { fprintf(stderr, "invalid COW fraction\n"); return 2; }
     long page_long = sysconf(_SC_PAGESIZE);
     if (page_long <= 0) die("page size");
     size_t page = (size_t)page_long, bytes = mib * 1024 * 1024;
-    if (bytes % (4 * page)) return 2;
+    if (bytes % (4 * page) || (cow_stride && bytes % (cow_stride * page))) return 2;
+    size_t total_pages = bytes / page;
+    size_t cow_pages = cow_stride ? total_pages / cow_stride : 0;
     struct utsname u;
     if (uname(&u)) die("uname");
     printf("{\"kind\":\"environment\",\"kernel\":\"%s\",\"arch\":\"%s\","
-           "\"page_bytes\":%zu,\"mib\":%lu,\"thp_policy\":\"MADV_NOHUGEPAGE\"}\n",
-           u.release, u.machine, page, mib);
+           "\"page_bytes\":%zu,\"mib\":%lu,\"thp_policy\":\"MADV_NOHUGEPAGE\","
+           "\"probe_version\":2,\"cow_fraction\":\"%s\",\"cow_stride_pages\":%zu,"
+           "\"total_pages\":%zu,\"cow_pages\":%zu}\n",
+           u.release, u.machine, page, mib, fraction, cow_stride, total_pages, cow_pages);
     void *base = mmap(NULL, bytes + 2 * page, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (base == MAP_FAILED) die("mmap");
     volatile unsigned char *p = (unsigned char *)base + page;
@@ -81,10 +110,17 @@ int main(int argc, char **argv) {
         transfer(command[0], &signal, 1, 0);
         if (signal != 'W') _exit(1);
         struct reply reply;
+        reply.written_pages = 0;
         before = read_faults();
-        for (size_t i = 0; i < bytes; i += 4 * page) p[i] = 2;
+        if (cow_stride) {
+            for (size_t i = 0; i < total_pages; i += cow_stride) {
+                p[i * page] = 2;
+                ++reply.written_pages;
+            }
+        }
         reply.faults = difference(before);
         reply.checksum = checksum(p, bytes, page);
+        reply.mismatches = mismatches(p, total_pages, page, cow_stride);
         transfer(response[1], &reply, sizeof(reply), 1);
         /* Parent samples both live processes while child waits here. */
         transfer(command[0], &signal, 1, 0);
@@ -100,12 +136,16 @@ int main(int argc, char **argv) {
     signal = 'W'; transfer(command[1], &signal, 1, 1);
     struct reply reply;
     transfer(response[0], &reply, sizeof(reply), 0);
-    snapshot("child_write_quarter", "parent", getpid(), p, bytes, zero);
-    snapshot("child_write_quarter", "child", child, p, bytes, reply.faults);
+    snapshot("child_write", "parent", getpid(), p, bytes, zero);
+    snapshot("child_write", "child", child, p, bytes, reply.faults);
     unsigned long parent_sum = checksum(p, bytes, page);
-    int isolated = parent_sum == bytes / page && reply.checksum == bytes / page * 5 / 4;
-    printf("{\"kind\":\"isolation\",\"parent_sum\":%lu,\"child_sum\":%lu,\"ok\":%s}\n",
-           parent_sum, reply.checksum, isolated ? "true" : "false");
+    unsigned long parent_mismatches = mismatches(p, total_pages, page, 0);
+    int isolated = parent_sum == total_pages && reply.checksum == total_pages + cow_pages &&
+                   reply.written_pages == cow_pages && !parent_mismatches && !reply.mismatches;
+    printf("{\"kind\":\"isolation\",\"parent_sum\":%lu,\"child_sum\":%lu,"
+           "\"cow_written_pages\":%lu,\"parent_mismatches\":%lu,\"child_mismatches\":%lu,\"ok\":%s}\n",
+           parent_sum, reply.checksum, reply.written_pages, parent_mismatches, reply.mismatches,
+           isolated ? "true" : "false");
     signal = 'Q'; transfer(command[1], &signal, 1, 1);
     close(command[1]); close(response[0]);
     int status;

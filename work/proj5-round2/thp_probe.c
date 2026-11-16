@@ -4,12 +4,34 @@
  * Reference: https://docs.kernel.org/admin-guide/mm/transhuge.html
  */
 #include "../common/probe.h"
+#include <sys/prctl.h>
+
+/* Capture the kernel's process policy independently of our requested setting. */
+static int process_policy(const char *policy) {
+    if (strcmp(policy, "inherit") &&
+        prctl(PR_SET_THP_DISABLE, !strcmp(policy, "disable") ? 1L : 0L, 0L, 0L, 0L))
+        die("PR_SET_THP_DISABLE");
+    int disabled = prctl(PR_GET_THP_DISABLE, 0L, 0L, 0L, 0L);
+    if (disabled < 0) die("PR_GET_THP_DISABLE");
+    FILE *file = fopen("/proc/self/status", "r");
+    if (!file) die("open status");
+    char line[512];
+    fprintf(stderr, "BEGIN_PROCESS pid=%ld\n", (long)getpid());
+    while (fgets(line, sizeof(line), file)) fputs(line, stderr);
+    if (ferror(file)) die("read status");
+    fclose(file);
+    fprintf(stderr, "END_PROCESS\n");
+    return disabled;
+}
 
 int main(int argc, char **argv) {
-    if (argc != 3 || (strcmp(argv[1], "on") && strcmp(argv[1], "off")) ||
-        (strcmp(argv[2], "sparse") && strcmp(argv[2], "full"))) {
-        fprintf(stderr, "usage: thp_probe on|off sparse|full\n"); return 2;
+    if ((argc != 3 && argc != 4) || (strcmp(argv[1], "on") && strcmp(argv[1], "off")) ||
+        (strcmp(argv[2], "sparse") && strcmp(argv[2], "full")) ||
+        (argc == 4 && strcmp(argv[3], "inherit") && strcmp(argv[3], "allow") && strcmp(argv[3], "disable"))) {
+        fprintf(stderr, "usage: thp_probe on|off sparse|full [inherit|allow|disable]\n"); return 2;
     }
+    const char *policy = argc == 4 ? argv[3] : "inherit";
+    int disabled = process_policy(policy);
     long page_long = sysconf(_SC_PAGESIZE);
     if (page_long <= 0) die("page size");
     size_t page = (size_t)page_long, huge = 0;
@@ -31,8 +53,9 @@ int main(int argc, char **argv) {
     size_t stride = strcmp(argv[2], "sparse") == 0 ? huge : page;
     printf("{\"kind\":\"condition\",\"thp_requested\":\"%s\",\"pattern\":\"%s\","
            "\"page_bytes\":%zu,\"huge_bytes\":%zu,\"region_bytes\":%zu,"
-           "\"stride_bytes\":%zu,\"writes\":%zu,\"huge_aligned\":true}\n",
-           argv[1], argv[2], page, huge, bytes, stride, bytes / stride);
+           "\"stride_bytes\":%zu,\"writes\":%zu,\"huge_aligned\":true,"
+           "\"process_thp\":\"%s\",\"process_thp_disabled\":%d,\"madvise_result\":0}\n",
+           argv[1], argv[2], page, huge, bytes, stride, bytes / stride, policy, disabled);
     struct faults zero = {0, 0};
     snapshot("untouched", "parent", getpid(), p, bytes, zero);
     struct faults before = read_faults();

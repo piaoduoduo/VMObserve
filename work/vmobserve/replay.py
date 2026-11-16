@@ -41,37 +41,45 @@ def load_run(directory):
         raise ValueError("unsupported result schema")
     report = legacy_report(root, original) if legacy else copy.deepcopy(original)
     report.update(view_mode="historical_replay", replayed_at=timestamp(), original_report_sha256=digest(root / "report.json"))
-    errors = []
+    source_errors = []
     for rel, sha in report.get("sources", {}).items():
         try:
             p = safe_child(root, rel if legacy else "source/" + rel)
             if digest(p) != sha:
-                errors.append("source hash mismatch: " + rel)
+                source_errors.append("source hash mismatch: " + rel)
         except (OSError, ValueError) as exc:
-            errors.append(f"source unavailable: {rel}: {exc}")
+            source_errors.append(f"source unavailable: {rel}: {exc}")
     if not report.get("sources"):
-        errors.append("source manifest missing")
+        source_errors.append("source manifest missing")
+    artifact_errors = {}
     for rel, sha in report.get("artifacts", {}).items():
         try:
             if digest(safe_child(root, rel)) != sha:
-                errors.append("artifact hash mismatch: " + rel)
+                artifact_errors[rel] = "artifact hash mismatch: " + rel
         except (OSError, ValueError) as exc:
-            errors.append(f"artifact unavailable: {rel}: {exc}")
+            artifact_errors[rel] = f"artifact unavailable: {rel}: {exc}"
+    raw_paths = {rel for case in report.get("cases", []) for rel in case.get("artifacts", {}).values()}
+    shared_errors = source_errors + [error for rel, error in artifact_errors.items() if rel not in raw_paths]
+    errors = source_errors + list(artifact_errors.values())
     for case in report.get("cases", []):
         # Always discard derived fields, even when the saved process failed.
         case["data"] = None
         case["validation"] = {"status": "insufficient_evidence", "checks": []}
+        case.pop("integrity", None)
         if case.get("status") != "completed":
             continue
         try:
-            if errors:
-                raise ValueError("source/artifact manifest verification failed")
+            if shared_errors:
+                raise ValueError("shared source/environment manifest verification failed")
             artifacts = case["artifacts"]
-            if not legacy and any(artifacts[k] not in report["artifacts"] for k in ("jsonl", "smaps")):
+            if not legacy and any(relative not in report["artifacts"] for relative in artifacts.values()):
                 raise ValueError("raw evidence missing from artifact manifest")
-            case["data"] = parse_case(safe_child(root, artifacts["jsonl"]), safe_child(root, artifacts["smaps"]), case["suite"], case["parameters"])
-            case["validation"] = validate_measurements(case["suite"], case["data"])
-            case["integrity"] = "legacy_partial" if legacy else "verified"
+            case_errors = [artifact_errors[rel] for rel in artifacts.values() if rel in artifact_errors]
+            if case_errors:
+                raise ValueError("; ".join(case_errors))
+            data = parse_case(safe_child(root, artifacts["jsonl"]), safe_child(root, artifacts.get("kernel", artifacts.get("smaps"))), case["suite"], case["parameters"])
+            validation = validate_measurements(case["suite"], data)
+            case.update(data=data, validation=validation, integrity="legacy_partial" if legacy else "verified")
         except (OSError, ValueError, KeyError, TypeError) as exc:
             case.update(integrity="failed", error={"code": "replay_evidence_invalid", "message": str(exc)})
             errors.append(f"{case['id']}: {exc}")

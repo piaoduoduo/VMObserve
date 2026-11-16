@@ -7,12 +7,18 @@ import shutil
 
 from . import SCHEMA_VERSION, __version__
 from .common import digest, execute, read_json, run_id, timestamp, write_json
+from .cow import COW_CHOICES, cow_fractions
 from .diagnosis import diagnose
 from .evidence import parse_case, validate_measurements
+from . import group3, group4
 
 WORK = Path(__file__).resolve().parents[1]
-SOURCES = {"baseline": "proj5-memory-pilot/memory_probe.c", "thp": "proj5-round2/thp_probe.c"}
+SOURCES = {"baseline": "proj5-memory-pilot/memory_probe.c", "thp": "proj5-round2/thp_probe.c", "course": "proj5-course/allocator_probe.c", "layout": "proj5-course/layout_probe.c"}
 
+SOURCES.update({"link-dynamic": "proj5-course/group3_link.c", "link-static": "proj5-course/group3_link.c",
+                "sequence": "proj5-course/group3_sequence.c", "demand512": "proj5-course/group3_demand.c",
+                "stack": "proj5-course/group3_stack.c"})
+SOURCES.update(group4.SOURCES)
 
 def read_optional(path):
     try:
@@ -31,7 +37,9 @@ def environment():
     thp = Path("/sys/kernel/mm/transparent_hugepage")
     return {"system": platform.system(), "kernel": platform.release(), "machine": platform.machine(),
             "os_release": release, "distribution": parsed, "python": platform.python_version(),
-            "libc": list(platform.libc_ver()), "page_bytes": os.sysconf("SC_PAGE_SIZE") if hasattr(os, "sysconf") else None,
+            "libc": list(platform.libc_ver()),
+            "allocator_environment": {key: os.environ.get(key) for key in ("GLIBC_TUNABLES", "MALLOC_MMAP_THRESHOLD_", "MALLOC_TRIM_THRESHOLD_", "MALLOC_PERTURB_", "LD_PRELOAD")},
+            "page_bytes": os.sysconf("SC_PAGE_SIZE") if hasattr(os, "sysconf") else None,
             "thp_enabled": read_optional(thp / "enabled"), "thp_defrag": read_optional(thp / "defrag"),
             "pmd_size": read_optional(thp / "hpage_pmd_size"),
             "thp_sizes": {p.parent.name: read_optional(p) for p in thp.glob("hugepages-*/enabled")},
@@ -42,28 +50,51 @@ def environment():
 def source_files():
     files = [WORK / "run_all.py", WORK / "launch.py", *(WORK / name for name in SOURCES.values())]
     files += sorted((WORK / "common").glob("*.h"))
+    files += sorted((WORK / "proj5-course").glob("*.h"))
+    files += sorted((WORK / "lessons").glob("*/*"))
     files += sorted((WORK / "vmobserve").glob("*.py"))
     files += sorted((WORK / "vmobserve/web").glob("*"))
     files += [WORK / "package_sources.py", WORK / "vm.ps1"]
     files += sorted((WORK / "openeuler-vm").glob("*.sh"))
+    files += [p for p in (WORK / "course-labs/group4").rglob("*") if p.is_file() and p.suffix in (".c", ".h", ".sh", ".py", ".md")]
     return files
 
 
 def plan_cases(args):
-    cases = []
+    cases = group3.plan(args.repeats) if args.suite == "group3" else group4.plan(args.repeats, args.group4_task) if args.suite == "group4" else []
+    if args.suite == "sequence":
+        cases = [c for c in group3.plan(args.repeats) if c["suite"] == "sequence"]
+    if args.suite in ("all", "layout", "group3"):
+        for repeat in range(1, args.repeats + 1):
+            cases.append({"id": f"layout-{repeat}", "suite": "layout",
+                          "parameters": {"repeat": repeat}, "arguments": []})
+    if args.suite in ("all", "course"):
+        implementation = getattr(args, "course_code", "reference")
+        for kib in (1, 256, 1024, 16384):
+            for repeat in range(1, args.repeats + 1):
+                cases.append({"id": f"course-{kib}KiB-{repeat}" + ("-student" if implementation == "student" else ""), "suite": "course",
+                              "parameters": {"requested_kib": kib, "repeat": repeat, "course_code": implementation},
+                              "arguments": [str(kib)]})
     if args.suite in ("all", "baseline"):
         for mib in (16, 64):
             for repeat in range(1, args.repeats + 1):
-                cases.append({"id": f"baseline-{mib}MiB-{repeat}", "suite": "baseline",
-                              "parameters": {"mib": mib, "repeat": repeat}, "arguments": [str(mib)]})
+                for fraction in cow_fractions(args.cow_fraction):
+                    suffix = "" if fraction == "1/4" else "-cow-" + fraction.replace("/", "_")
+                    cases.append({"id": f"baseline-{mib}MiB-{repeat}{suffix}", "suite": "baseline",
+                                  "parameters": {"mib": mib, "repeat": repeat, "cow_fraction": fraction},
+                                  "arguments": [str(mib), fraction]})
     if args.suite in ("all", "thp"):
         for pattern in ("sparse", "full") if args.pattern == "all" else (args.pattern,):
             for repeat in range(1, args.repeats + 1):
                 modes = ("off", "on") if repeat % 2 else ("on", "off")
                 for mode in modes if args.thp == "both" else (args.thp,):
-                    cases.append({"id": f"thp-{pattern}-{mode}-{repeat}", "suite": "thp",
-                                  "parameters": {"pattern": pattern, "thp": mode, "repeat": repeat},
-                                  "arguments": [mode, pattern]})
+                    policy = getattr(args, "thp_process", "inherit")
+                    policies = ("allow", "disable") if repeat % 2 else ("disable", "allow")
+                    for process in policies if policy == "pair" else (policy,):
+                        suffix = "" if process == "inherit" else "-" + process
+                        cases.append({"id": f"thp-{pattern}-{mode}-{repeat}{suffix}", "suite": "thp",
+                                      "parameters": {"pattern": pattern, "thp": mode, "repeat": repeat, "process_thp": process},
+                                      "arguments": [mode, pattern, process]})
     return cases
 
 
@@ -85,8 +116,10 @@ def run(args):
             if previous.get("data_origin") != "real_execution" or not any(c.get("suite") == "thp" for c in previous.get("cases", [])):
                 raise ValueError("recheck requires a v1 real THP execution record")
             report["related_run"] = {"run_id": previous["run_id"], "report_sha256": digest(args.recheck_from / "report.json"),
-                                     "recipe": "thp_" + (args.pattern if args.pattern != "all" else "sparse") + "_pair", "relation": "new_controlled_recheck"}
+                                     "recipe": "thp_" + (args.pattern if args.pattern != "all" else "sparse") + ("_process_pair" if args.recheck_kind == "process" else "_pair"), "relation": "new_controlled_recheck"}
             args.suite, args.pattern, args.thp = "thp", args.pattern if args.pattern != "all" else "sparse", "both"
+            if args.recheck_kind == "process":
+                args.thp, args.thp_process = "on", "pair"
         for src in source_files():
             relative = src.relative_to(WORK)
             target = out / "source" / relative
@@ -111,9 +144,28 @@ def run(args):
         checkpoint()
         (out / "build").mkdir()
         report["compiler_check"] = execute([args.compiler, "--version"], out / "build/compiler.stdout.log", out / "build/compiler.stderr.log", 10)
+        if any(c["suite"] == "g4-fork" for c in planned):
+            report["builds"]["child_prog"] = group4.build_child(out, args.compiler, execute)
+            if report["builds"]["child_prog"]["status"] != "completed":
+                raise ValueError("child_prog compilation failed; see build logs")
+        if any(c["suite"] == "sequence" for c in planned):
+            report["trace_tool"] = execute(["strace", "--version"], out / "build/strace.stdout.log", out / "build/strace.stderr.log", 10)
+            report["trace_tool"]["version"] = read_optional(out / "build/strace.stdout.log")
         for suite in dict.fromkeys(c["suite"] for c in planned):
             command = [args.compiler, "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror",
                        str(out / "source" / SOURCES[suite]), "-o", str(out / "build" / suite)]
+            if suite in group4.SOURCES:
+                command += ["-pthread", "-g"]
+            if suite == "course" and args.course_code == "student":
+                command += ['-DVMOBSERVE_ACCESS_HEADER="../lessons/demand/student.h"', '-DVMOBSERVE_ACCESS_NAME="student"']
+            if suite == "layout":
+                command += ["-fPIE", "-pie", "-ldl"]
+            if suite == "link-dynamic":
+                command += ["-fPIE", "-pie"]
+            elif suite == "link-static":
+                command += ["-static", "-no-pie", '-DLINK_MODE="static"']
+            elif suite == "stack":
+                command += ["-O0", "-fno-optimize-sibling-calls", "-fno-omit-frame-pointer"]
             build = execute(command, out / "build" / f"{suite}.stdout.log", out / "build" / f"{suite}.stderr.log", 30)
             report["builds"][suite] = build
             for case in (c for c in report["cases"] if c["suite"] == suite):
@@ -123,13 +175,17 @@ def run(args):
                 if suite == "thp" and env["pmd_size"] is None:
                     case.update(status="unsupported", error={"code": "thp_unavailable", "message": "PMD THP size unavailable"})
                     continue
+                if suite == "sequence" and report["trace_tool"]["status"] != "completed":
+                    case.update(status="unsupported", error={"code": "trace_tool_unavailable", "message": "strace version check failed; see build/strace.*.log"})
+                    continue
                 folder = out / "cases" / case["id"]
                 folder.mkdir(parents=True)
-                raw, smaps = folder / "stdout.jsonl", folder / "smaps.stderr.txt"
-                case["artifacts"] = {"jsonl": raw.relative_to(out).as_posix(), "smaps": smaps.relative_to(out).as_posix()}
+                raw, smaps = folder / "stdout.jsonl", folder / ("kernel.stderr.txt" if suite in group4.SOURCES else "smaps.stderr.txt")
+                case["artifacts"] = {"jsonl": raw.relative_to(out).as_posix(), "kernel" if suite in group4.SOURCES else "smaps": smaps.relative_to(out).as_posix()}
                 case["status"] = "running"
                 checkpoint()
-                case["execution"] = execute([str(out / "build" / suite), *case["arguments"]], raw, smaps, args.timeout)
+                command = group3.prepare(case, folder, out / "build" / suite, execute, args.timeout) if suite in group3.SUITES else group4.command(case, out / "build" / suite) if suite in group4.SOURCES else [str(out / "build" / suite), *case["arguments"]]
+                case["execution"] = execute(command, raw, smaps, args.timeout)
                 case["status"] = case["execution"]["status"]
                 case["error"] = case["execution"]["error"]
                 if case["status"] == "completed":
@@ -139,8 +195,10 @@ def run(args):
                         case["integrity"] = "verified"
                     except (ValueError, KeyError, TypeError, OSError) as exc:
                         case.update(status="failed", error={"code": "evidence_invalid", "message": str(exc)}, integrity="failed")
-                for p in (raw, smaps):
-                    report["artifacts"][p.relative_to(out).as_posix()] = digest(p)
+                for relative in case["artifacts"].values():
+                    p = out / relative
+                    if p.is_file():
+                        report["artifacts"][relative] = digest(p)
                 checkpoint()
                 if case["status"] == "cancelled":
                     report["status"] = "cancelled"
@@ -173,10 +231,16 @@ def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--require-openeuler", action="store_true")
     p.add_argument("--output", type=Path, default=WORK / "runs")
-    p.add_argument("--suite", choices=("all", "baseline", "thp"), default="all")
+    p.add_argument("--suite", choices=("all", "baseline", "thp", "course", "layout", "group3", "group4", "sequence"), default="all")
+    p.add_argument("--group4-task", choices=("all", "4.1", "4.2", "4.3", "4.4"), default="all")
     p.add_argument("--repeats", type=int, choices=range(1, 6), default=3)
+    p.add_argument("--cow-fraction", choices=COW_CHOICES, default="1/4",
+                   help="child write fraction; all runs 0, 1/8, 1/4, 1/2, 1 (baseline only)")
     p.add_argument("--pattern", choices=("all", "sparse", "full"), default="all")
     p.add_argument("--thp", choices=("both", "on", "off"), default="both")
+    p.add_argument("--thp-process", choices=("inherit", "allow", "disable", "pair"), default="inherit")
+    p.add_argument("--course-code", choices=("reference", "student"), default="reference")
+    p.add_argument("--recheck-kind", choices=("advice", "process"), default="advice")
     p.add_argument("--timeout", type=float, default=20)
     p.add_argument("--compiler", default="gcc")
     p.add_argument("--recheck-from", type=Path, help="v1 real run directory; execute a new sparse THP off/on control")

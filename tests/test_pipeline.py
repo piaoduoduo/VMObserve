@@ -65,7 +65,10 @@ class EvidenceTests(unittest.TestCase):
             report = load_run(dest)
             self.assertEqual(report["integrity"]["status"], "failed")
             self.assertTrue(report["integrity"]["errors"])
-            self.assertFalse(any(f["confidence"] == "confirmed" for f in report["diagnosis"]["findings"]))
+            self.assertIsNone(report["cases"][0]["data"])
+            self.assertEqual(report["cases"][0]["integrity"], "failed")
+            self.assertTrue(all(c["data"] and c["validation"]["status"] == "passed" for c in report["cases"][1:]))
+            self.assertTrue(any(f["confidence"] == "confirmed" for f in report["diagnosis"]["findings"]))
 
     def test_synthetic_missing_sample_is_not_zero(self):
         c = self.report["cases"][0]

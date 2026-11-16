@@ -61,7 +61,11 @@ if (( retrieval_rc == 0 )); then
  for result in "$transport"/runs/*; do
   destination="$VM_DIR/guest-runs/$(basename -- "$result")"
   if test -e "$destination"; then echo "Refusing to overwrite $destination" >&2; exit 1; fi
-  cp -a -- "$result" "$destination"
+  # Publish only after the whole copy is ready. A reader must never encounter
+  # report.json while the source/evidence files are still being copied.
+  staging="$transport/publish-$(basename -- "$result")"
+  cp -a -- "$result" "$staging"
+  mv -T -- "$staging" "$destination"
   echo "EVIDENCE_DIRECTORY=$destination"
  done
 fi

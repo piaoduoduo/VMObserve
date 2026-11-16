@@ -2,8 +2,10 @@ __pycache__/
 *.py[cod]
 .venv/
 node_modules/
+.playwright-cli/
 output/
 outputs/
+/tmp/
 work/*-review/
 work/runs/
 work/replays/
@@ -38,5 +40,12 @@ known_hosts*
 !/work/vmobserve/
 !/work/proj5-memory-pilot/
 !/work/proj5-round2/
+!/work/proj5-course/
+!/work/lessons/
+!/work/course-labs/
+/work/course-labs/*
+!/work/course-labs/group4/
+/work/course-labs/**/.build/
+/work/course-labs/**/results/
 !/work/openeuler-vm/
 /work/openeuler-vm/download.py

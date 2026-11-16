@@ -1,4 +1,4 @@
-# 统一运行入口（v0.1.0）
+# 统一运行入口（v0.6.1）
 
 本说明替代最初的预实验运行步骤。原始 results 和 guest-runs 全部保留；不要移动项目或虚拟磁盘。脚本路径已改为相对自身定位，但 qcow2 写入层仍可能记录绝对 backing 路径。
 
@@ -11,6 +11,10 @@
 ./work/vm.ps1 start
 ./work/vm.ps1 wait
 ./work/vm.ps1 retest
+./work/vm.ps1 retest --suite layout
+./work/vm.ps1 retest --suite sequence
+./work/vm.ps1 retest --suite group3 --timeout 120
+./work/vm.ps1 retest --suite course
 python work/launch.py
 ```
 
@@ -23,12 +27,25 @@ PowerShell 入口用 wslpath 转换实际项目路径，不再要求手写 /mnt/
 ```sh
 python3 work/run_all.py
 python3 work/run_all.py --require-openeuler
+python3 work/run_all.py --suite layout
+python3 work/run_all.py --suite sequence
+python3 work/run_all.py --suite course
+python3 work/run_all.py --cow-fraction all
+python3 work/run_all.py --suite baseline --cow-fraction 1/8
 python3 work/run_all.py --suite thp --pattern sparse --thp both --repeats 3
 python3 work/run_all.py --recheck-from work/runs/某次运行ID
 python3 work/launch.py --executor local
 ```
 
-基础实验默认 16/64 MiB 各 3 次；THP 四条件各 3 次。参数：suite=all/baseline/thp，pattern=all/sparse/full，thp=both/on/off，repeats=1..5，timeout=(0,120] 秒。默认每次程序 20 秒、编译 30 秒。THP 开关顺序交替。
+地址实验默认三个独立进程，各保存七类地址、完整 smaps 和加载后的 ELF 段。malloc 课程实验为 1/256/1024/16384 KiB 独立申请，各 3 次；基础实验默认 16/64 MiB 各 3 次、子进程写 1/4；THP 四条件各 3 次。参数：suite=all/layout/course/baseline/thp/group3/sequence，pattern=all/sparse/full，thp=both/on/off，repeats=1..5，timeout=(0,120] 秒。`--cow-fraction` 可选 `0`、`1/8`、`1/4`、`1/2`、`1`、`all`。默认每次程序 20 秒、编译 30 秒。THP 开关顺序交替。
+
+`sequence` 在同一进程连续申请 1/256/1024 KiB，默认独立重复三次；需要 strace，保存版本及原始调用。页面入口“连续 malloc 与调用”。缺少跟踪器时案例 unsupported、检查证据不足，整轮失败；不退化为猜测调用。`group3` 含连续分配、链接、512 MiB 按需调页、栈及地址课例，默认 24 案例，另需 file/ldd/readelf 和静态 libc 开发文件。现有 WSL/openEuler 依赖已可用，普通运行不安装依赖。两者均不改变默认 all 的 33 案例计划。
+
+`--cow-fraction all` 遍历五种比例，默认重复次数下为 30 项基础案例；suite=all 时另执行 3 项地址、12 项课程和 12 项 THP，共 57 项。没有指定该参数时共 33 项。Windows 传输入口同样接受该参数，如 `./work/vm.ps1 retest --cow-fraction all`。旧版 18/30/42/54 项历史记录保持原样。
+
+页面默认“程序地址与映射”，点击“运行地址空间实验”新建 3 项真实案例；任务单为 `work/lessons/layout/WORKSHEET.md`。切换到“课程实验入门”，点击“运行课程实验”新建 12 项真实案例。六步为申请前、申请后、写到 1/4、写到 1/2、写完、释放后。上一步/下一步只回放记录；展开原理和全部阶段不会执行程序。课程探针保留系统默认 THP，统计范围是与申请区间相交的整个 VMA；详见 ../docs/COURSE.md。
+
+页面切换到“按需分配 / 写时复制”，选择“下一次真实运行：子进程写入比例”，点击“运行 COW 对照”。单比例运行 6 项，全部比例运行 30 项。选择控件只影响下一次真实执行，当前历史表不会因此改变。零写入是保留共享的对照，不应解释为已发生复制。
 
 旧 `run_pilot.py` 与 `run_thp.py` 自动转入统一运行器，并生成独立 `work/runs/<ID>`，不再覆盖旧 results。
 
@@ -54,6 +71,25 @@ VM 传输日志在 `openeuler-vm/transfers/<宿主ID>`，只打包白名单源�
 
 现有环境为 openEuler 24.03 LTS、内核 6.6.0-28.0.0.34.oe2403.x86_64，QEMU TCG 2 核/2 GiB；SSH 仅 WSL 127.0.0.1:2226。`--require-openeuler` 同时拒绝非 openEuler 用户态和 Microsoft/WSL 内核。默认不改全局 THP。
 
-客体时钟与宿主有约 51 分钟偏差（本轮实际观测；可能变化）。没有为了隐藏警告而修改时间；源码包的 mtime 归一化为 0，内容 SHA256 不变。运行身份依靠唯一 ID 与哈希；传输日志保留两侧时间，不能跨机器直接按 ID推断先后。
+2026-11-10 曾观察到客体时钟与宿主约 51 分钟偏差，这不是固定偏移量。2026-11-11 复用磁盘启动了已停止的 VM，未手动校时；当前时差需按当次 preflight/传输日志核查。源码包的 mtime 归一化为 0，内容 SHA256 不变。运行身份依靠唯一 ID 与哈希，不能跨机器直接按 ID 推断先后。
 
 历史初始复测在 guest-runs/20261110T091621.439041Z。当前验证入口与新增证据见 ../docs/VERIFICATION.md；后续接手先看 ../docs/HANDOFF.md。
+
+## v0.4 学生任务与进程策略反例
+
+```powershell
+# 起始 student.h 故意未完成，此命令预期返回 1 并保留检查失败的记录
+./work/vm.ps1 retest --suite course --course-code student
+# 参考实现，不会覆盖学生文件
+./work/vm.ps1 retest --suite course --course-code reference
+# 两组均请求 THP，仅改变进程策略；稀疏/逐页 × 两策略 × 三次 = 12 项
+./work/vm.ps1 retest --suite thp --thp on --thp-process pair
+# 关联已经存在的真实记录，执行新的进程策略对照（路径换成待复验目录）
+./work/vm.ps1 retest --recheck-from work/openeuler-vm/guest-runs/20261111T124402.584266Z --recheck-kind process --pattern sparse
+```
+
+Linux 使用相同参数传给 `python3 work/run_all.py`。`--thp-process` 支持 inherit（默认）、allow、disable、pair；pair 交替两种执行顺序，allow 解除当前进程禁用而不保证分配大页。进程退出后不影响其他进程，不修改 sysfs。课程任务说明见 `work/lessons/demand/WORKSHEET.md`。
+
+网页 `/lesson` 提供草稿、证据选择与学习记录 JSON；个人解释不自动评分。主页面 THP 页提供新对照及关联复验。课例 v2 采集完整可退出 0，但累计位置/页首值检查不通过时统一运行器返回 1，整轮 `failed`。这与采集不完整、编译失败不同。原始 v1 课例兼容读取，不重写。
+
+VM 在传输目录完成副本后再一次性移入公开历史目录，避免页面将复制中的不完整目录误判为证据损坏。失败执行仍取回；不覆盖历史。
