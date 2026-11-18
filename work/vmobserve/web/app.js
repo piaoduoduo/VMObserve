@@ -95,6 +95,8 @@ function renderLayout() {
   $('#content').innerHTML = intro + `<div class="experiment"><div class="observation">${selector}<p class="muted">历史回放 · 检查 ${esc(c.validation.status)} · PID ${esc(d?.condition.pid)}</p><details><summary>展开真实对应关系（先做预测）</summary>${points}<p>r / w / x 分别表示读、写、执行权限；p 表示私有映射，不表示这些页已经全部驻留。这里展示虚拟地址。</p></details><details><summary>进一步：程序和动态库怎样装入地址空间？</summary><p>装载后的段起点 = 装载基址 + ELF 段虚拟地址。PT_LOAD 是装载段，一个段可能跨多条映射；装载器还可能收紧部分页面的权限。</p>${segments}${d?`<details><summary>逐段查看相交映射原文</summary><pre>${esc(d.segments.map(s=>short(s.object)+' #'+s.index+'\n'+s.mappings.join('\n')).join('\n\n'))}</pre></details>`:''}</details><details><summary>比较三次独立运行的地址</summary>${table(['重复','函数地址','栈变量地址'],repeats)}<p>观察地址是否变化，再比较对象归属和权限是否稳定。这里只比较本轮进程。</p></details><p class="course-question">现在用自己的话解释：知道变量的虚拟地址和所属映射，是否就知道它的物理页框？</p>${c.error?`<pre>${esc(JSON.stringify(c.error,null,2))}</pre>`:''}${c.artifacts?`<div class="raw-links"><button data-raw="${esc(c.id)}" data-kind="smaps">查看原始映射与 smaps</button><button data-raw="${esc(c.id)}" data-kind="jsonl">查看地址与装载段记录</button></div>`:''}</div>${diagnosisHTML(findings)}</div>`;
 }
 const state = {runs:[], id:null, report:null, tab:'layout', selected:0, phase:0, timer:null, job:null, pendingJobId:null, config:null, cowFraction:'all', group4Task:'all'};
+let selectionRequest = 0;
+let evidenceRequest = 0;
 const labels={completed:'完成',completed_with_deviations:'完成 · 有偏差',failed:'失败',timeout:'超时',cancelled:'中断',unsupported:'环境不支持',running:'记录未结束',not_run:'未运行'};
 const confidence={confirmed:'已确认（受控观测）',probable:'可能原因',insufficient_evidence:'证据不足'};
 const phases={untouched:'创建映射，尚未访问',read_all:'逐页只读',write_quarter:'每四页写一页',write_all:'写入每个基础页',fork_shared:'fork 后暂停，尚未改写',child_write_quarter:'子进程改写四分之一',after_write:'按步长写入后'};
@@ -125,10 +127,48 @@ function history() {
   }).join('') || '<p class="empty">该环境暂无记录</p>';
 }
 
+function readLocation() {
+  const hash = new URLSearchParams(window.location.hash.slice(1));
+  const topic = hash.get('topic');
+  const tab = [...document.querySelectorAll('[data-tab]')].some(button => button.dataset.tab === topic)
+    ? topic : null;
+  const position = key => {
+    const value = hash.get(key);
+    return /^\d+$/.test(value ?? '') && Number.isSafeInteger(Number(value)) ? Number(value) : 0;
+  };
+  return {id: hash.get('run'), tab, selected: position('case'), phase: position('step')};
+}
+
+function saveLocation() {
+  const hash = new URLSearchParams({run: state.id, topic: state.tab});
+  if ($('#case-select') && state.selected) hash.set('case', state.selected);
+  if ($('#phase, [data-course-step], [data-sequence-step]') && state.phase) hash.set('step', state.phase);
+  const target = '#' + hash;
+  if (window.location.hash !== target) window.history.replaceState(null, '', target);
+}
+
+async function copyLocation() {
+  if (!state.report) return;
+  const link = window.location.href;
+  try {
+    await navigator.clipboard.writeText(link);
+    $('#copy-status').textContent = '已复制';
+  } catch {
+    dialog('回放链接', `<label for="replay-link">复制此地址</label><input id="replay-link" type="url" readonly value="${esc(link)}">`);
+    $('#replay-link').select();
+  }
+}
+
 async function refresh() {
   state.runs = await api('/api/runs');
   history();
   if (state.id) return;
+  const requested = readLocation();
+  if (requested.id) {
+    if (requested.tab) state.tab = requested.tab;
+    await select(requested.id, requested);
+    return;
+  }
   const preferred = state.runs.find(run => run.group !== 'sample' && run.status === 'completed' && run.suites?.includes('layout'))
     || state.runs[0];
   if (preferred) {
@@ -139,12 +179,14 @@ async function refresh() {
   }
 }
 
-async function select(id) {
+async function select(id, position = {}) {
+  const request = ++selectionRequest;
+  evidenceRequest++;
   stop();
   state.id = id;
   state.report = null;
-  state.selected = 0;
-  state.phase = 0;
+  state.selected = position.selected ?? 0;
+  state.phase = position.phase ?? 0;
   error('');
   history();
   renderHeading();
@@ -154,11 +196,11 @@ async function select(id) {
   $('#content').innerHTML = '<p class="empty">正在校验证据与源码哈希…</p>';
   try {
     const report = await api(url('/api/report', {id}));
-    if (state.id !== id) return;
+    if (request !== selectionRequest) return;
     state.report = report;
     render();
   } catch (e) {
-    if (state.id !== id) return;
+    if (request !== selectionRequest) return;
     $('#mode').textContent = '回放失败';
     $('#content').innerHTML = '<p class="empty">无法读取这条记录。</p>';
     error(e.message);
@@ -173,9 +215,12 @@ function renderHeading() {
     } else button.removeAttribute('aria-current');
   });
   $('#export').disabled = !state.report;
+  $('#copy-replay').disabled = !state.report;
 }
 
 function render() {
+  evidenceRequest++;
+  $('#copy-status').textContent = '';
   renderHeading();
   const r = state.report;
   if (!r) return;
@@ -191,6 +236,7 @@ function render() {
   const views = {layout: renderLayout, sequence: renderSequence, group3: renderGroup3, group4: renderGroup4,
     linkage: renderGroup3, stack: renderGroup3, course: renderCourse, thp: renderTHP, baseline: renderBaseline};
   (views[state.tab] || renderEvidence)();
+  saveLocation();
   bindContent();
   jobUI();
 }
@@ -254,12 +300,87 @@ function renderCourse() {
   $('#content').innerHTML = intro + `<div class="experiment"><div class="observation">${selector}<p class="muted">历史回放 · ${c.parameters.course_code==='student'?'学生代码':'参考实现'} · 检查 ${esc(c.validation?.status)} · 第 ${state.phase+1} / 6 步</p><h3>${step.title}</h3><p><code>${step.code}</code></p><p class="course-question">${step.question}</p>${metrics}<p class="detail-copy">RSS 是相关整个映射的驻留量。映射可能包含其他对象。申请前和释放后按保存的地址范围查找。</p><details class="course-theory"><summary>展开课内原理</summary><p>${step.theory}</p></details><div class="course-navigation"><button data-course-step="${state.phase-1}" ${state.phase===0?'disabled':''}>上一步</button><button data-course-step="${state.phase+1}" ${state.phase===5?'disabled':''}>下一步</button></div><details><summary>查看本轮全部阶段</summary>${c.data?table(['阶段','RSS','本步次缺页'],c.data.samples.map((s,i)=>[courseSteps[i].title,kib(s.rss_kib),s.action_minor])):''}</details>${c.artifacts?`<div class="raw-links"><button data-raw="${esc(c.id)}" data-kind="smaps">查看原始 smaps</button><button data-raw="${esc(c.id)}" data-kind="jsonl">查看动作记录</button></div>`:''}</div>${diagnosisHTML(findings)}</div>`;
 }
 
-function renderEvidence(){const r=state.report;$('#content').innerHTML=`<h2>证据与环境</h2><p>诊断根据原始 JSONL 与 smaps 重新计算，旧报告保持原样。旧格式缺少原始文件哈希时明确标注为部分校验。</p><dl class="info"><dt>数据来源 / 当前模式</dt><dd>${esc(r.data_origin)} / ${esc(r.view_mode)}</dd><dt>执行状态 / 完整性</dt><dd>${esc(r.status)} / ${esc(r.integrity.status)}</dd><dt>系统与内核</dt><dd>${esc(r.environment.os_release)} / ${esc(r.environment.kernel)}</dd><dt>全局 THP 策略</dt><dd>${esc(r.environment.thp_enabled||'旧格式未统一采集；请查看原始子报告')}</dd></dl><details><summary>完整环境记录</summary><pre>${esc(JSON.stringify(r.environment,null,2))}</pre></details><h3>逐项执行与原始记录</h3>${r.cases.map(c=>`<div class="evidence-row"><span>${esc(c.id)} · ${esc(labels[c.status]||c.status)} · ${esc(c.validation?.status)}</span>${c.artifacts?`<button data-raw="${esc(c.id)}" data-kind="jsonl">JSONL</button><button data-raw="${esc(c.id)}" data-kind="smaps">smaps</button>`:''}</div>${c.error?`<pre>${esc(JSON.stringify(c.error,null,2))}</pre>`:''}`).join('')}`;}
-function bindContent(){bindSequenceSteps();$('#run-group4')?.addEventListener('click',()=>run('group4'));$('#group4-task')?.addEventListener('change',e=>{state.group4Task=e.target.value;});$('#run-sequence')?.addEventListener('click',()=>run('sequence'));$('#run-group3')?.addEventListener('click',()=>run('group3'));$('#run-layout')?.addEventListener('click',()=>run('layout'));$('#run-policy')?.addEventListener('click',()=>run('policy'));$('#policy-recheck')?.addEventListener('click',()=>run('policy-recheck'));$('#run-course')?.addEventListener('click',()=>run('course'));document.querySelectorAll('[data-course-step]').forEach(b=>b.addEventListener('click',()=>{state.phase=Number(b.dataset.courseStep);render();}));$('#cow-fraction')?.addEventListener('change',e=>{state.cowFraction=e.target.value;});$('#run-cow')?.addEventListener('click',()=>run('cow'));$('#case-select')?.addEventListener('change',e=>{stop();state.selected=Number(e.target.value);state.phase=0;render();});$('#view-raw')?.addEventListener('click',()=>{$('#raw-links').hidden=!$('#raw-links').hidden;});$('#recheck')?.addEventListener('click',()=>run('recheck'));$('#phase')?.addEventListener('input',e=>{stop();state.phase=Number(e.target.value);render();});$('#play')?.addEventListener('click',()=>{if(state.timer){stop();render();return;}state.timer=setInterval(()=>{const c=state.report.cases.filter(c=>c.suite==='baseline')[state.selected];state.phase=(state.phase+1)%c.data.samples.length;render();},1400);render();});document.querySelectorAll('[data-raw]').forEach(button=>button.addEventListener('click',()=>raw(button.dataset.raw,button.dataset.kind)));}
+const artifactLabels = {
+  jsonl: '原始 JSONL', smaps: 'smaps', kernel: '内核观察', syscalls: 'strace',
+  file: 'file', ldd: 'ldd', readelf: 'readelf', ldd_stderr: 'ldd 错误输出'
+};
+
+function evidenceStatus(item) {
+  if (item.integrity === 'failed' || item.validation?.status === 'failed') return 'attention';
+  if (['failed', 'timeout', 'cancelled'].includes(item.status) ||
+      ['deviation', 'completed_with_deviations'].includes(item.validation?.status)) return 'attention';
+  return item.status === 'completed' && item.validation?.status === 'passed' ? 'passed' : 'unavailable';
+}
+
+function renderEvidenceCases() {
+  const term = $('#evidence-search').value.trim().toLowerCase();
+  const status = $('#evidence-status').value;
+  const cases = state.report.cases;
+  const found = cases.filter(item => {
+    const text = [item.id, item.suite, ...Object.values(item.parameters || {})].join(' ').toLowerCase();
+    return text.includes(term) && (status === 'all' || evidenceStatus(item) === status);
+  });
+  $('#evidence-count').textContent = `${found.length} / ${cases.length} 个案例`;
+  $('#evidence-cases').innerHTML = found.map(item => {
+    const links = Object.entries(artifactLabels).filter(([kind]) => item.artifacts?.[kind])
+      .map(([kind, label]) => `<button data-raw="${esc(item.id)}" data-kind="${kind}">${label}</button>`).join('');
+    return `<article class="evidence-row"><div class="evidence-identity">
+      <strong class="mono">${esc(item.id)}</strong>
+      <p class="muted">${esc(labels[item.status] || item.status)} · 校验 ${esc(item.validation?.status)}</p>
+      </div><div class="actions">${links}</div>
+      ${item.error ? `<details><summary>执行或校验详情</summary><pre>${esc(JSON.stringify(item.error, null, 2))}</pre></details>` : ''}</article>`;
+  }).join('') || '<p class="empty">没有匹配的案例。</p>';
+}
+
+function renderEvidence() {
+  const r = state.report;
+  $('#content').innerHTML = `<section class="observation"><h2>逐项执行与原始记录</h2>
+    <div class="evidence-filters">
+      <label>查找案例<input id="evidence-search" type="search" placeholder="编号、实验名或参数"></label>
+      <label>状态<select id="evidence-status"><option value="all">全部</option><option value="passed">通过</option>
+        <option value="attention">失败或偏差</option><option value="unavailable">暂无完整结果</option></select></label>
+      <output id="evidence-count" aria-live="polite"></output>
+    </div>
+    <div id="evidence-cases"></div>
+    <details class="manifest"><summary>环境与证据来源</summary>
+      <dl class="info"><dt>数据来源</dt><dd>${esc(r.data_origin)}</dd><dt>记录完整性</dt><dd>${esc(r.integrity.status)}</dd>
+      <dt>内核</dt><dd>${esc(r.environment.kernel)}</dd><dt>THP 策略</dt><dd>${esc(r.environment.thp_enabled)}</dd></dl>
+      <pre>${esc(JSON.stringify(r.environment, null, 2))}</pre>
+    </details></section>`;
+  renderEvidenceCases();
+  $('#evidence-search').addEventListener('input', renderEvidenceCases);
+  $('#evidence-status').addEventListener('change', renderEvidenceCases);
+}
+
+function bindContent(){bindSequenceSteps();$('#run-group4')?.addEventListener('click',()=>run('group4'));$('#group4-task')?.addEventListener('change',e=>{state.group4Task=e.target.value;});$('#run-sequence')?.addEventListener('click',()=>run('sequence'));$('#run-group3')?.addEventListener('click',()=>run('group3'));$('#run-layout')?.addEventListener('click',()=>run('layout'));$('#run-policy')?.addEventListener('click',()=>run('policy'));$('#policy-recheck')?.addEventListener('click',()=>run('policy-recheck'));$('#run-course')?.addEventListener('click',()=>run('course'));document.querySelectorAll('[data-course-step]').forEach(b=>b.addEventListener('click',()=>{state.phase=Number(b.dataset.courseStep);render();}));$('#cow-fraction')?.addEventListener('change',e=>{state.cowFraction=e.target.value;});$('#run-cow')?.addEventListener('click',()=>run('cow'));$('#case-select')?.addEventListener('change',e=>{stop();state.selected=Number(e.target.value);state.phase=0;render();});$('#view-raw')?.addEventListener('click',()=>{$('#raw-links').hidden=!$('#raw-links').hidden;});$('#recheck')?.addEventListener('click',()=>run('recheck'));$('#phase')?.addEventListener('input',e=>{stop();state.phase=Number(e.target.value);render();});$('#play')?.addEventListener('click',()=>{if(state.timer){stop();render();return;}state.timer=setInterval(()=>{const c=state.report.cases.filter(c=>c.suite==='baseline')[state.selected];state.phase=(state.phase+1)%c.data.samples.length;render();},1400);render();});}
 function dialog(title,html){$('#dialog-title').textContent=title;$('#dialog-body').innerHTML=html;$('#raw-dialog').showModal();}
-async function raw(caseId,kind){try{const res=await fetch(url('/api/evidence',{id:state.id,case:caseId,kind}));const text=await res.text();if(!res.ok)throw new Error(text);dialog(`${caseId} · ${kind}`,`<pre>${esc(text)}</pre>`);}catch(e){error(e.message);}}
+async function raw(caseId, kind) {
+  stop();
+  const request = ++evidenceRequest;
+  const id = state.id;
+  try {
+    const res = await fetch(url('/api/evidence', {id, case: caseId, kind}));
+    const text = await res.text();
+    if (request !== evidenceRequest) return;
+    if (!res.ok) throw new Error(text);
+    dialog(`${caseId} · ${artifactLabels[kind] || kind}`, `<pre>${esc(text)}</pre>`);
+  } catch (e) {
+    if (request === evidenceRequest) error(e.message);
+  }
+}
 async function run(mode){stop();error('');try{state.job=await api('/api/run',{method:'POST',headers:{'Content-Type':'application/json','X-VMObserve-Token':state.config.token},body:JSON.stringify({mode,id:state.id,group4_task:state.group4Task,cow_fraction:state.cowFraction,pattern:mode.includes('policy')?'sparse':state.tab==='thp'?[...new Set(state.report?.cases.filter(c=>c.suite==='thp' && !['allow','disable'].includes(c.parameters.process_thp)).map(c=>`${c.parameters.pattern}:${c.parameters.repeat}`))][state.selected]?.split(':')[0]||'sparse':'sparse'})});state.pendingJobId=state.job.id;jobUI();}catch(e){error(e.message);}}
 function jobUI(){const job=state.job;const disabled=job?.status==='running'||!state.config?.live_available;$('#run').disabled=disabled;$('#run-course-all').hidden=!state.config?.live_available;$('#run-course-all').disabled=disabled;for(const id of ['recheck','run-cow','cow-fraction','run-course','run-policy','policy-recheck','run-layout','run-group3','run-sequence','run-group4','group4-task'])if($('#'+id))$('#'+id).disabled=disabled;$('#job').hidden=!job;if(!job)return;$('#job').innerHTML=job.status==='running'?`真实执行中 · ${esc(job.target)}${job.cow_fraction?` · COW 比例 ${esc(job.cow_fraction)}`:''} · 本页下方仍是已选历史记录，完成后会刷新。`:`最近任务 ${esc(job.id)}：${esc(labels[job.status]||job.status)}${job.new_run_ids?.includes(state.id)?' · 当前显示该任务结果':' · 当前显示其他历史记录'}<details><summary>执行日志</summary><pre>${esc(job.log||job.error?.message||'')}</pre></details>`;}
+$('#content').addEventListener('click', event => {
+  const button = event.target.closest('[data-raw]');
+  if (button) raw(button.dataset.raw, button.dataset.kind);
+});
+$('#copy-replay').addEventListener('click', copyLocation);
+window.addEventListener('hashchange', () => {
+  const requested = readLocation();
+  if (!requested.id || !state.config) return;
+  if (requested.tab) state.tab = requested.tab;
+  select(requested.id, requested);
+});
 $('#runs').addEventListener('click',e=>{const button=e.target.closest('[data-run]');if(button)select(button.dataset.run);});$('#environment').addEventListener('change',history);document.querySelectorAll('[data-tab]').forEach(button => button.addEventListener('click', () => {
   stop();
   state.tab = button.dataset.tab;

@@ -5,6 +5,7 @@
 - Windows 双击 `启动交互网页.cmd`，打开 <http://127.0.0.1:8766>。首次打开可以直接回放内置样例。
 - Linux / WSL 运行 `python3 -B work/launch.py --executor local --port 8766`。新的「运行课内全套」使用第 3 组原课例、地址映射和 12 项按需分配入门，共 36 项。命令行也可运行 `python3 -B work/run_all.py --suite course-all`。
 - 第 3 组需要 GCC、静态 libc、binutils、file、ldd 和 strace。strace 不在 PATH 时，可通过启动或运行命令的 `--strace` 指定路径。
+- 「复制回放链接」可保存当前运行记录、主题、案例和步骤。同一个工作台地址能打开对应记录时，刷新或访问该链接会恢复回放位置。「证据与环境」可按案例编号、实验或参数查找，并筛选状态。
 - 「连续分配」支持时间线和原始调用行号。「静态与动态链接」「栈增长对照」按运行轮次比较原始课例记录。第 4 组保持独立运行和回放入口。
 
 2026-11-16 第1、2组补齐：六项基础实验已在openEuler实跑，Git两类补丁在干净副本还原一致，原Dockerfile构建/运行及宿主进程观察通过；能力赛16/64 MiB COW案例在容器内2/2通过。先看[11月18日速查](docs/ACCEPTANCE_20261118.md)和[本轮完成记录](docs/GROUP12_COMPLETION_20261116.md)，命令入口 `work/course-labs/group12/demo.ps1`。
