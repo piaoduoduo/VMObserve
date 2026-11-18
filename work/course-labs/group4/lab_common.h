@@ -41,10 +41,13 @@ static inline char receive_byte(int fd) {
     char c=0;ssize_t n;do{n=read(fd,&c,1);}while(n<0&&errno==EINTR);
     if(n!=1){errno=EPIPE;die("handshake read");}return c;
 }
-static inline int wait_child(pid_t pid) {
-    int status;pid_t got;do{got=waitpid(pid,&status,0);}while(got<0&&errno==EINTR);
-    if(got!=pid) die("waitpid");
-    return status;
+static inline pid_t wait_child(pid_t pid, int *status) {
+    pid_t got;
+    do {
+        got = waitpid(pid, status, 0);
+    } while (got < 0 && errno == EINTR);
+    if (got < 0) die("waitpid");
+    return got;
 }
 static inline void dump_status(const char *tag,pid_t pid,int with_threads) {
     char path[128],buffer[2048];
@@ -53,15 +56,17 @@ static inline void dump_status(const char *tag,pid_t pid,int with_threads) {
     fprintf(stderr,"BEGIN status=%s pid=%ld\n",tag,(long)pid);
     while(fgets(buffer,sizeof buffer,f)) fputs(buffer,stderr);
     fclose(f);fprintf(stderr,"END status\n");fflush(stderr);
+    char id[32];
+    snprintf(id,sizeof id,"%ld",(long)pid);
     pid_t observer=fork();if(observer<0) die("observer fork");
     if(!observer){
-        char id[32];snprintf(id,sizeof id,"%ld",(long)pid);
         if(dup2(STDERR_FILENO,STDOUT_FILENO)<0) _exit(126);
         if(with_threads) execlp("ps","ps","-L","-o","pid,ppid,tid,stat,comm","-p",id,(char *)NULL);
         else execlp("ps","ps","-o","pid,ppid,stat,comm","-p",id,(char *)NULL);
         _exit(127);
     }
-    int status=wait_child(observer);
+    int status;
+    wait_child(observer,&status);
     if(!WIFEXITED(status)||WEXITSTATUS(status)){errno=ECHILD;die("ps observer");}
 }
 #endif

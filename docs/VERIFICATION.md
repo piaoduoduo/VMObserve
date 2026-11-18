@@ -174,3 +174,9 @@ WSL 内核为 6.6.87.2-microsoft-standard-WSL2；openEuler 为 6.6.0-28.0.0.34.o
 WSL `20261116T091932.046340Z`、openEuler `20261116T092118.588077Z`各42/42真实案例completed、passed、verified；后者由网页任务 `20261116T092105.320066Z`触发。每轮57份源码哈希与当前实现一致，各导出525行CSV及HTML/JSON。60项自动检查通过，新增8项解析/错误证据回归与真实运行分开计数。
 
 旧24/24/3/3/33/33只读回放通过，29份原材料未改。独立脚本与便携包复验见 `output/verification/v0.7-group4/delivery-audit.json`；原始运行与导出审计在同目录audit.json。每项运行结果与边界见 [GROUP4_COMPLETION_20261116.md](GROUP4_COMPLETION_20261116.md)。
+
+## 2026-11-16 第1、2组补齐
+
+六项实际记录与证据索引见[完成记录](GROUP12_COMPLETION_20261116.md)。审计 `output/verification/group12-20261116/audit.json`：普通用户基础/编译/strace/两种异常通过，Git两种补丁完整树一致；原容器构建、hello退出0与7项宿主/容器观察检查通过。实际Windows演示入口status/git/linkage已运行。
+
+容器内能力赛运行 `20261116T121454.736703Z` 的2个案例均completed/passed/verified，取回回放与HTML/JSON/CSV导出通过；57份运行源码与当前工程一致，29份原课程材料哈希未变。核心未改，本轮不重复计算此前60项测试。首次600秒构建超时与1800秒重试成功均保存。

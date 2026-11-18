@@ -45,6 +45,8 @@ known_hosts*
 !/work/course-labs/
 /work/course-labs/*
 !/work/course-labs/group4/
+!/work/course-labs/group12/
+!/work/course-labs/systems/
 /work/course-labs/**/.build/
 /work/course-labs/**/results/
 !/work/openeuler-vm/

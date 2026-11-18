@@ -1,0 +1,6 @@
+{"kind": "observation", "lab": "6.3", "phase": "/ 的文件系统", "observed": "ext4"}
+{"kind": "observation", "lab": "6.3", "phase": "/proc 的文件系统", "observed": "proc"}
+{"kind": "observation", "lab": "6.3", "phase": "/sys 的文件系统", "observed": "sysfs"}
+{"kind": "observation", "lab": "6.3", "phase": "/dev/shm 的文件系统", "observed": "tmpfs"}
+{"kind": "observation", "lab": "6.3", "phase": "从 procfs 读到的内核版本", "observed": "6.6.0-28.0.0.34.oe2403.x86_64"}
+{"kind": "observation", "lab": "6.3", "phase": "从 sysfs 读到的回环接口类型", "observed": 772}

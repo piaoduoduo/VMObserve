@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "work"))
 from vmobserve.layout import SYMBOLS, parse_layout, validate_layout, layout_findings
 from vmobserve.export import csv_text, html_text
 from vmobserve.runner import parser, plan_cases
-from vmobserve.server import Workbench
+from vmobserve.server import experiment_args, Workbench
 
 
 class LayoutTests(unittest.TestCase):
@@ -80,7 +80,7 @@ class LayoutTests(unittest.TestCase):
     def test_public_entry_points_include_layout(self):
         plan = plan_cases(parser().parse_args(["--suite", "layout"]))
         self.assertEqual([c["id"] for c in plan], ["layout-1", "layout-2", "layout-3"])
-        self.assertEqual(Workbench("local").command(layout=True)[-2:], ["--suite", "layout"])
+        self.assertEqual(experiment_args("layout")[-2:], ["--suite", "layout"])
 
 
 if __name__ == "__main__":

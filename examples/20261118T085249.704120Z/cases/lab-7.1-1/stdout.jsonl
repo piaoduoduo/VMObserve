@@ -1,0 +1,9 @@
+{"kind": "observation", "lab": "7.1", "phase": "null 的文件类型、主次设备号", "observed": [true, 1, 3]}
+{"kind": "observation", "lab": "7.1", "phase": "null 读取 8 字节的结果", "observed": 0}
+{"kind": "observation", "lab": "7.1", "phase": "zero 的文件类型、主次设备号", "observed": [true, 1, 5]}
+{"kind": "observation", "lab": "7.1", "phase": "zero 读取 8 字节的结果", "observed": "0000000000000000"}
+{"kind": "observation", "lab": "7.1", "phase": "random 的文件类型、主次设备号", "observed": [true, 1, 8]}
+{"kind": "observation", "lab": "7.1", "phase": "random 读取 8 字节的结果", "observed": 8}
+{"kind": "observation", "lab": "7.1", "phase": "urandom 的文件类型、主次设备号", "observed": [true, 1, 9]}
+{"kind": "observation", "lab": "7.1", "phase": "urandom 读取 8 字节的结果", "observed": 8}
+{"kind": "observation", "lab": "7.1", "phase": "写入 null 的返回字节数", "observed": 4}

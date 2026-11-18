@@ -1,0 +1,64 @@
+brk(NULL)                               = 0x985000
+mmap(NULL, 18951, PROT_READ, MAP_PRIVATE, 3, 0) = 0x7f33ac9b0000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f33ac9ae000
+mmap(NULL, 1932688, PROT_READ|PROT_EXEC, MAP_PRIVATE|MAP_DENYWRITE, 3, 0) = 0x7f33ac7d6000
+mmap(0x7f33ac99b000, 24576, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_DENYWRITE, 3, 0x1c5000) = 0x7f33ac99b000
+mmap(0x7f33ac9a1000, 52624, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0) = 0x7f33ac9a1000
+mmap(NULL, 8192, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f33ac7d4000
+munmap(0x7f33ac9b0000, 18951)           = 0
+write(1, "{\"kind\":\"condition\",\"mode\":\"sequence\",\"pid\":1861,\"sizes\":[1024,262144,1048576],\"page_bytes\":4096}\n", 98) = 98
+brk(NULL)                               = 0x985000
+write(1, "{\"kind\":\"sample\",\"phase\":\"before_alloc\",\"pid\":1861,\"address\":\"0\",\"program_break\":\"985000\",\"count\":0,\"action_minor\":0,\"action_maj", 128) = 128
+write(1, "or\":0,\"total_minor\":64,\"total_major\":0}\n", 40) = 40
+write(2, "BEGIN phase=before_alloc pid=1861\n", 34) = 34
+write(2, "00400000-00401000 r--p 00000000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3406) = 3406
+write(2, "00404000-00405000 rw-p 00003000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3916) = 3916
+write(2, "7f33ac99f000-7f33ac9a1000 rw-p 001c9000 fc:02 921967                     /usr/lib64/libc.so.6\nSize:                  8 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                   8 kB\nPss:                   8 kB\nPss_Dirty:            "..., 3937) = 3937
+write(2, "7ffc8a55f000-7ffc8a580000 rw-p 00000000 00:00 0                          [stack]\nSize:                132 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                  12 kB\nPss:                  12 kB\nPss_Dirty:            12 kB\nShared_"..., 3095) = 3095
+write(2, "END\n", 4)                    = 4
+write(2, "ACTION malloc_1 BEGIN\n", 22) = 22
+brk(0x9a6000)                           = 0x9a6000
+write(2, "ACTION malloc_1 END\n", 20)   = 20
+write(1, "{\"kind\":\"sample\",\"phase\":\"alloc_1KiB\",\"pid\":1861,\"address\":\"9852a0\",\"program_break\":\"9a6000\",\"count\":1,\"action_minor\":1,\"action_", 128) = 128
+write(1, "major\":0,\"total_minor\":66,\"total_major\":0}\n", 43) = 43
+write(2, "BEGIN phase=alloc_1KiB pid=1861\n", 32) = 32
+write(2, "00400000-00401000 r--p 00000000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3406) = 3406
+write(2, "00404000-00405000 rw-p 00003000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3905) = 3905
+write(2, "7f33ac99b000-7f33ac99f000 r--p 001c5000 fc:02 921967                     /usr/lib64/libc.so.6\nSize:                 16 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                  16 kB\nPss:                  16 kB\nPss_Dirty:            "..., 3923) = 3923
+write(2, "7f33ac9e3000-7f33ac9e5000 rw-p 0002e000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2\nSize:                  8 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                   8 kB\nPss:                   8 kB\nPss_Dirty: "..., 3897) = 3897
+write(2, "END\n", 4)                    = 4
+write(2, "ACTION malloc_2 BEGIN\n", 22) = 22
+mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f33ac793000
+write(2, "ACTION malloc_2 END\n", 20)   = 20
+write(1, "{\"kind\":\"sample\",\"phase\":\"alloc_256KiB\",\"pid\":1861,\"address\":\"7f33ac793010\",\"program_break\":\"9a6000\",\"count\":2,\"action_minor\":1,", 128) = 128
+write(1, "\"action_major\":0,\"total_minor\":67,\"total_major\":0}\n", 51) = 51
+write(2, "BEGIN phase=alloc_256KiB pid=1861\n", 34) = 34
+write(2, "00400000-00401000 r--p 00000000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3406) = 3406
+write(2, "00404000-00405000 rw-p 00003000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3905) = 3905
+write(2, "7f33ac99b000-7f33ac99f000 r--p 001c5000 fc:02 921967                     /usr/lib64/libc.so.6\nSize:                 16 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                  16 kB\nPss:                  16 kB\nPss_Dirty:            "..., 3923) = 3923
+write(2, "7f33ac9e3000-7f33ac9e5000 rw-p 0002e000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2\nSize:                  8 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                   8 kB\nPss:                   8 kB\nPss_Dirty: "..., 3897) = 3897
+write(2, "END\n", 4)                    = 4
+write(2, "ACTION malloc_3 BEGIN\n", 22) = 22
+mmap(NULL, 1052672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f33ac692000
+write(2, "ACTION malloc_3 END\n", 20)   = 20
+write(1, "{\"kind\":\"sample\",\"phase\":\"alloc_1MiB\",\"pid\":1861,\"address\":\"7f33ac692010\",\"program_break\":\"9a6000\",\"count\":3,\"action_minor\":1,\"a", 128) = 128
+write(1, "ction_major\":0,\"total_minor\":68,\"total_major\":0}\n", 49) = 49
+write(2, "BEGIN phase=alloc_1MiB pid=1861\n", 32) = 32
+write(2, "00400000-00401000 r--p 00000000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3406) = 3406
+write(2, "00404000-00405000 rw-p 00003000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3905) = 3905
+write(2, "7f33ac99b000-7f33ac99f000 r--p 001c5000 fc:02 921967                     /usr/lib64/libc.so.6\nSize:                 16 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                  16 kB\nPss:                  16 kB\nPss_Dirty:            "..., 3923) = 3923
+write(2, "7f33ac9e3000-7f33ac9e5000 rw-p 0002e000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2\nSize:                  8 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                   8 kB\nPss:                   8 kB\nPss_Dirty: "..., 3897) = 3897
+write(2, "END\n", 4)                    = 4
+write(1, "{\"kind\":\"allocations\",\"addresses\":[\"9852a0\",\"7f33ac793010\",\"7f33ac692010\"]}\n", 76) = 76
+write(2, "ACTION free_all BEGIN\n", 22) = 22
+munmap(0x7f33ac793000, 266240)          = 0
+munmap(0x7f33ac692000, 1052672)         = 0
+write(2, "ACTION free_all END\n", 20)   = 20
+write(1, "{\"kind\":\"sample\",\"phase\":\"freed\",\"pid\":1861,\"address\":\"9852a0\",\"program_break\":\"9a6000\",\"count\":0,\"action_minor\":0,\"action_major", 128) = 128
+write(1, "\":0,\"total_minor\":68,\"total_major\":0}\n", 38) = 38
+write(2, "BEGIN phase=freed pid=1861\n", 27) = 27
+write(2, "00400000-00401000 r--p 00000000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3406) = 3406
+write(2, "00404000-00405000 rw-p 00003000 fc:02 395959                             /root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence\nSize:                  4 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:         "..., 3905) = 3905
+write(2, "7f33ac99b000-7f33ac99f000 r--p 001c5000 fc:02 921967                     /usr/lib64/libc.so.6\nSize:                 16 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                  16 kB\nPss:                  16 kB\nPss_Dirty:            "..., 3923) = 3923
+write(2, "7f33ac9e3000-7f33ac9e5000 rw-p 0002e000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2\nSize:                  8 kB\nKernelPageSize:        4 kB\nMMUPageSize:           4 kB\nRss:                   8 kB\nPss:                   8 kB\nPss_Dirty: "..., 3897) = 3897
+write(2, "END\n", 4)                    = 4

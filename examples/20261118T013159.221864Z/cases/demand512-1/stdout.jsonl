@@ -1,0 +1,8 @@
+{"kind":"condition","mode":"demand512","pid":2202,"bytes":536870912,"stride":4096,"page_bytes":4096}
+{"kind":"sample","phase":"before_alloc","pid":2202,"address":"0","program_break":"63b000","count":0,"action_minor":0,"action_major":0,"total_minor":56,"total_major":0}
+{"kind":"sample","phase":"allocated","pid":2202,"address":"7fbf5cd35010","program_break":"65c000","count":0,"action_minor":2,"action_major":0,"total_minor":59,"total_major":0}
+{"kind":"sample","phase":"write_quarter","pid":2202,"address":"7fbf5cd35010","program_break":"65c000","count":32768,"action_minor":266,"action_major":0,"total_minor":325,"total_major":0}
+{"kind":"sample","phase":"write_half","pid":2202,"address":"7fbf5cd35010","program_break":"65c000","count":65536,"action_minor":64,"action_major":0,"total_minor":389,"total_major":0}
+{"kind":"sample","phase":"write_all","pid":2202,"address":"7fbf5cd35010","program_break":"65c000","count":131072,"action_minor":436,"action_major":0,"total_minor":825,"total_major":0}
+{"kind":"values","checked":131072,"mismatches":0}
+{"kind":"sample","phase":"freed","pid":2202,"address":"7fbf5cd35010","program_break":"65c000","count":0,"action_minor":0,"action_major":0,"total_minor":825,"total_major":0}

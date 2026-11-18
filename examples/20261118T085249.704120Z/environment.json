@@ -1,0 +1,43 @@
+{
+  "system": "Linux",
+  "kernel": "6.6.0-28.0.0.34.oe2403.x86_64",
+  "machine": "x86_64",
+  "os_release": "NAME=\"openEuler\"\nVERSION=\"24.03 (LTS)\"\nID=\"openEuler\"\nVERSION_ID=\"24.03\"\nPRETTY_NAME=\"openEuler 24.03 (LTS)\"\nANSI_COLOR=\"0;31\"",
+  "distribution": {
+    "NAME": "openEuler",
+    "VERSION": "24.03 (LTS)",
+    "ID": "openEuler",
+    "VERSION_ID": "24.03",
+    "PRETTY_NAME": "openEuler 24.03 (LTS)",
+    "ANSI_COLOR": "0;31"
+  },
+  "python": "3.11.6",
+  "libc": [
+    "glibc",
+    "2.38"
+  ],
+  "allocator_environment": {
+    "GLIBC_TUNABLES": null,
+    "MALLOC_MMAP_THRESHOLD_": null,
+    "MALLOC_TRIM_THRESHOLD_": null,
+    "MALLOC_PERTURB_": null,
+    "LD_PRELOAD": null
+  },
+  "page_bytes": 4096,
+  "thp_enabled": "[always] madvise never",
+  "thp_defrag": "always defer defer+madvise [madvise] never",
+  "pmd_size": "2097152",
+  "thp_sizes": {
+    "hugepages-32kB": "always inherit madvise [never]",
+    "hugepages-512kB": "always inherit madvise [never]",
+    "hugepages-2048kB": "always [inherit] madvise never",
+    "hugepages-1024kB": "always inherit madvise [never]",
+    "hugepages-64kB": "always inherit madvise [never]",
+    "hugepages-16kB": "always inherit madvise [never]",
+    "hugepages-256kB": "always inherit madvise [never]",
+    "hugepages-128kB": "always inherit madvise [never]"
+  },
+  "meminfo": "MemTotal:        1753680 kB\nMemFree:         1216944 kB\nMemAvailable:    1515712 kB\nBuffers:           17200 kB\nCached:           413772 kB\nSwapCached:            0 kB\nActive:           303824 kB\nInactive:         168520 kB\nActive(anon):        644 kB\nInactive(anon):    49968 kB\nActive(file):     303180 kB\nInactive(file):   118552 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:              1020 kB\nWriteback:             0 kB\nAnonPages:         41404 kB\nMapped:            70620 kB\nShmem:              9232 kB\nKReclaimable:      15356 kB\nSlab:              35580 kB\nSReclaimable:      15356 kB\nSUnreclaim:        20224 kB\nKernelStack:        1824 kB\nPageTables:         1540 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:      876840 kB\nCommitted_AS:     364832 kB\nVmallocTotal:   13743895347199 kB\nVmallocUsed:       14752 kB\nVmallocChunk:          0 kB\nPercpu:              904 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:      6144 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      104296 kB\nDirectMap2M:     1992704 kB\nDirectMap1G:           0 kB",
+  "captured_at": "2026-11-18T08:52:49.764955+00:00",
+  "execution_context": "qemu-tcg"
+}

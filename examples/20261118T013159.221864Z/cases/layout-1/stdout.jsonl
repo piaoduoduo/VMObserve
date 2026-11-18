@@ -1,0 +1,17 @@
+{"kind":"condition","probe_version":1,"pid":2325,"page_bytes":4096,"method":"dl_iterate_phdr+smaps","executable":"/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout"}
+{"kind":"point","symbol":"function","address":"55fdbe17b520"}
+{"kind":"point","symbol":"readonly","address":"55fdbe17c220"}
+{"kind":"point","symbol":"initialized","address":"55fdbe17e0a8"}
+{"kind":"point","symbol":"uninitialized","address":"55fdbe180100"}
+{"kind":"point","symbol":"heap","address":"55fdbfb4d2a0"}
+{"kind":"point","symbol":"stack","address":"7ffc0765126c"}
+{"kind":"point","symbol":"libc_malloc","address":"7f5febbfcf60"}
+{"kind":"segment","object":"/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout","is_main":true,"index":2,"load_bias":"55fdbe17a000","vaddr":"0","offset":0,"filesz":2736,"memsz":2736,"flags":"r--"}
+{"kind":"segment","object":"/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout","is_main":true,"index":3,"load_bias":"55fdbe17a000","vaddr":"1000","offset":4096,"filesz":1749,"memsz":1749,"flags":"r-x"}
+{"kind":"segment","object":"/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout","is_main":true,"index":4,"load_bias":"55fdbe17a000","vaddr":"2000","offset":8192,"filesz":1020,"memsz":1020,"flags":"r--"}
+{"kind":"segment","object":"/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout","is_main":true,"index":5,"load_bias":"55fdbe17a000","vaddr":"3dd0","offset":11728,"filesz":732,"memsz":33584,"flags":"rw-"}
+{"kind":"segment","object":"linux-vdso.so.1","is_main":false,"index":0,"load_bias":"7ffc07767000","vaddr":"0","offset":0,"filesz":3926,"memsz":3926,"flags":"r-x"}
+{"kind":"segment","object":"/lib64/libc.so.6","is_main":false,"index":2,"load_bias":"7f5febb6a000","vaddr":"0","offset":0,"filesz":1854727,"memsz":1854727,"flags":"r-x"}
+{"kind":"segment","object":"/lib64/libc.so.6","is_main":false,"index":3,"load_bias":"7f5febb6a000","vaddr":"1c5ba0","offset":1858464,"filesz":19240,"memsz":74224,"flags":"rw-"}
+{"kind":"segment","object":"/lib64/ld-linux-x86-64.so.2","is_main":false,"index":0,"load_bias":"7f5febd4b000","vaddr":"0","offset":0,"filesz":179496,"memsz":179496,"flags":"r-x"}
+{"kind":"segment","object":"/lib64/ld-linux-x86-64.so.2","is_main":false,"index":1,"load_bias":"7f5febd4b000","vaddr":"2c5e0","offset":181728,"filesz":11024,"memsz":11480,"flags":"rw-"}

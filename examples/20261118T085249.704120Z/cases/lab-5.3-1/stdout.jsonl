@@ -1,0 +1,2 @@
+{"kind":"observation","lab":"5.3","phase":"发布端写入的值","observed":42}
+{"kind":"observation","lab":"5.3","phase":"读端看到标志后读出的值","observed":42}

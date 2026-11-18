@@ -2,7 +2,7 @@
 import re
 from pathlib import Path
 from .smaps import parse_mappings, FIELDS
-from .sequence import trace_actions, attach_mappings, describe_allocations
+from .sequence import trace_actions, attach_mappings, describe_allocations, allocation_overview
 
 SUITES = ("link-dynamic", "link-static", "sequence", "demand512", "stack")
 TITLES = {"link-dynamic": "3.1 动态链接与装入", "link-static": "3.1 静态链接对照",
@@ -114,12 +114,18 @@ def parse(records, raw, suite, parameters, folder):
             raise ValueError("allocation addresses disagree")
         result["allocations"] = addresses
         attach_mappings(samples, mappings, addresses, condition["sizes"])
+        result["overview"] = allocation_overview(samples[3])
         trace = (folder / "syscalls.txt").read_text()
         result["actions"] = trace_actions(trace)
         describe_allocations(result["actions"], samples, addresses, condition["sizes"])
     elif suite == "demand512":
         if phases != ["before_alloc", "allocated", "write_quarter", "write_half", "write_all", "freed"]:
             raise ValueError("demand phases missing")
+        allocated_address = samples[1]["address"]
+        if (condition["mode"] != "demand512" or int(allocated_address, 16) == 0
+                or any(row["address"] != allocated_address for row in samples[2:])
+                or any(not row["mapping_present"] for row in samples[1:5])):
+            raise ValueError("demand samples must follow the same live allocation through the writes")
         if condition["bytes"] != 512*1024*1024 or condition["stride"] != 4096:
             raise ValueError("original demand size/stride changed")
         if [s["count"] for s in samples] != [0,0,32768,65536,131072,0]:

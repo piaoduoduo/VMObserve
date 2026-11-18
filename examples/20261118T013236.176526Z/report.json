@@ -1,0 +1,5434 @@
+{
+  "schema_version": "vmobserve.run/v1",
+  "tool_version": "0.7.0",
+  "run_id": "20261118T013236.176526Z",
+  "data_origin": "real_execution",
+  "view_mode": "execution_record",
+  "status": "completed",
+  "started_at": "2026-11-18T01:32:36.181733+00:00",
+  "environment": {
+    "system": "Linux",
+    "kernel": "6.6.0-28.0.0.34.oe2403.x86_64",
+    "machine": "x86_64",
+    "os_release": "NAME=\"openEuler\"\nVERSION=\"24.03 (LTS)\"\nID=\"openEuler\"\nVERSION_ID=\"24.03\"\nPRETTY_NAME=\"openEuler 24.03 (LTS)\"\nANSI_COLOR=\"0;31\"",
+    "distribution": {
+      "NAME": "openEuler",
+      "VERSION": "24.03 (LTS)",
+      "ID": "openEuler",
+      "VERSION_ID": "24.03",
+      "PRETTY_NAME": "openEuler 24.03 (LTS)",
+      "ANSI_COLOR": "0;31"
+    },
+    "python": "3.11.6",
+    "libc": [
+      "glibc",
+      "2.38"
+    ],
+    "allocator_environment": {
+      "GLIBC_TUNABLES": null,
+      "MALLOC_MMAP_THRESHOLD_": null,
+      "MALLOC_TRIM_THRESHOLD_": null,
+      "MALLOC_PERTURB_": null,
+      "LD_PRELOAD": null
+    },
+    "page_bytes": 4096,
+    "thp_enabled": "[always] madvise never",
+    "thp_defrag": "always defer defer+madvise [madvise] never",
+    "pmd_size": "2097152",
+    "thp_sizes": {
+      "hugepages-32kB": "always inherit madvise [never]",
+      "hugepages-512kB": "always inherit madvise [never]",
+      "hugepages-2048kB": "always [inherit] madvise never",
+      "hugepages-1024kB": "always inherit madvise [never]",
+      "hugepages-64kB": "always inherit madvise [never]",
+      "hugepages-16kB": "always inherit madvise [never]",
+      "hugepages-256kB": "always inherit madvise [never]",
+      "hugepages-128kB": "always inherit madvise [never]"
+    },
+    "meminfo": "MemTotal:        1753684 kB\nMemFree:         1317976 kB\nMemAvailable:    1504264 kB\nBuffers:           19972 kB\nCached:           298012 kB\nSwapCached:            0 kB\nActive:           195488 kB\nInactive:         167104 kB\nActive(anon):        632 kB\nInactive(anon):    53220 kB\nActive(file):     194856 kB\nInactive(file):   113884 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:              1360 kB\nWriteback:             0 kB\nAnonPages:         43292 kB\nMapped:            73740 kB\nShmem:              9236 kB\nKReclaimable:      16380 kB\nSlab:              37256 kB\nSReclaimable:      16380 kB\nSUnreclaim:        20876 kB\nKernelStack:        1936 kB\nPageTables:         1524 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:      876840 kB\nCommitted_AS:     374708 kB\nVmallocTotal:   13743895347199 kB\nVmallocUsed:       14864 kB\nVmallocChunk:          0 kB\nPercpu:              928 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:      6144 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      120680 kB\nDirectMap2M:     1976320 kB\nDirectMap1G:           0 kB",
+    "captured_at": "2026-11-18T01:32:36.207142+00:00",
+    "execution_context": "qemu-tcg"
+  },
+  "sources": {
+    "run_all.py": "f94b36c625afdd3fe8fa1828cee3bc05840c82be0f3fb947a1993d77d602d473",
+    "launch.py": "ffc137660f6edb4d5786b44a247f3a71b43362fa8c88aa8e6a71b6621e4f3657",
+    "proj5-memory-pilot/memory_probe.c": "a518fd2b5265189230bc68dee42103e4c274af6644174d5737b67f734a3eed20",
+    "proj5-round2/thp_probe.c": "7a95878ef66c01114ae00f4550844c51b9c1c1958245f2b14ca06f450a849e1b",
+    "proj5-course/allocator_probe.c": "c3f4612c8cb68a7d1faafb5a0f52096182cde30e673daf5114c738c7f74703b6",
+    "proj5-course/layout_probe.c": "60795ef2090bed0e6531be424bc2e3ee09e46bfd298ac609db70a6da779c3b1a",
+    "proj5-course/group3_link.c": "459db3c54c0fa09368bbb187899955f3d3886099ef08a600bc8c9fd191351f35",
+    "proj5-course/group3_sequence.c": "14c31a0ba276cf5ed45bfe942b0ea31523f2f96c12c446fc4f5009ebd45e09c3",
+    "proj5-course/group3_demand.c": "c72e9e61279c515aa8c5614f5e5eecb416772ced94d39cc0ecc456d786832223",
+    "proj5-course/group3_stack.c": "125197bc6a6aae8ab0d69eb2c7ae66ed69acc8faf6f710f4c3230fc822a86bd4",
+    "course-labs/group4/lab4_1/fork_exec_wait.c": "363e8a1309fc3dda566de47a5610cb90620341695042f308d4bf9d22dcdf2d29",
+    "course-labs/group4/lab4_2/pthread_test.c": "575e85f16ffc4e4920c96d9687b52d66de9cba29b476a2f5637351e9eeb56073",
+    "course-labs/group4/lab4_3/user_thread_test.c": "1249083bfc46c799f83ad62a83b4ab97454abea650258088bf8b7c696187904e",
+    "course-labs/group4/lab4_4/pipe_communication.c": "77d8b3a1a1b4869ff9b28e2a6105e7844dda667250bf7e56deef616ad76c5e1c",
+    "course-labs/group4/lab4_4/thread_communication.c": "4dcfb86e4649cb503c6168d493e2eab0a182bc74adbf3069499817592b30bad8",
+    "common/probe.h": "5508d4521f4a530882a8e1f36ceb5e65cab91ece03026f54572116b0cc745a6c",
+    "proj5-course/access_pattern.h": "191b2771546e8365a8ede1f85db5373de3b91b291fecace74a865e3759031c45",
+    "proj5-course/group3_snapshot.h": "d18ba0edf15c13b9184161dc6a39ca1b87233c18b649539cd0494231df01c3c9",
+    "lessons/demand/WORKSHEET.md": "138339305b4ca9a6f1e12ed47455d6c854b8812d5c79b5a45945e9b3b3d59802",
+    "lessons/demand/student.h": "a4e4ca53cfb082999f08285b4ba24e1e38c98903ee25b2f311c16afbb4c1f10d",
+    "lessons/layout/WORKSHEET.md": "9db686a910cbb33c5b7495b2516176fde802a663587e0fc8bd9c7350d3ffe317",
+    "lessons/sequence/WORKSHEET.md": "00257712cb0e82b41305668f8a5a417ad41689f50a994a38e356ed86bd49fca6",
+    "vmobserve/__init__.py": "ab51628fc1717bec535be144aafd86662e4e9afe0ccccc109bd4bd76a17951d8",
+    "vmobserve/__main__.py": "3b93eb45fdc020f830329ad25e605b9f50db2c27c918a0b14e71a7c212fe71df",
+    "vmobserve/allocator.py": "308dbe04ba2c6886822ed0e671a8603cd1a67a34044946f97819e5780d0cceae",
+    "vmobserve/common.py": "eb07f230fbf3c8a0b94fe761d88c0177baba7c9dfb72348e4fdf7062cf7c1ee3",
+    "vmobserve/cow.py": "12f369f252a12c3bb31f8e22844885dd57a624b75ccf93227caafac79dbf08ca",
+    "vmobserve/diagnosis.py": "63f3730c11054e6d2c12cc925ca8cece37feb1e4dea6000679183f0c8c9b97a8",
+    "vmobserve/evidence.py": "4cbe8a204cf22d353606efe994bc6883f4342c0f4585963b049d14bd31367810",
+    "vmobserve/export.py": "22fdc6cc4a8b21689cc27496575d20e5dba4af4f43440050144600599737291c",
+    "vmobserve/group3.py": "0756122056432890039ad4cc29b832be51adc9f9dfe2a87ec0c3f890d5cc9c2d",
+    "vmobserve/group4.py": "9bb0759ecb522711f087d91ce9fcdf066ca9034fae9061521f6dd912a0974acf",
+    "vmobserve/layout.py": "9b50d90f32e72deee742c1fbfbe5a096d6e7e07845f3baa3c6325a080021497a",
+    "vmobserve/replay.py": "2fa8024df8d6fb114eda1d92972be42898b60410da1307e2d0b986c7b8cb0756",
+    "vmobserve/runner.py": "ad8268d70c87ac0c30bf35192755edde3809e6b0c8157fe4f461a1a87e925905",
+    "vmobserve/sequence.py": "d4aed43bf5991ef549eb73170ad7c64370ebe92d281159aa8d2699a7a5ec800f",
+    "vmobserve/server.py": "0c60f494a2a6318813499bbc9d45033df1f85e35f8679f0d0405b46eb6dd31dc",
+    "vmobserve/smaps.py": "1be9e84650a63cb4acc57296ffd92a2fa158aaa422d1064d02604a2c5a54f0ad",
+    "vmobserve/thp_policy.py": "1d599914b89a2a532f1e53fdc382256933eec1d1149799d70ec2e34d90a1d2f6",
+    "vmobserve/web/app.js": "2abbf8a54129eb555a448cfe85928aa4204e3455bc10bbec76af900cc5f973a3",
+    "vmobserve/web/index.html": "26acd5e301543122d6e00f75a4137bde381a85ed718ce7e85c0073f22d2533da",
+    "vmobserve/web/lesson.html": "96971b3fa1e8ddf5f44538f7b3294400f7a2c67e7aa5a3efb00027f02b7d0717",
+    "vmobserve/web/lesson.js": "c1ea984b711db305e77f2a78d6239da0fe7db2e976a35c039f933aca6cabb9a7",
+    "vmobserve/web/style.css": "929151e47b121ea37457a84a107cef383cdd10ef8714c7498bb1d1d26d589b03",
+    "package_sources.py": "4d3091fac8b344bef656810645805d3bae1cec53eccdb50d8fcc119abebbfba6",
+    "vm.ps1": "d3bc9cf58783f808b72e9953703a8a3a4af409a31e8fa7acaa4c8dd2594f961e",
+    "openeuler-vm/config.sh": "9824af1e0910a8857dc78a69284b3f791b5176357c8dce0b288c82072148b7ac",
+    "openeuler-vm/retest.sh": "64795a569e14197c4062beb0e0458e5effd9288dc2930ccd66e1ee52dac255c1",
+    "openeuler-vm/start.sh": "d9381156afce699ff92a930e34ac0e2e1e9ff3f62e64d4e84894fd99b8d09cc5",
+    "openeuler-vm/status.sh": "048b5f63b9e0fc16e073bf8fa1b19745a4bb3158098f8a6ffbaebc621a2d2841",
+    "openeuler-vm/wait.sh": "4cef1b3e8d43528c48e0da80929530038f9220294e662ac5fb55bae408de5a71",
+    "course-labs/group4/build.sh": "dc7cc5aa2b8bd57d28db328dbc91c57e616eb07d03805030c7dc79b76c0feadf",
+    "course-labs/group4/view_events.py": "15c82a3e982bbc9e41c921e1b63068396d9aff62f690421405e1227fff93214a",
+    "course-labs/group4/demo.sh": "d964458d5b31be075bd22c38502cd72ec52334bd6dc4d50207b63883f4afd5c2",
+    "course-labs/group4/README.md": "1ce6518b154239ad7b2676e763ed6c229f3e704060014c96647cc2af5e3dbc35",
+    "course-labs/group4/lab_common.h": "2522147bccdff0e5bb5dea54763e3c01b854c63b148b9140514740cf30564598",
+    "course-labs/group4/lab4_1/child_prog.c": "0f59e7dd417df641d09663516b6d7c22dbb92f5e069207f66378a68dac6dc0ed"
+  },
+  "artifacts": {
+    "cases/g4-fork-normal-1/stdout.jsonl": "c8e0ed9e5366d5a82f843ae55bf9f64456f22f24d358be0e622ca323680ad76a",
+    "cases/g4-fork-normal-1/kernel.stderr.txt": "032c3023897679c79ae6236ca093260c1320e54952cd46b46c976ea2f01ae163",
+    "cases/g4-fork-exec-failure-1/stdout.jsonl": "bcbe0eb8272e9ceb6982b73f239c6c765d057005d7d4f4dcaed906a00fab0ac5",
+    "cases/g4-fork-exec-failure-1/kernel.stderr.txt": "eb1ec8168a2af4e4ebd8b7f064b4aa7662e8ab2ae37c36c548d62ecfe1744fa8",
+    "cases/g4-pthread-unsafe-1/stdout.jsonl": "8e9a489866b80c721c41fa18acc73fedfb67914cf693e998f2bcfdc15c624bfd",
+    "cases/g4-pthread-unsafe-1/kernel.stderr.txt": "5bee9def346b402467d73399d236eb67abff2d6ce7e6a229444a7a72f4769bfe",
+    "cases/g4-pthread-mutex-1/stdout.jsonl": "524c39a1ce12f6f1425ae7f4a3f021908b702eeef4103ada5938bd81f7dafcbb",
+    "cases/g4-pthread-mutex-1/kernel.stderr.txt": "2fcd7f8618454058388450cc089c43b8c9d5fab2915cc240cd90b723952ab239",
+    "cases/g4-uthread-round-robin-1/stdout.jsonl": "f3d482ffd38038be08f35c1dc41801c855e58a520d459e01ff01c22884071b04",
+    "cases/g4-uthread-round-robin-1/kernel.stderr.txt": "7815d9bfae54cf65bde5292b1dedfa069ce56791d9880fd63a534ce81311e2bc",
+    "cases/g4-uthread-blocking-1/stdout.jsonl": "ac57d3fd38cbfcdc997b07e1da8b8902e81efa2194c195391e429874452afbae",
+    "cases/g4-uthread-blocking-1/kernel.stderr.txt": "85651ce07fb7a1b21ef959f62c20622b392a55193bafff12bd9282c8a6b0bbd7",
+    "cases/g4-pipe-basic-1/stdout.jsonl": "3258fcf55a0a692ff59f7a8c2ba8eca8d1ee4226a8e03d0fcd6f66b15cd953c5",
+    "cases/g4-pipe-basic-1/kernel.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/g4-pipe-eof-1/stdout.jsonl": "1eb938374b69624d7a45a71e2f40b1ff1710d0789414193c9f997bd55d7f98a4",
+    "cases/g4-pipe-eof-1/kernel.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/g4-pipe-eagain-1/stdout.jsonl": "cfe21f9b96d31cf22a5b6738523b9edb3dfdd9c64dac032da6c2fb2174a3b5b8",
+    "cases/g4-pipe-eagain-1/kernel.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/g4-pipe-epipe-1/stdout.jsonl": "8d426bdf02a4e3bb8a3fcbad789c015b00c2a362ee50c97ef74c935e543b3cac",
+    "cases/g4-pipe-epipe-1/kernel.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/g4-pipe-sigpipe-1/stdout.jsonl": "10d91775dbd5e95399de6bb10ce634742d554653b35026671e2168223fe60d05",
+    "cases/g4-pipe-sigpipe-1/kernel.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/g4-bank-comparison-1/stdout.jsonl": "d2541dccd9b850b886acb82e92f1c080a8de8a97dbb49e53c5df4d522460833b",
+    "cases/g4-bank-comparison-1/kernel.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/g4-bank-condition-1/stdout.jsonl": "b660dfb067db8931c834f13b35e6d1f5ad46124aa63478a4e7e6beb56853f845",
+    "cases/g4-bank-condition-1/kernel.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/g4-bank-transfer-1/stdout.jsonl": "040096c3744c5765c688690934070042e6e7245975286590dd361bb7dc3d3d56",
+    "cases/g4-bank-transfer-1/kernel.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "environment.json": "aa14f6cee58e2be69c648ead6e76cd60af519274eecf55cf91bfbe0dfbabacb6",
+    "build/g4-bank.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/g4-uthread.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/child_prog.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/g4-pthread.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stdout.log": "47214cb7a32d8be03220eb0f5ef9186fbd03556cf0fd580e1553d863d131d8dc",
+    "build/g4-pipe.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/g4-pthread.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/g4-fork.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/g4-bank.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/g4-uthread.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/g4-fork.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/child_prog.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/g4-pipe.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "builds": {
+    "child_prog": {
+      "command": [
+        "gcc",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/source/course-labs/group4/lab4_1/child_prog.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/child_prog"
+      ],
+      "started_at": "2026-11-18T01:32:36.635506+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:38.799763+00:00",
+      "duration_seconds": 2.164
+    },
+    "g4-fork": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/source/course-labs/group4/lab4_1/fork_exec_wait.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-fork",
+        "-pthread",
+        "-g"
+      ],
+      "started_at": "2026-11-18T01:32:38.801796+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:40.660238+00:00",
+      "duration_seconds": 1.859
+    },
+    "g4-pthread": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/source/course-labs/group4/lab4_2/pthread_test.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-pthread",
+        "-pthread",
+        "-g"
+      ],
+      "started_at": "2026-11-18T01:32:41.252008+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:43.111433+00:00",
+      "duration_seconds": 1.859
+    },
+    "g4-uthread": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/source/course-labs/group4/lab4_3/user_thread_test.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-uthread",
+        "-pthread",
+        "-g"
+      ],
+      "started_at": "2026-11-18T01:32:43.918760+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:45.724870+00:00",
+      "duration_seconds": 1.806
+    },
+    "g4-pipe": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/source/course-labs/group4/lab4_4/pipe_communication.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-pipe",
+        "-pthread",
+        "-g"
+      ],
+      "started_at": "2026-11-18T01:32:46.450948+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:48.001723+00:00",
+      "duration_seconds": 1.551
+    },
+    "g4-bank": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/source/course-labs/group4/lab4_4/thread_communication.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-bank",
+        "-pthread",
+        "-g"
+      ],
+      "started_at": "2026-11-18T01:32:48.699665+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:51.274354+00:00",
+      "duration_seconds": 2.575
+    }
+  },
+  "cases": [
+    {
+      "id": "g4-fork-normal-1",
+      "suite": "g4-fork",
+      "parameters": {
+        "mode": "normal",
+        "repeat": 1
+      },
+      "arguments": [
+        "normal"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2611,
+            "expected": 2611,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "fork_child_return",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "fork_parent_return",
+            "observed": 2612,
+            "expected": 2612,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "child_parent",
+            "observed": 2611,
+            "expected": 2611,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "waited_child",
+            "observed": 2612,
+            "expected": 2612,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "private_parent_value",
+            "observed": [
+              7,
+              7
+            ],
+            "expected": [
+              7,
+              7
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "private_child_value",
+            "observed": 99,
+            "expected": 99,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "same_virtual_address",
+            "observed": "0x4040e8",
+            "expected": "0x4040e8",
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "kernel_child_identity",
+            "observed": [
+              2612,
+              2611
+            ],
+            "expected": [
+              2612,
+              2611
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "signal",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "exec_preserves_pid",
+            "observed": 2612,
+            "expected": 2612,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "exec_argument",
+            "observed": "course-demo",
+            "expected": "course-demo",
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "exec_exit",
+            "observed": 7,
+            "expected": 7,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "new_process_image",
+            "observed": "child_prog",
+            "expected": "child_prog",
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "kernel_post_exec_identity",
+            "observed": 2612,
+            "expected": 2612,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "success_does_not_return",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2611,
+          "tid": 2611,
+          "time_ns": 292679884229,
+          "lab": "4.1",
+          "mode": "normal",
+          "ppid": 2547,
+          "value": 7,
+          "address": "0x4040e8"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2611,
+          "tid": 2611,
+          "time_ns": 292923760279,
+          "role": "parent",
+          "child_pid": 2612,
+          "wait_return": 2612,
+          "exit_code": 7,
+          "signal": 0,
+          "value": 7
+        },
+        "kernel_status": {
+          "before_exec": {
+            "Name": "g4-fork",
+            "Tgid": 2612,
+            "Pid": 2612,
+            "PPid": 2611,
+            "Threads": 1
+          },
+          "after_exec": {
+            "Name": "child_prog",
+            "Tgid": 2612,
+            "Pid": 2612,
+            "PPid": 2611,
+            "Threads": 1
+          }
+        },
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2611,
+            "tid": 2611,
+            "time_ns": 292679884229,
+            "lab": "4.1",
+            "mode": "normal",
+            "ppid": 2547,
+            "value": 7,
+            "address": "0x4040e8",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "before_exec",
+            "pid": 2612,
+            "tid": 2612,
+            "time_ns": 292683258199,
+            "role": "child",
+            "ppid": 2611,
+            "fork_return": 0,
+            "value": 99,
+            "address": "0x4040e8",
+            "phase": "before_exec",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "parent_after_fork",
+            "pid": 2611,
+            "tid": 2611,
+            "time_ns": 292683910199,
+            "role": "parent",
+            "child_pid": 2612,
+            "fork_return": 2612,
+            "value": 7,
+            "address": "0x4040e8",
+            "phase": "parent_after_fork",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "after_exec",
+            "pid": 2612,
+            "tid": 2612,
+            "time_ns": 292813628819,
+            "role": "child",
+            "ppid": 2611,
+            "message": "course-demo",
+            "requested_exit": 7,
+            "phase": "after_exec",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2611,
+            "tid": 2611,
+            "time_ns": 292923760279,
+            "role": "parent",
+            "child_pid": 2612,
+            "wait_return": 2612,
+            "exit_code": 7,
+            "signal": 0,
+            "value": 7,
+            "phase": "summary",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-fork-normal-1/stdout.jsonl",
+        "kernel": "cases/g4-fork-normal-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-fork",
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/child_prog",
+          "normal"
+        ],
+        "started_at": "2026-11-18T01:32:40.687002+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:40.967747+00:00",
+        "duration_seconds": 0.281
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-fork-exec-failure-1",
+      "suite": "g4-fork",
+      "parameters": {
+        "mode": "exec-failure",
+        "repeat": 1
+      },
+      "arguments": [
+        "exec-failure"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2615,
+            "expected": 2615,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "fork_child_return",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "fork_parent_return",
+            "observed": 2616,
+            "expected": 2616,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "child_parent",
+            "observed": 2615,
+            "expected": 2615,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "waited_child",
+            "observed": 2616,
+            "expected": 2616,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "private_parent_value",
+            "observed": [
+              7,
+              7
+            ],
+            "expected": [
+              7,
+              7
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "private_child_value",
+            "observed": 99,
+            "expected": 99,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "same_virtual_address",
+            "observed": "0x4040e8",
+            "expected": "0x4040e8",
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "kernel_child_identity",
+            "observed": [
+              2616,
+              2615
+            ],
+            "expected": [
+              2616,
+              2615
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "signal",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "exec_failure_errno",
+            "observed": 2,
+            "expected": 2,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "exec_failure_exit",
+            "observed": 127,
+            "expected": 127,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "no_new_image",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2615,
+          "tid": 2615,
+          "time_ns": 293033317109,
+          "lab": "4.1",
+          "mode": "exec-failure",
+          "ppid": 2547,
+          "value": 7,
+          "address": "0x4040e8"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2615,
+          "tid": 2615,
+          "time_ns": 293149456919,
+          "role": "parent",
+          "child_pid": 2616,
+          "wait_return": 2616,
+          "exit_code": 127,
+          "signal": 0,
+          "value": 7
+        },
+        "kernel_status": {
+          "before_exec": {
+            "Name": "g4-fork",
+            "Tgid": 2616,
+            "Pid": 2616,
+            "PPid": 2615,
+            "Threads": 1
+          }
+        },
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2615,
+            "tid": 2615,
+            "time_ns": 293033317109,
+            "lab": "4.1",
+            "mode": "exec-failure",
+            "ppid": 2547,
+            "value": 7,
+            "address": "0x4040e8",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "before_exec",
+            "pid": 2616,
+            "tid": 2616,
+            "time_ns": 293037277899,
+            "role": "child",
+            "ppid": 2615,
+            "fork_return": 0,
+            "value": 99,
+            "address": "0x4040e8",
+            "phase": "before_exec",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "parent_after_fork",
+            "pid": 2615,
+            "tid": 2615,
+            "time_ns": 293037813349,
+            "role": "parent",
+            "child_pid": 2616,
+            "fork_return": 2616,
+            "value": 7,
+            "address": "0x4040e8",
+            "phase": "parent_after_fork",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "exec_error",
+            "pid": 2616,
+            "tid": 2616,
+            "time_ns": 293148415599,
+            "role": "child",
+            "errno": 2,
+            "phase": "exec_error",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2615,
+            "tid": 2615,
+            "time_ns": 293149456919,
+            "role": "parent",
+            "child_pid": 2616,
+            "wait_return": 2616,
+            "exit_code": 127,
+            "signal": 0,
+            "value": 7,
+            "phase": "summary",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-fork-exec-failure-1/stdout.jsonl",
+        "kernel": "cases/g4-fork-exec-failure-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-fork",
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/child_prog",
+          "exec-failure"
+        ],
+        "started_at": "2026-11-18T01:32:41.038013+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:41.218431+00:00",
+        "duration_seconds": 0.18
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-pthread-unsafe-1",
+      "suite": "g4-pthread",
+      "parameters": {
+        "mode": "unsafe",
+        "repeat": 1
+      },
+      "arguments": [
+        "unsafe"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2623,
+            "expected": 2623,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "two_workers",
+            "observed": [
+              1,
+              2
+            ],
+            "expected": [
+              1,
+              2
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "workers_joined",
+            "observed": [
+              1,
+              2
+            ],
+            "expected": [
+              1,
+              2
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "one_process",
+            "observed": [
+              2623
+            ],
+            "expected": [
+              2623
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "different_kernel_threads",
+            "observed": 3,
+            "expected": 3,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "global_shared",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "heap_shared",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "separate_stacks",
+            "observed": 2,
+            "expected": 2,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "kernel_threads",
+            "observed": 3,
+            "expected": 3,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "ps_matches_worker_tids",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "requested_work",
+            "observed": 2000000,
+            "expected": 2000000,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2623,
+          "tid": 2623,
+          "time_ns": 295136416239,
+          "lab": "4.2",
+          "mode": "unsafe",
+          "expected": 2000000,
+          "address": "0x4041b4",
+          "heap_address": "0xbf72a0"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2623,
+          "tid": 2623,
+          "time_ns": 295296939059,
+          "value": 1631854,
+          "expected": 2000000,
+          "mode": "unsafe",
+          "heap_value": 42
+        },
+        "kernel_status": {
+          "pthread_ready": {
+            "Name": "g4-pthread",
+            "Tgid": 2623,
+            "Pid": 2623,
+            "PPid": 2547,
+            "Threads": 3
+          }
+        },
+        "ps_threads": [
+          [
+            2623,
+            2547,
+            2623
+          ],
+          [
+            2623,
+            2547,
+            2624
+          ],
+          [
+            2623,
+            2547,
+            2625
+          ]
+        ],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2623,
+            "tid": 2623,
+            "time_ns": 295136416239,
+            "lab": "4.2",
+            "mode": "unsafe",
+            "expected": 2000000,
+            "address": "0x4041b4",
+            "heap_address": "0xbf72a0",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "worker_start",
+            "pid": 2623,
+            "tid": 2624,
+            "time_ns": 295140772599,
+            "worker": 1,
+            "address": "0x4041b4",
+            "heap_address": "0xbf72a0",
+            "stack_address": "0x7f5ac013bebc",
+            "phase": "worker_start",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "worker_start",
+            "pid": 2623,
+            "tid": 2625,
+            "time_ns": 295141643069,
+            "worker": 2,
+            "address": "0x4041b4",
+            "heap_address": "0xbf72a0",
+            "stack_address": "0x7f5abf93aebc",
+            "phase": "worker_start",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "worker_end",
+            "pid": 2623,
+            "tid": 2625,
+            "time_ns": 295294693989,
+            "worker": 2,
+            "phase": "worker_end",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "worker_end",
+            "pid": 2623,
+            "tid": 2624,
+            "time_ns": 295295734609,
+            "worker": 1,
+            "phase": "worker_end",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2623,
+            "tid": 2623,
+            "time_ns": 295296939059,
+            "value": 1631854,
+            "expected": 2000000,
+            "mode": "unsafe",
+            "heap_value": 42,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-pthread-unsafe-1/stdout.jsonl",
+        "kernel": "cases/g4-pthread-unsafe-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-pthread",
+          "unsafe"
+        ],
+        "started_at": "2026-11-18T01:32:43.139472+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:43.368349+00:00",
+        "duration_seconds": 0.229
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-pthread-mutex-1",
+      "suite": "g4-pthread",
+      "parameters": {
+        "mode": "mutex",
+        "repeat": 1
+      },
+      "arguments": [
+        "mutex"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2627,
+            "expected": 2627,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "two_workers",
+            "observed": [
+              1,
+              2
+            ],
+            "expected": [
+              1,
+              2
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "workers_joined",
+            "observed": [
+              1,
+              2
+            ],
+            "expected": [
+              1,
+              2
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "one_process",
+            "observed": [
+              2627
+            ],
+            "expected": [
+              2627
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "different_kernel_threads",
+            "observed": 3,
+            "expected": 3,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "global_shared",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "heap_shared",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "separate_stacks",
+            "observed": 2,
+            "expected": 2,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "kernel_threads",
+            "observed": 3,
+            "expected": 3,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "ps_matches_worker_tids",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "requested_work",
+            "observed": 2000000,
+            "expected": 2000000,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "protected_counter",
+            "observed": 2000000,
+            "expected": 2000000,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2627,
+          "tid": 2627,
+          "time_ns": 295434728819,
+          "lab": "4.2",
+          "mode": "mutex",
+          "expected": 2000000,
+          "address": "0x4041b4",
+          "heap_address": "0xde02a0"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2627,
+          "tid": 2627,
+          "time_ns": 295793991309,
+          "value": 2000000,
+          "expected": 2000000,
+          "mode": "mutex",
+          "heap_value": 42
+        },
+        "kernel_status": {
+          "pthread_ready": {
+            "Name": "g4-pthread",
+            "Tgid": 2627,
+            "Pid": 2627,
+            "PPid": 2547,
+            "Threads": 3
+          }
+        },
+        "ps_threads": [
+          [
+            2627,
+            2547,
+            2627
+          ],
+          [
+            2627,
+            2547,
+            2628
+          ],
+          [
+            2627,
+            2547,
+            2629
+          ]
+        ],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2627,
+            "tid": 2627,
+            "time_ns": 295434728819,
+            "lab": "4.2",
+            "mode": "mutex",
+            "expected": 2000000,
+            "address": "0x4041b4",
+            "heap_address": "0xde02a0",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "worker_start",
+            "pid": 2627,
+            "tid": 2628,
+            "time_ns": 295438534539,
+            "worker": 1,
+            "address": "0x4041b4",
+            "heap_address": "0xde02a0",
+            "stack_address": "0x7ff47a547ebc",
+            "phase": "worker_start",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "worker_start",
+            "pid": 2627,
+            "tid": 2629,
+            "time_ns": 295438716699,
+            "worker": 2,
+            "address": "0x4041b4",
+            "heap_address": "0xde02a0",
+            "stack_address": "0x7ff479d46ebc",
+            "phase": "worker_start",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "worker_end",
+            "pid": 2627,
+            "tid": 2628,
+            "time_ns": 295774859399,
+            "worker": 1,
+            "phase": "worker_end",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "worker_end",
+            "pid": 2627,
+            "tid": 2629,
+            "time_ns": 295792948439,
+            "worker": 2,
+            "phase": "worker_end",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2627,
+            "tid": 2627,
+            "time_ns": 295793991309,
+            "value": 2000000,
+            "expected": 2000000,
+            "mode": "mutex",
+            "heap_value": 42,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-pthread-mutex-1/stdout.jsonl",
+        "kernel": "cases/g4-pthread-mutex-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-pthread",
+          "mutex"
+        ],
+        "started_at": "2026-11-18T01:32:43.441931+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:43.876463+00:00",
+        "duration_seconds": 0.434
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-uthread-round-robin-1",
+      "suite": "g4-uthread",
+      "parameters": {
+        "mode": "round-robin",
+        "repeat": 1
+      },
+      "arguments": [
+        "round-robin"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2636,
+            "expected": 2636,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "three_contexts",
+            "observed": [
+              0,
+              1,
+              2
+            ],
+            "expected": [
+              0,
+              1,
+              2
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "round_robin_steps",
+            "observed": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ]
+            ],
+            "expected": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ]
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "all_finished",
+            "observed": [
+              0,
+              1,
+              2
+            ],
+            "expected": [
+              0,
+              1,
+              2
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "one_kernel_thread",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "kernel_thread_count",
+            "observed": 1,
+            "expected": 1,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "independent_stacks",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "locals_on_own_stacks",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "scheduler_return",
+            "observed": 3,
+            "expected": 3,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2636,
+          "tid": 2636,
+          "time_ns": 297746503379,
+          "lab": "4.3",
+          "mode": "round-robin"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2636,
+          "tid": 2636,
+          "time_ns": 297862051559,
+          "value": 3,
+          "expected": 3
+        },
+        "kernel_status": {
+          "uthread_ready": {
+            "Name": "g4-uthread",
+            "Tgid": 2636,
+            "Pid": 2636,
+            "PPid": 2547,
+            "Threads": 1
+          }
+        },
+        "ps_threads": [
+          [
+            2636,
+            2547,
+            2636
+          ]
+        ],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297746503379,
+            "lab": "4.3",
+            "mode": "round-robin",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "created",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297749313939,
+            "worker": 0,
+            "stack_base": "0x7fe4e15d2010",
+            "stack_bytes": 1048576,
+            "phase": "created",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "created",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297749589039,
+            "worker": 1,
+            "stack_base": "0x7fe4e14d1010",
+            "stack_bytes": 1048576,
+            "phase": "created",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "created",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297749695929,
+            "worker": 2,
+            "stack_base": "0x7fe4e13d0010",
+            "stack_bytes": 1048576,
+            "phase": "created",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861280329,
+            "worker": 0,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861636859,
+            "worker": 0,
+            "step": 1,
+            "stack_address": "0x7fe4e16d1fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861762349,
+            "worker": 1,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861781409,
+            "worker": 1,
+            "step": 1,
+            "stack_address": "0x7fe4e15d0fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861817409,
+            "worker": 2,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861830959,
+            "worker": 2,
+            "step": 1,
+            "stack_address": "0x7fe4e14cffcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861851519,
+            "worker": 0,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861873599,
+            "worker": 0,
+            "step": 2,
+            "stack_address": "0x7fe4e16d1fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861882199,
+            "worker": 1,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861889039,
+            "worker": 1,
+            "step": 2,
+            "stack_address": "0x7fe4e15d0fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861896119,
+            "worker": 2,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861902379,
+            "worker": 2,
+            "step": 2,
+            "stack_address": "0x7fe4e14cffcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861909309,
+            "worker": 0,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861915369,
+            "worker": 0,
+            "step": 3,
+            "stack_address": "0x7fe4e16d1fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861922109,
+            "worker": 1,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861928209,
+            "worker": 1,
+            "step": 3,
+            "stack_address": "0x7fe4e15d0fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861934969,
+            "worker": 2,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861940879,
+            "worker": 2,
+            "step": 3,
+            "stack_address": "0x7fe4e14cffcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861947709,
+            "worker": 0,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "finished",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297861963589,
+            "worker": 0,
+            "phase": "finished",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297862016409,
+            "worker": 1,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "finished",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297862024869,
+            "worker": 1,
+            "phase": "finished",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297862032209,
+            "worker": 2,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "finished",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297862038489,
+            "worker": 2,
+            "phase": "finished",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2636,
+            "tid": 2636,
+            "time_ns": 297862051559,
+            "value": 3,
+            "expected": 3,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-uthread-round-robin-1/stdout.jsonl",
+        "kernel": "cases/g4-uthread-round-robin-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-uthread",
+          "round-robin"
+        ],
+        "started_at": "2026-11-18T01:32:45.756158+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:45.931746+00:00",
+        "duration_seconds": 0.176
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-uthread-blocking-1",
+      "suite": "g4-uthread",
+      "parameters": {
+        "mode": "blocking",
+        "repeat": 1
+      },
+      "arguments": [
+        "blocking"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2638,
+            "expected": 2638,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "three_contexts",
+            "observed": [
+              0,
+              1,
+              2
+            ],
+            "expected": [
+              0,
+              1,
+              2
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "round_robin_steps",
+            "observed": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ]
+            ],
+            "expected": [
+              [
+                0,
+                1
+              ],
+              [
+                1,
+                1
+              ],
+              [
+                2,
+                1
+              ],
+              [
+                0,
+                2
+              ],
+              [
+                1,
+                2
+              ],
+              [
+                2,
+                2
+              ],
+              [
+                0,
+                3
+              ],
+              [
+                1,
+                3
+              ],
+              [
+                2,
+                3
+              ]
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "all_finished",
+            "observed": [
+              0,
+              1,
+              2
+            ],
+            "expected": [
+              0,
+              1,
+              2
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "one_kernel_thread",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "kernel_thread_count",
+            "observed": 1,
+            "expected": 1,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "independent_stacks",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "locals_on_own_stacks",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "scheduler_return",
+            "observed": 3,
+            "expected": 3,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "blocking_observed",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "no_other_context_during_block",
+            "observed": 7,
+            "expected": 7,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2638,
+          "tid": 2638,
+          "time_ns": 298014329459,
+          "lab": "4.3",
+          "mode": "blocking"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2638,
+          "tid": 2638,
+          "time_ns": 298338050869,
+          "value": 3,
+          "expected": 3
+        },
+        "kernel_status": {
+          "uthread_ready": {
+            "Name": "g4-uthread",
+            "Tgid": 2638,
+            "Pid": 2638,
+            "PPid": 2547,
+            "Threads": 1
+          }
+        },
+        "ps_threads": [
+          [
+            2638,
+            2547,
+            2638
+          ]
+        ],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298014329459,
+            "lab": "4.3",
+            "mode": "blocking",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "created",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298017429079,
+            "worker": 0,
+            "stack_base": "0x7f13f9f15010",
+            "stack_bytes": 1048576,
+            "phase": "created",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "created",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298017777999,
+            "worker": 1,
+            "stack_base": "0x7f13f9e14010",
+            "stack_bytes": 1048576,
+            "phase": "created",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "created",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298017892729,
+            "worker": 2,
+            "stack_base": "0x7f13f9d13010",
+            "stack_bytes": 1048576,
+            "phase": "created",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298135047219,
+            "worker": 0,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298135675709,
+            "worker": 0,
+            "step": 1,
+            "stack_address": "0x7f13fa014fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "block_begin",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298135785249,
+            "worker": 0,
+            "phase": "block_begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "block_end",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298336799299,
+            "worker": 0,
+            "phase": "block_end",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337418149,
+            "worker": 1,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337575049,
+            "worker": 1,
+            "step": 1,
+            "stack_address": "0x7f13f9f13fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337697549,
+            "worker": 2,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337715809,
+            "worker": 2,
+            "step": 1,
+            "stack_address": "0x7f13f9e12fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337739769,
+            "worker": 0,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337761279,
+            "worker": 0,
+            "step": 2,
+            "stack_address": "0x7f13fa014fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337770569,
+            "worker": 1,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337778569,
+            "worker": 1,
+            "step": 2,
+            "stack_address": "0x7f13f9f13fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337785719,
+            "worker": 2,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337792239,
+            "worker": 2,
+            "step": 2,
+            "stack_address": "0x7f13f9e12fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337799229,
+            "worker": 0,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337805579,
+            "worker": 0,
+            "step": 3,
+            "stack_address": "0x7f13fa014fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337812739,
+            "worker": 1,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337819039,
+            "worker": 1,
+            "step": 3,
+            "stack_address": "0x7f13f9f13fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337826109,
+            "worker": 2,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "step",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337832259,
+            "worker": 2,
+            "step": 3,
+            "stack_address": "0x7f13f9e12fcc",
+            "phase": "step",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337839389,
+            "worker": 0,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "finished",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337845799,
+            "worker": 0,
+            "phase": "finished",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337909579,
+            "worker": 1,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "finished",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298337918259,
+            "worker": 1,
+            "phase": "finished",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "dispatch",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298338007539,
+            "worker": 2,
+            "phase": "dispatch",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "finished",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298338040789,
+            "worker": 2,
+            "phase": "finished",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2638,
+            "tid": 2638,
+            "time_ns": 298338050869,
+            "value": 3,
+            "expected": 3,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-uthread-blocking-1/stdout.jsonl",
+        "kernel": "cases/g4-uthread-blocking-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-uthread",
+          "blocking"
+        ],
+        "started_at": "2026-11-18T01:32:46.020948+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:46.401969+00:00",
+        "duration_seconds": 0.381
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-pipe-basic-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "basic",
+        "repeat": 1
+      },
+      "arguments": [
+        "basic"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2645,
+            "expected": 2645,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "bytes_preserved",
+            "observed": "Hello from Parent Process!",
+            "expected": "Hello from Parent Process!",
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "byte_count",
+            "observed": [
+              26,
+              26
+            ],
+            "expected": [
+              26,
+              26
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "receiver_process",
+            "observed": 2646,
+            "expected": 2646,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "sender_parent",
+            "observed": 2645,
+            "expected": 2645,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "eof_after_payload",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "child_exit",
+            "observed": [
+              0,
+              0
+            ],
+            "expected": [
+              0,
+              0
+            ],
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2645,
+          "tid": 2645,
+          "time_ns": 300053900219,
+          "lab": "4.4-pipe",
+          "mode": "basic"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2645,
+          "tid": 2645,
+          "time_ns": 300059840439,
+          "child_pid": 2646,
+          "exit_code": 0,
+          "signal": 0
+        },
+        "kernel_status": {},
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2645,
+            "tid": 2645,
+            "time_ns": 300053900219,
+            "lab": "4.4-pipe",
+            "mode": "basic",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "sent",
+            "pid": 2645,
+            "tid": 2645,
+            "time_ns": 300056270159,
+            "role": "parent",
+            "write_bytes": 26,
+            "message": "Hello from Parent Process!",
+            "phase": "sent",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "received",
+            "pid": 2646,
+            "tid": 2646,
+            "time_ns": 300058536569,
+            "role": "child",
+            "read_bytes": 26,
+            "message": "Hello from Parent Process!",
+            "eof": true,
+            "phase": "received",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2645,
+            "tid": 2645,
+            "time_ns": 300059840439,
+            "child_pid": 2646,
+            "exit_code": 0,
+            "signal": 0,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-pipe-basic-1/stdout.jsonl",
+        "kernel": "cases/g4-pipe-basic-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-pipe",
+          "basic"
+        ],
+        "started_at": "2026-11-18T01:32:48.062117+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:48.106002+00:00",
+        "duration_seconds": 0.044
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-pipe-eof-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "eof",
+        "repeat": 1
+      },
+      "arguments": [
+        "eof"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2647,
+            "expected": 2647,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "all_writers_closed",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "read_eof",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2647,
+          "tid": 2647,
+          "time_ns": 300186807439,
+          "lab": "4.4-pipe",
+          "mode": "eof"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2647,
+          "tid": 2647,
+          "time_ns": 300188099909,
+          "read_bytes": 0,
+          "errno": 0,
+          "writers_remaining": 0
+        },
+        "kernel_status": {},
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2647,
+            "tid": 2647,
+            "time_ns": 300186807439,
+            "lab": "4.4-pipe",
+            "mode": "eof",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2647,
+            "tid": 2647,
+            "time_ns": 300188099909,
+            "read_bytes": 0,
+            "errno": 0,
+            "writers_remaining": 0,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-pipe-eof-1/stdout.jsonl",
+        "kernel": "cases/g4-pipe-eof-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-pipe",
+          "eof"
+        ],
+        "started_at": "2026-11-18T01:32:48.195945+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:48.236080+00:00",
+        "duration_seconds": 0.041
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-pipe-eagain-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "eagain",
+        "repeat": 1
+      },
+      "arguments": [
+        "eagain"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2648,
+            "expected": 2648,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "all_writers_closed",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "read_eof",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "empty_with_writer",
+            "observed": [
+              -1,
+              11
+            ],
+            "expected": [
+              -1,
+              11
+            ],
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2648,
+          "tid": 2648,
+          "time_ns": 300316409569,
+          "lab": "4.4-pipe",
+          "mode": "eagain"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2648,
+          "tid": 2648,
+          "time_ns": 300318523999,
+          "read_bytes": 0,
+          "errno": 0,
+          "writers_remaining": 0
+        },
+        "kernel_status": {},
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2648,
+            "tid": 2648,
+            "time_ns": 300316409569,
+            "lab": "4.4-pipe",
+            "mode": "eagain",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "empty_with_writer",
+            "pid": 2648,
+            "tid": 2648,
+            "time_ns": 300318087529,
+            "read_bytes": -1,
+            "errno": 11,
+            "phase": "empty_with_writer",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2648,
+            "tid": 2648,
+            "time_ns": 300318523999,
+            "read_bytes": 0,
+            "errno": 0,
+            "writers_remaining": 0,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-pipe-eagain-1/stdout.jsonl",
+        "kernel": "cases/g4-pipe-eagain-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-pipe",
+          "eagain"
+        ],
+        "started_at": "2026-11-18T01:32:48.322668+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:48.365029+00:00",
+        "duration_seconds": 0.042
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-pipe-epipe-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "epipe",
+        "repeat": 1
+      },
+      "arguments": [
+        "epipe"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2649,
+            "expected": 2649,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "ignored_sigpipe_epipe",
+            "observed": [
+              -1,
+              32
+            ],
+            "expected": [
+              -1,
+              32
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "writer_survived",
+            "observed": [
+              0,
+              0
+            ],
+            "expected": [
+              0,
+              0
+            ],
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2649,
+          "tid": 2649,
+          "time_ns": 300449852159,
+          "lab": "4.4-pipe",
+          "mode": "epipe"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2649,
+          "tid": 2649,
+          "time_ns": 300456022919,
+          "child_pid": 2650,
+          "exit_code": 0,
+          "signal": 0
+        },
+        "kernel_status": {},
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2649,
+            "tid": 2649,
+            "time_ns": 300449852159,
+            "lab": "4.4-pipe",
+            "mode": "epipe",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "before_write",
+            "pid": 2650,
+            "tid": 2650,
+            "time_ns": 300453953449,
+            "role": "child",
+            "readers_remaining": 0,
+            "phase": "before_write",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "write_result",
+            "pid": 2650,
+            "tid": 2650,
+            "time_ns": 300454871319,
+            "role": "child",
+            "write_bytes": -1,
+            "errno": 32,
+            "phase": "write_result",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2649,
+            "tid": 2649,
+            "time_ns": 300456022919,
+            "child_pid": 2650,
+            "exit_code": 0,
+            "signal": 0,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-pipe-epipe-1/stdout.jsonl",
+        "kernel": "cases/g4-pipe-epipe-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-pipe",
+          "epipe"
+        ],
+        "started_at": "2026-11-18T01:32:48.455911+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:48.499408+00:00",
+        "duration_seconds": 0.043
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-pipe-sigpipe-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "sigpipe",
+        "repeat": 1
+      },
+      "arguments": [
+        "sigpipe"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2651,
+            "expected": 2651,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "default_sigpipe",
+            "observed": 13,
+            "expected": 13,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "no_successful_write",
+            "observed": 0,
+            "expected": 0,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2651,
+          "tid": 2651,
+          "time_ns": 300582581819,
+          "lab": "4.4-pipe",
+          "mode": "sigpipe"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2651,
+          "tid": 2651,
+          "time_ns": 300587776569,
+          "child_pid": 2652,
+          "exit_code": -1,
+          "signal": 13
+        },
+        "kernel_status": {},
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2651,
+            "tid": 2651,
+            "time_ns": 300582581819,
+            "lab": "4.4-pipe",
+            "mode": "sigpipe",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "before_write",
+            "pid": 2652,
+            "tid": 2652,
+            "time_ns": 300585920509,
+            "role": "child",
+            "readers_remaining": 0,
+            "phase": "before_write",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2651,
+            "tid": 2651,
+            "time_ns": 300587776569,
+            "child_pid": 2652,
+            "exit_code": -1,
+            "signal": 13,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-pipe-sigpipe-1/stdout.jsonl",
+        "kernel": "cases/g4-pipe-sigpipe-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-pipe",
+          "sigpipe"
+        ],
+        "started_at": "2026-11-18T01:32:48.593352+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:48.633970+00:00",
+        "duration_seconds": 0.041
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-bank-comparison-1",
+      "suite": "g4-bank",
+      "parameters": {
+        "mode": "comparison",
+        "repeat": 1
+      },
+      "arguments": [
+        "comparison"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2658,
+            "expected": 2658,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "both_variants",
+            "observed": [
+              "unsafe",
+              "mutex"
+            ],
+            "expected": [
+              "unsafe",
+              "mutex"
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "safe_deposits",
+            "observed": 100000,
+            "expected": 100000,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "safe_detail",
+            "observed": 100000,
+            "expected": 100000,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2658,
+          "tid": 2658,
+          "time_ns": 303331379009,
+          "lab": "4.4-bank",
+          "mode": "comparison"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2658,
+          "tid": 2658,
+          "time_ns": 303354645789,
+          "value": 100000,
+          "expected": 100000,
+          "unsafe_value": 60245
+        },
+        "kernel_status": {},
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2658,
+            "tid": 2658,
+            "time_ns": 303331379009,
+            "lab": "4.4-bank",
+            "mode": "comparison",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "deposit_worker",
+            "pid": 2658,
+            "tid": 2659,
+            "time_ns": 303335984909,
+            "worker": 1,
+            "variant": "unsafe",
+            "phase": "deposit_worker",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "deposit_worker",
+            "pid": 2658,
+            "tid": 2660,
+            "time_ns": 303336940639,
+            "worker": 2,
+            "variant": "unsafe",
+            "phase": "deposit_worker",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "counter_result",
+            "pid": 2658,
+            "tid": 2658,
+            "time_ns": 303339244399,
+            "variant": "unsafe",
+            "value": 60245,
+            "expected": 100000,
+            "phase": "counter_result",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "deposit_worker",
+            "pid": 2658,
+            "tid": 2661,
+            "time_ns": 303339897449,
+            "worker": 1,
+            "variant": "mutex",
+            "phase": "deposit_worker",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "deposit_worker",
+            "pid": 2658,
+            "tid": 2662,
+            "time_ns": 303340201539,
+            "worker": 2,
+            "variant": "mutex",
+            "phase": "deposit_worker",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "counter_result",
+            "pid": 2658,
+            "tid": 2658,
+            "time_ns": 303354449389,
+            "variant": "mutex",
+            "value": 100000,
+            "expected": 100000,
+            "phase": "counter_result",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2658,
+            "tid": 2658,
+            "time_ns": 303354645789,
+            "value": 100000,
+            "expected": 100000,
+            "unsafe_value": 60245,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-bank-comparison-1/stdout.jsonl",
+        "kernel": "cases/g4-bank-comparison-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-bank",
+          "comparison"
+        ],
+        "started_at": "2026-11-18T01:32:51.336897+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:51.414073+00:00",
+        "duration_seconds": 0.078
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-bank-condition-1",
+      "suite": "g4-bank",
+      "parameters": {
+        "mode": "condition",
+        "repeat": 1
+      },
+      "arguments": [
+        "condition"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2663,
+            "expected": 2663,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "two_waiters",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "wait_before_deposit",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "deposit_balance",
+            "observed": 230,
+            "expected": 230,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "withdraw_amounts",
+            "observed": [
+              50,
+              80
+            ],
+            "expected": [
+              50,
+              80
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "withdraw_balance_1",
+            "observed": 150,
+            "expected": 150,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "withdraw_balance_2",
+            "observed": 100,
+            "expected": 100,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "final_balance",
+            "observed": 100,
+            "expected": 100,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2663,
+          "tid": 2663,
+          "time_ns": 303519934389,
+          "lab": "4.4-bank",
+          "mode": "condition"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2663,
+          "tid": 2663,
+          "time_ns": 303527638549,
+          "value": 100,
+          "expected": 100,
+          "waiters": 2
+        },
+        "kernel_status": {},
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2663,
+            "tid": 2663,
+            "time_ns": 303519934389,
+            "lab": "4.4-bank",
+            "mode": "condition",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "waiting",
+            "pid": 2663,
+            "tid": 2664,
+            "time_ns": 303524360699,
+            "worker": 1,
+            "amount": 80,
+            "balance": 30,
+            "phase": "waiting",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "waiting",
+            "pid": 2663,
+            "tid": 2665,
+            "time_ns": 303524997109,
+            "worker": 2,
+            "amount": 50,
+            "balance": 30,
+            "phase": "waiting",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "deposited",
+            "pid": 2663,
+            "tid": 2666,
+            "time_ns": 303525707889,
+            "amount": 200,
+            "balance": 230,
+            "waiters": 2,
+            "phase": "deposited",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "withdrawn",
+            "pid": 2663,
+            "tid": 2664,
+            "time_ns": 303526464489,
+            "worker": 1,
+            "amount": 80,
+            "balance": 150,
+            "phase": "withdrawn",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "withdrawn",
+            "pid": 2663,
+            "tid": 2665,
+            "time_ns": 303527354509,
+            "worker": 2,
+            "amount": 50,
+            "balance": 100,
+            "phase": "withdrawn",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2663,
+            "tid": 2663,
+            "time_ns": 303527638549,
+            "value": 100,
+            "expected": 100,
+            "waiters": 2,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-bank-condition-1/stdout.jsonl",
+        "kernel": "cases/g4-bank-condition-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-bank",
+          "condition"
+        ],
+        "started_at": "2026-11-18T01:32:51.528939+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:51.570099+00:00",
+        "duration_seconds": 0.041
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "g4-bank-transfer-1",
+      "suite": "g4-bank",
+      "parameters": {
+        "mode": "transfer",
+        "repeat": 1
+      },
+      "arguments": [
+        "transfer"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "parent_summary",
+            "observed": 2667,
+            "expected": 2667,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "transfers_complete",
+            "observed": 60,
+            "expected": 60,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "ordered_locks",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "event_ledger",
+            "observed": true,
+            "expected": true,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "final_accounts",
+            "observed": [
+              800,
+              1150,
+              1050
+            ],
+            "expected": [
+              800,
+              1150,
+              1050
+            ],
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "conserved_total",
+            "observed": 3000,
+            "expected": 3000,
+            "category": "correctness",
+            "status": "passed"
+          },
+          {
+            "id": "successful_operations",
+            "observed": 60,
+            "expected": 60,
+            "category": "correctness",
+            "status": "passed"
+          }
+        ],
+        "scope": "collection and protected/reference outcomes; intentional unsafe variants are observations"
+      },
+      "data": {
+        "condition": {
+          "kind": "event",
+          "event": "begin",
+          "pid": 2667,
+          "tid": 2667,
+          "time_ns": 303679235729,
+          "lab": "4.4-bank",
+          "mode": "transfer"
+        },
+        "summary": {
+          "kind": "event",
+          "event": "summary",
+          "pid": 2667,
+          "tid": 2667,
+          "time_ns": 303686907819,
+          "value": 3000,
+          "expected": 3000,
+          "success": 60,
+          "account2": 800,
+          "account3": 1150,
+          "account4": 1050
+        },
+        "kernel_status": {},
+        "ps_threads": [],
+        "samples": [
+          {
+            "kind": "event",
+            "event": "begin",
+            "pid": 2667,
+            "tid": 2667,
+            "time_ns": 303679235729,
+            "lab": "4.4-bank",
+            "mode": "transfer",
+            "phase": "begin",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303684738429,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 985,
+            "to_balance": 1015,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303685311849,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 970,
+            "to_balance": 1030,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303685362449,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 955,
+            "to_balance": 1045,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303685375069,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 940,
+            "to_balance": 1060,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303685383769,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 925,
+            "to_balance": 1075,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303685391329,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 910,
+            "to_balance": 1090,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303685399029,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 895,
+            "to_balance": 1105,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303685406259,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 880,
+            "to_balance": 1120,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303685413569,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 865,
+            "to_balance": 1135,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2671,
+            "time_ns": 303685420849,
+            "worker": 4,
+            "from": 4,
+            "to": 3,
+            "amount": 15,
+            "first_lock": 3,
+            "second_lock": 4,
+            "from_balance": 850,
+            "to_balance": 1150,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685518539,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 990,
+            "to_balance": 1160,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685668699,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 980,
+            "to_balance": 1170,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685683559,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 970,
+            "to_balance": 1180,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685693369,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 960,
+            "to_balance": 1190,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685702389,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 950,
+            "to_balance": 1200,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685710669,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 940,
+            "to_balance": 1210,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685718549,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 930,
+            "to_balance": 1220,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685726529,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 920,
+            "to_balance": 1230,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685734479,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 910,
+            "to_balance": 1240,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685741889,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 900,
+            "to_balance": 1250,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685749349,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 890,
+            "to_balance": 1260,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685875289,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 880,
+            "to_balance": 1270,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685887799,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 870,
+            "to_balance": 1280,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685896319,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 860,
+            "to_balance": 1290,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685904099,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 850,
+            "to_balance": 1300,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685911779,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 840,
+            "to_balance": 1310,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685919529,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 830,
+            "to_balance": 1320,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685927139,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 820,
+            "to_balance": 1330,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685934879,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 810,
+            "to_balance": 1340,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2668,
+            "time_ns": 303685942279,
+            "worker": 1,
+            "from": 2,
+            "to": 3,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 800,
+            "to_balance": 1350,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686018139,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1340,
+            "to_balance": 810,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686232509,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1330,
+            "to_balance": 820,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686289199,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1320,
+            "to_balance": 830,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686301179,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1310,
+            "to_balance": 840,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686310189,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1300,
+            "to_balance": 850,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686317929,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1290,
+            "to_balance": 860,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686325529,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1280,
+            "to_balance": 870,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686332859,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1270,
+            "to_balance": 880,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686340019,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1260,
+            "to_balance": 890,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686347399,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1250,
+            "to_balance": 900,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686354599,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1240,
+            "to_balance": 910,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686361819,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1230,
+            "to_balance": 920,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686369069,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1220,
+            "to_balance": 930,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686427719,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1210,
+            "to_balance": 940,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686438659,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1200,
+            "to_balance": 950,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686446479,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1190,
+            "to_balance": 960,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686454129,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1180,
+            "to_balance": 970,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686461249,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1170,
+            "to_balance": 980,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686468529,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1160,
+            "to_balance": 990,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2669,
+            "time_ns": 303686475619,
+            "worker": 2,
+            "from": 3,
+            "to": 2,
+            "amount": 10,
+            "first_lock": 2,
+            "second_lock": 3,
+            "from_balance": 1150,
+            "to_balance": 1000,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686567019,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 980,
+            "to_balance": 870,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686639689,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 960,
+            "to_balance": 890,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686652429,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 940,
+            "to_balance": 910,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686661799,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 920,
+            "to_balance": 930,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686670019,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 900,
+            "to_balance": 950,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686677819,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 880,
+            "to_balance": 970,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686685329,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 860,
+            "to_balance": 990,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686692959,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 840,
+            "to_balance": 1010,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686700449,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 820,
+            "to_balance": 1030,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "transferred",
+            "pid": 2667,
+            "tid": 2670,
+            "time_ns": 303686707949,
+            "worker": 3,
+            "from": 2,
+            "to": 4,
+            "amount": 20,
+            "first_lock": 2,
+            "second_lock": 4,
+            "from_balance": 800,
+            "to_balance": 1050,
+            "phase": "transferred",
+            "role": "process",
+            "scope": "process_thread_event"
+          },
+          {
+            "kind": "event",
+            "event": "summary",
+            "pid": 2667,
+            "tid": 2667,
+            "time_ns": 303686907819,
+            "value": 3000,
+            "expected": 3000,
+            "success": 60,
+            "account2": 800,
+            "account3": 1150,
+            "account4": 1050,
+            "phase": "summary",
+            "role": "process",
+            "scope": "process_thread_event"
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/g4-bank-transfer-1/stdout.jsonl",
+        "kernel": "cases/g4-bank-transfer-1/kernel.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013227-183/runs/20261118T013236.176526Z/build/g4-bank",
+          "transfer"
+        ],
+        "started_at": "2026-11-18T01:32:51.687879+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:51.729613+00:00",
+        "duration_seconds": 0.042
+      },
+      "error": null,
+      "integrity": "verified"
+    }
+  ],
+  "error": null,
+  "related_run": null,
+  "scope": "Mechanism/function verification; no hardware performance inference, especially under QEMU TCG.",
+  "plan": [
+    {
+      "id": "g4-fork-normal-1",
+      "suite": "g4-fork",
+      "parameters": {
+        "mode": "normal",
+        "repeat": 1
+      },
+      "arguments": [
+        "normal"
+      ]
+    },
+    {
+      "id": "g4-fork-exec-failure-1",
+      "suite": "g4-fork",
+      "parameters": {
+        "mode": "exec-failure",
+        "repeat": 1
+      },
+      "arguments": [
+        "exec-failure"
+      ]
+    },
+    {
+      "id": "g4-pthread-unsafe-1",
+      "suite": "g4-pthread",
+      "parameters": {
+        "mode": "unsafe",
+        "repeat": 1
+      },
+      "arguments": [
+        "unsafe"
+      ]
+    },
+    {
+      "id": "g4-pthread-mutex-1",
+      "suite": "g4-pthread",
+      "parameters": {
+        "mode": "mutex",
+        "repeat": 1
+      },
+      "arguments": [
+        "mutex"
+      ]
+    },
+    {
+      "id": "g4-uthread-round-robin-1",
+      "suite": "g4-uthread",
+      "parameters": {
+        "mode": "round-robin",
+        "repeat": 1
+      },
+      "arguments": [
+        "round-robin"
+      ]
+    },
+    {
+      "id": "g4-uthread-blocking-1",
+      "suite": "g4-uthread",
+      "parameters": {
+        "mode": "blocking",
+        "repeat": 1
+      },
+      "arguments": [
+        "blocking"
+      ]
+    },
+    {
+      "id": "g4-pipe-basic-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "basic",
+        "repeat": 1
+      },
+      "arguments": [
+        "basic"
+      ]
+    },
+    {
+      "id": "g4-pipe-eof-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "eof",
+        "repeat": 1
+      },
+      "arguments": [
+        "eof"
+      ]
+    },
+    {
+      "id": "g4-pipe-eagain-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "eagain",
+        "repeat": 1
+      },
+      "arguments": [
+        "eagain"
+      ]
+    },
+    {
+      "id": "g4-pipe-epipe-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "epipe",
+        "repeat": 1
+      },
+      "arguments": [
+        "epipe"
+      ]
+    },
+    {
+      "id": "g4-pipe-sigpipe-1",
+      "suite": "g4-pipe",
+      "parameters": {
+        "mode": "sigpipe",
+        "repeat": 1
+      },
+      "arguments": [
+        "sigpipe"
+      ]
+    },
+    {
+      "id": "g4-bank-comparison-1",
+      "suite": "g4-bank",
+      "parameters": {
+        "mode": "comparison",
+        "repeat": 1
+      },
+      "arguments": [
+        "comparison"
+      ]
+    },
+    {
+      "id": "g4-bank-condition-1",
+      "suite": "g4-bank",
+      "parameters": {
+        "mode": "condition",
+        "repeat": 1
+      },
+      "arguments": [
+        "condition"
+      ]
+    },
+    {
+      "id": "g4-bank-transfer-1",
+      "suite": "g4-bank",
+      "parameters": {
+        "mode": "transfer",
+        "repeat": 1
+      },
+      "arguments": [
+        "transfer"
+      ]
+    }
+  ],
+  "compiler_check": {
+    "command": [
+      "gcc",
+      "--version"
+    ],
+    "started_at": "2026-11-18T01:32:36.551530+00:00",
+    "status": "completed",
+    "exit_code": 0,
+    "error": null,
+    "finished_at": "2026-11-18T01:32:36.632892+00:00",
+    "duration_seconds": 0.081
+  },
+  "finished_at": "2026-11-18T01:32:51.817081+00:00",
+  "completed": true,
+  "diagnosis": {
+    "rule_version": "2026-11-13.1",
+    "findings": [
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.1 创建、替换与等待进程",
+        "explanation": "子进程2612由waitpid回收，退出码7；父进程私有变量保持7。成功exec前后PID相同，程序映像改变。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-fork-normal-1",
+            "artifacts": {
+              "jsonl": "cases/g4-fork-normal-1/stdout.jsonl",
+              "kernel": "cases/g4-fork-normal-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2611,
+              "tid": 2611,
+              "time_ns": 292923760279,
+              "role": "parent",
+              "child_pid": 2612,
+              "wait_return": 2612,
+              "exit_code": 7,
+              "signal": 0,
+              "value": 7
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.1 创建、替换与等待进程",
+        "explanation": "exec失败返回ENOENT，子进程以127退出，父进程取得该状态。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-fork-exec-failure-1",
+            "artifacts": {
+              "jsonl": "cases/g4-fork-exec-failure-1/stdout.jsonl",
+              "kernel": "cases/g4-fork-exec-failure-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2615,
+              "tid": 2615,
+              "time_ns": 293149456919,
+              "role": "parent",
+              "child_pid": 2616,
+              "wait_return": 2616,
+              "exit_code": 127,
+              "signal": 0,
+              "value": 7
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.2 内核线程与共享变量",
+        "explanation": "两个工作线程共享PID和全局/堆地址，内核TID与栈地址不同。unsafe最终计数1631854，串行期望2000000。",
+        "limitations": "无锁版本有C数据竞争，输出用于观察；一次恰好正确不说明同步正确。",
+        "evidence": [
+          {
+            "case_id": "g4-pthread-unsafe-1",
+            "artifacts": {
+              "jsonl": "cases/g4-pthread-unsafe-1/stdout.jsonl",
+              "kernel": "cases/g4-pthread-unsafe-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2623,
+              "tid": 2623,
+              "time_ns": 295296939059,
+              "value": 1631854,
+              "expected": 2000000,
+              "mode": "unsafe",
+              "heap_value": 42
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.2 内核线程与共享变量",
+        "explanation": "两个工作线程共享PID和全局/堆地址，内核TID与栈地址不同。mutex最终计数2000000，串行期望2000000。",
+        "limitations": "无锁版本有C数据竞争，输出用于观察；一次恰好正确不说明同步正确。",
+        "evidence": [
+          {
+            "case_id": "g4-pthread-mutex-1",
+            "artifacts": {
+              "jsonl": "cases/g4-pthread-mutex-1/stdout.jsonl",
+              "kernel": "cases/g4-pthread-mutex-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2627,
+              "tid": 2627,
+              "time_ns": 295793991309,
+              "value": 2000000,
+              "expected": 2000000,
+              "mode": "mutex",
+              "heap_value": 42
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.3 用户态调度与独立栈",
+        "explanation": "三个独立用户栈在同一内核线程中轮转；九步和三次结束均已记录。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-uthread-round-robin-1",
+            "artifacts": {
+              "jsonl": "cases/g4-uthread-round-robin-1/stdout.jsonl",
+              "kernel": "cases/g4-uthread-round-robin-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2636,
+              "tid": 2636,
+              "time_ns": 297862051559,
+              "value": 3,
+              "expected": 3
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.3 用户态调度与独立栈",
+        "explanation": "三个独立用户栈在同一内核线程中轮转；九步和三次结束均已记录。阻塞调用期间没有其他用户线程推进。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-uthread-blocking-1",
+            "artifacts": {
+              "jsonl": "cases/g4-uthread-blocking-1/stdout.jsonl",
+              "kernel": "cases/g4-uthread-blocking-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2638,
+              "tid": 2638,
+              "time_ns": 298338050869,
+              "value": 3,
+              "expected": 3
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.4 管道端点与字节流",
+        "explanation": "26字节字符串完整传递；分段read后收到EOF。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-pipe-basic-1",
+            "artifacts": {
+              "jsonl": "cases/g4-pipe-basic-1/stdout.jsonl",
+              "kernel": "cases/g4-pipe-basic-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2645,
+              "tid": 2645,
+              "time_ns": 300059840439,
+              "child_pid": 2646,
+              "exit_code": 0,
+              "signal": 0
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.4 管道端点与字节流",
+        "explanation": "所有写端关闭后read返回0。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-pipe-eof-1",
+            "artifacts": {
+              "jsonl": "cases/g4-pipe-eof-1/stdout.jsonl",
+              "kernel": "cases/g4-pipe-eof-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2647,
+              "tid": 2647,
+              "time_ns": 300188099909,
+              "read_bytes": 0,
+              "errno": 0,
+              "writers_remaining": 0
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.4 管道端点与字节流",
+        "explanation": "空管道有写端时非阻塞read为EAGAIN；写端全部关闭后为EOF。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-pipe-eagain-1",
+            "artifacts": {
+              "jsonl": "cases/g4-pipe-eagain-1/stdout.jsonl",
+              "kernel": "cases/g4-pipe-eagain-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2648,
+              "tid": 2648,
+              "time_ns": 300318523999,
+              "read_bytes": 0,
+              "errno": 0,
+              "writers_remaining": 0
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.4 管道端点与字节流",
+        "explanation": "忽略SIGPIPE后write返回-1/EPIPE，进程继续执行。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-pipe-epipe-1",
+            "artifacts": {
+              "jsonl": "cases/g4-pipe-epipe-1/stdout.jsonl",
+              "kernel": "cases/g4-pipe-epipe-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2649,
+              "tid": 2649,
+              "time_ns": 300456022919,
+              "child_pid": 2650,
+              "exit_code": 0,
+              "signal": 0
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.4 管道端点与字节流",
+        "explanation": "默认SIGPIPE终止写进程，监控父进程记录信号13。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-pipe-sigpipe-1",
+            "artifacts": {
+              "jsonl": "cases/g4-pipe-sigpipe-1/stdout.jsonl",
+              "kernel": "cases/g4-pipe-sigpipe-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2651,
+              "tid": 2651,
+              "time_ns": 300587776569,
+              "child_pid": 2652,
+              "exit_code": -1,
+              "signal": 13
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.4 共享账户的互斥与同步",
+        "explanation": "无锁余额60245；互斥版余额100000（期望100000）。",
+        "limitations": "无锁版本有C数据竞争，输出用于观察；一次恰好正确不说明同步正确。",
+        "evidence": [
+          {
+            "case_id": "g4-bank-comparison-1",
+            "artifacts": {
+              "jsonl": "cases/g4-bank-comparison-1/stdout.jsonl",
+              "kernel": "cases/g4-bank-comparison-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2658,
+              "tid": 2658,
+              "time_ns": 303354645789,
+              "value": 100000,
+              "expected": 100000,
+              "unsafe_value": 60245
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.4 共享账户的互斥与同步",
+        "explanation": "两个取款线程先等待，存入200后唤醒；30+200−80−50=100。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-bank-condition-1",
+            "artifacts": {
+              "jsonl": "cases/g4-bank-condition-1/stdout.jsonl",
+              "kernel": "cases/g4-bank-condition-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2663,
+              "tid": 2663,
+              "time_ns": 303527638549,
+              "value": 100,
+              "expected": 100,
+              "waiters": 2
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      },
+      {
+        "rule": "group4",
+        "confidence": "confirmed",
+        "title": "4.4 共享账户的互斥与同步",
+        "explanation": "60次转账按账户ID顺序加锁，逐笔账目一致，总额保持3000。",
+        "limitations": "此处验证进程、调度和同步行为；性能与物理页复制数量未测量。",
+        "evidence": [
+          {
+            "case_id": "g4-bank-transfer-1",
+            "artifacts": {
+              "jsonl": "cases/g4-bank-transfer-1/stdout.jsonl",
+              "kernel": "cases/g4-bank-transfer-1/kernel.stderr.txt"
+            },
+            "summary": {
+              "kind": "event",
+              "event": "summary",
+              "pid": 2667,
+              "tid": 2667,
+              "time_ns": 303686907819,
+              "value": 3000,
+              "expected": 3000,
+              "success": 60,
+              "account2": 800,
+              "account3": 1150,
+              "account4": 1050
+            }
+          }
+        ],
+        "next_steps": [
+          "先说明本案例的预期，再对照原始事件；fork私有地址可联系已有COW实验，pthread共享地址可联系第3组映射。"
+        ]
+      }
+    ],
+    "comparisons": [],
+    "cow_observations": [],
+    "policy_comparisons": [],
+    "references": [
+      "https://docs.kernel.org/filesystems/proc.html",
+      "https://docs.kernel.org/admin-guide/mm/transhuge.html",
+      "https://man7.org/linux/man-pages/man2/getrusage.2.html",
+      "https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html"
+    ],
+    "confidence_labels": {
+      "confirmed": "已确认（限列出的观测与对照）",
+      "probable": "可能原因",
+      "insufficient_evidence": "证据不足"
+    }
+  }
+}

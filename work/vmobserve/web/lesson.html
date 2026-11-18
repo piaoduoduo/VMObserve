@@ -1,12 +1,81 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>动手任务 · 按需分配</title><link rel="stylesheet" href="/style.css"><script type="module" src="/lesson.js"></script></head>
-<body><header><div class="brand">虚拟内存 · 动手任务</div><a href="/">返回实验观察台</a></header>
-<main class="lesson-page"><h1>申请了内存，就已经用上物理页了吗？</h1><p>这次只做一个问题。先预测，补一小段访问循环，再对照真实记录解释。</p><p class="notice">笔记是你的回答；下方数据来自所选真实运行的历史回放。自动检查不代表已经掌握原理。</p>
-<section class="course-intro"><h2>1. 先写下预测</h2>
-<label for="prediction">申请 16 MiB 后，RSS 会立刻增加 16 MiB 吗？逐步写入时呢？</label><textarea id="prediction" rows="4" placeholder="写下你的预测和理由；允许猜错。"></textarea>
-<p id="save-status" role="status"></p></section>
-<section class="course-intro"><h2>2. 亲手补访问循环</h2><p>只修改下面这个文件，从上一阶段停下的位置继续写，到当前目标为止。每隔一个基础页写 1 字节，值为 7，返回累计位置数。</p><pre id="student-path"></pre><details><summary>查看载入时的学生代码</summary><pre id="student-code"></pre></details><details><summary>需要时再看参考解</summary><pre id="reference-code"></pre></details><details><summary>任务说明与检查标准</summary><pre id="worksheet"></pre></details>
-<p>保存文件后，点击检查。未填写的起始版本应该失败；每次执行都会保存当时源码。页面不会自动改写你的代码。</p><div class="actions"><button id="run-student" class="primary">检查我的代码</button><button id="run-reference">运行参考实验</button></div><p id="job" role="status" aria-live="polite"></p><p id="error" role="alert"></p><details><summary>本次执行日志</summary><pre id="job-log"></pre></details></section>
-<section class="course-intro"><h2>3. 读真实证据，核对预测</h2><label for="lesson-run">选择实验记录</label><select id="lesson-run"></select><button id="refresh">刷新记录</button><p id="provenance"></p><div id="checks"></div><div id="observations"></div><p>不要把缺页数固定写成访问次数；小块可能已驻留。这里 RSS 统计整个相关映射，可能包含其他对象。</p><a id="report-download" hidden>下载所选完整证据报告</a></section>
-<section class="course-intro"><h2>4. 用自己的话解释</h2><label for="explanation">选一个与你预测不同的样本，写清动作、观测、解释和还缺什么证据。</label><textarea id="explanation" rows="6" placeholder="例如：哪种尺寸、哪个阶段？RSS 和缺页实际是多少？为什么？"></textarea><button id="save-record">保存本轮学习记录</button><button id="export-notes">导出学习记录</button><p id="record-status" role="status"></p><p class="detail-copy">草稿只存在当前浏览器。保存时绑定所选运行 ID、原报告哈希及源码哈希；之后切换记录不会改写已保存的回答。导出含草稿与已保存记录，个人解释不自动评分。</p></section>
-</main></body></html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>按需分配 · 重点任务可视化实验台</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/lesson.js"></script>
+</head>
+<body class="lesson-shell">
+<header class="topbar">
+  <a class="brand" href="/">
+    <svg aria-hidden="true" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="11" height="11" rx="2"/><rect x="18" y="3" width="11" height="11" rx="2"/><rect x="3" y="18" width="11" height="11" rx="2"/><rect x="18" y="18" width="11" height="11" rx="2"/></g></svg>
+    <div><strong>VMObserve</strong><span>重点任务可视化实验台</span></div>
+  </a>
+  <div class="topbar-actions">
+    <a class="nav-pill" href="/">作品首页</a>
+    <a class="nav-pill primary-pill" href="/labs/3.3">← 返回实验 3.3</a>
+  </div>
+</header>
+<main class="lesson-page">
+  <div class="lesson-hero">
+    <small class="question-kicker">实验 3.3 思考与笔记 · 按需调页</small>
+    <h1>按需调页实验记录与小结</h1>
+    <p>课内示例申请 512 MiB，用 ps 看整个进程。本页的小实验默认选 16 MiB，用 smaps 看返回指针所在的映射。先猜变化，再选两行数据验证。</p>
+    <p class="notice">先写预测，读两行采样，再把自己的访问实验和解释记下来。</p>
+  </div>
+  <details class="secondary-fold" id="original-demand">
+    <summary>对照指导书 3.3：原版 512 MiB 程序在另一终端看到什么？</summary>
+    <p>指导书第 11–12 页让你在每次按回车前，用 <code>ps</code> 观察整个进程。下面回放原版 <code>demand.c</code> 的五个暂停点供写作核对。</p>
+    <div id="original-ps"></div>
+  </details>
+
+  <section class="course-intro">
+    <h2>1. 先写下你的预测</h2>
+    <label for="prediction">向系统申请大块内存后，物理驻留（RSS）会立刻涨上去吗？分批写入时又会怎样？</label>
+    <textarea id="prediction" rows="4" placeholder="写下你的猜测和理由，猜错也很正常。"></textarea>
+    <p id="save-status" role="status"></p>
+  </section>
+
+  <section class="course-intro">
+    <h2>2. 查看真实采样数据，验证预测</h2>
+    <div class="sequence-controls">
+      <label for="lesson-run">选择一次运行记录</label>
+      <select id="lesson-run"></select>
+      <button id="refresh">刷新列表</button>
+    </div>
+    <p id="provenance" class="muted"></p>
+    <p id="error" role="alert"></p>
+    <div id="observations"></div>
+    <div id="checks"></div>
+    <p class="detail-copy">看数提示：小块申请所在的页可能本来就已驻留；表格里的 RSS 统计整段映射，缺页列统计的是这一步新发生的次缺页数。</p>
+    <a id="report-download" hidden>下载本次完整原始数据 (JSON)</a>
+  </section>
+
+  <section class="course-intro">
+    <h2>3. 试一种自己的访问方式</h2>
+    <p>指导书第 12 页让你仿照示例设计内存访问程序。比如申请同样大小的内存，一轮只写前半段，一轮把整块写完。你也可以自己选一个条件。</p>
+    <p>在课程虚拟机编译并运行自己的程序，在申请后、写入后各暂停一次。把下面的 PID 换成程序实际打印的进程号，在另一个终端记录两次输出。</p>
+    <pre>ps -o min_flt,maj_flt,rsz,vsz,pid,cmd -p PID</pre>
+    <label for="own-trial">我的访问方式、修改的条件和实测结果</label>
+    <textarea id="own-trial" rows="3" placeholder="可以先记设计，运行后补上实际的 ps 输出。"></textarea>
+  </section>
+  <section class="course-intro">
+    <h2>4. 用自己的话做个小结</h2>
+    <label for="result-notes">实验过程与结果：选了哪个案例？哪两个阶段的数据最能说明变化？</label>
+    <textarea id="result-notes" rows="3" placeholder="注明程序动作、观察范围和单位。"></textarea>
+    <label for="explanation">思考题回答：挑一个阶段，用 RSS 和缺页数解释为什么申请成功和实际用上物理页是两回事。</label>
+    <textarea id="explanation" rows="6" placeholder="例如：刚申请完时 RSS 是多少、缺页是多少？为什么写入后才开始明显上涨？"></textarea>
+    <label for="extension">拓展（选填）：你对比了哪组条件？复验时观察到了什么？</label>
+    <textarea id="extension" rows="2" placeholder="做过再写，可以留空。"></textarea>
+    <div class="actions">
+      <button id="save-record" class="primary">保存本轮学习记录</button>
+      <button id="export-notes">导出笔记交给老师</button>
+    </div>
+    <p id="record-status" role="status"></p>
+    <p class="detail-copy">草稿会自动保存在当前浏览器中；保存回答时会把你选中的实验记录和阶段一并记下。</p>
+  </section>
+</main>
+</body>
+</html>

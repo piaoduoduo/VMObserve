@@ -1,0 +1,5 @@
+{"kind":"event","event":"begin","pid":2611,"tid":2611,"time_ns":292679884229,"lab":"4.1","mode":"normal","ppid":2547,"value":7,"address":"0x4040e8"}
+{"kind":"event","event":"before_exec","pid":2612,"tid":2612,"time_ns":292683258199,"role":"child","ppid":2611,"fork_return":0,"value":99,"address":"0x4040e8"}
+{"kind":"event","event":"parent_after_fork","pid":2611,"tid":2611,"time_ns":292683910199,"role":"parent","child_pid":2612,"fork_return":2612,"value":7,"address":"0x4040e8"}
+{"kind":"event","event":"after_exec","pid":2612,"tid":2612,"time_ns":292813628819,"role":"child","ppid":2611,"message":"course-demo","requested_exit":7}
+{"kind":"event","event":"summary","pid":2611,"tid":2611,"time_ns":292923760279,"role":"parent","child_pid":2612,"wait_return":2612,"exit_code":7,"signal":0,"value":7}

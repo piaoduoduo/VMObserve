@@ -1,0 +1,5 @@
+{"kind": "observation", "lab": "6.1", "phase": "顺序写入", "observed": "abc"}
+{"kind": "observation", "lab": "6.1", "phase": "定位到偏移 1 后覆盖", "observed": "aXc"}
+{"kind": "observation", "lab": "6.1", "phase": "追加模式下先定位到 0 再写", "observed": "aXc!"}
+{"kind": "observation", "lab": "6.1", "phase": "dup 读一字节后原描述符的偏移", "observed": 1}
+{"kind": "observation", "lab": "6.1", "phase": "独立 open 的偏移", "observed": 0}

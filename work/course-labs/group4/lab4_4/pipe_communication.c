@@ -22,7 +22,9 @@ int main(int argc,char **argv) {
         }
         close(fd[0]);ssize_t n=write(fd[1],message,strlen(message));if(n!=(ssize_t)strlen(message)) die("write");
         event("sent",",\"role\":\"parent\",\"write_bytes\":%ld,\"message\":\"%s\"",(long)n,message);close(fd[1]);
-        int status=wait_child(child);int code=WIFEXITED(status)?WEXITSTATUS(status):-1;
+        int status;
+        wait_child(child,&status);
+        int code=WIFEXITED(status)?WEXITSTATUS(status):-1;
         event("summary",",\"child_pid\":%ld,\"exit_code\":%d,\"signal\":%d",(long)child,code,WIFSIGNALED(status)?WTERMSIG(status):0);
         return code==0?0:1;
     }
@@ -47,7 +49,9 @@ int main(int argc,char **argv) {
         event("write_result",",\"role\":\"child\",\"write_bytes\":%ld,\"errno\":%d",(long)n,saved);close(fd[1]);
         _exit(!strcmp(mode,"epipe") && n==-1 && saved==EPIPE?0:1);
     }
-    close(fd[1]);int status=wait_child(child);
+    close(fd[1]);
+    int status;
+    wait_child(child,&status);
     int code=WIFEXITED(status)?WEXITSTATUS(status):-1,sig=WIFSIGNALED(status)?WTERMSIG(status):0;
     event("summary",",\"child_pid\":%ld,\"exit_code\":%d,\"signal\":%d",(long)child,code,sig);
     return !strcmp(mode,"epipe")?(code==0&&sig==0?0:1):(sig==SIGPIPE?0:1);

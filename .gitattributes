@@ -5,3 +5,4 @@
 *.img binary
 # Historical evidence is byte-preserved, including kernel-emitted trailing spaces.
 tests/fixtures/** -text -whitespace
+examples/** -text -whitespace

@@ -86,3 +86,17 @@ def describe_allocations(actions, samples, addresses, sizes):
                     action.update(allocation_source="new_brk_range", source_line=event["line"])
         if not action["events"]:
             action["allocation_source"] = "no_memory_syscall"
+
+
+def allocation_overview(sample):
+    """Group the live blocks by actual address interval at the third allocation."""
+    regions = {}
+    for number, block in enumerate(sample["blocks"], 1):
+        for mapping in block["mappings"]:
+            key = mapping["start"], mapping["end"]
+            row = regions.setdefault(key, {"start": key[0], "end": key[1],
+                "size_kib": mapping["size_kib"], "rss_kib": mapping["rss_kib"], "blocks": []})
+            row["blocks"].append(number)
+    return {"requested_kib": sum(b["requested_bytes"] for b in sample["blocks"]) // 1024,
+            "mapped_kib": sample["related_size_kib"], "resident_kib": sample["related_rss_kib"],
+            "regions": list(regions.values())}

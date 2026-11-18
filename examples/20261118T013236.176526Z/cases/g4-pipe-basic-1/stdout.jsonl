@@ -1,0 +1,4 @@
+{"kind":"event","event":"begin","pid":2645,"tid":2645,"time_ns":300053900219,"lab":"4.4-pipe","mode":"basic"}
+{"kind":"event","event":"sent","pid":2645,"tid":2645,"time_ns":300056270159,"role":"parent","write_bytes":26,"message":"Hello from Parent Process!"}
+{"kind":"event","event":"received","pid":2646,"tid":2646,"time_ns":300058536569,"role":"child","read_bytes":26,"message":"Hello from Parent Process!","eof":true}
+{"kind":"event","event":"summary","pid":2645,"tid":2645,"time_ns":300059840439,"child_pid":2646,"exit_code":0,"signal":0}

@@ -1,0 +1,6 @@
+{"kind": "observation", "lab": "7.2", "phase": "无写端时 read 的字节数", "observed": 0}
+{"kind": "observation", "lab": "7.2", "phase": "有写端但无数据时 read 的结果", "observed": "EAGAIN"}
+{"kind": "observation", "lab": "7.2", "phase": "写入前 select 就绪数", "observed": 0}
+{"kind": "observation", "lab": "7.2", "phase": "写入后 select 就绪数", "observed": 1}
+{"kind": "observation", "lab": "7.2", "phase": "读到的内容", "observed": "A"}
+{"kind": "observation", "lab": "7.2", "phase": "最后一个写端关闭后 read 的字节数", "observed": 0}

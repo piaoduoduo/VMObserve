@@ -1,8 +1,10 @@
-# 统一运行入口（v0.6.1）
+# 统一运行入口
 
 本说明替代最初的预实验运行步骤。原始 results 和 guest-runs 全部保留；不要移动项目或虚拟磁盘。脚本路径已改为相对自身定位，但 qcow2 写入层仍可能记录绝对 backing 路径。
 
 ## Windows
+
+要复验同步、文件与设备九项观察，在已有 openEuler 环境运行 `./work/vm.ps1 retest --suite systems --repeats 1`。只做一项可加 `--lab 7.2`。在 Linux 本机运行 `python3 work/run_all.py --suite systems --lab 7.2 --repeats 1`。这组参数沿用相同的源码快照、原始输出、回放与报告格式。
 
 在项目根目录：
 

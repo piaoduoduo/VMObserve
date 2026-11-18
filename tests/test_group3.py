@@ -6,7 +6,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'work'))
 from vmobserve.group3 import validate
 from vmobserve.runner import parser, plan_cases
-from vmobserve.server import Workbench
+from vmobserve.server import experiment_args, Workbench
 
 
 class Group3Tests(unittest.TestCase):
@@ -14,7 +14,7 @@ class Group3Tests(unittest.TestCase):
         self.assertEqual(len(plan_cases(parser().parse_args(['--suite','group3']))),24)
         self.assertEqual(len(plan_cases(parser().parse_args([]))),33)
         app=Workbench('local')
-        command=app.command(group3=True)
+        command=experiment_args("group3")
         self.assertEqual(command[command.index('--suite')+1],'group3')
         self.assertEqual(command[command.index('--timeout')+1],'120')
 

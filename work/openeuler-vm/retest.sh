@@ -38,7 +38,8 @@ r=load_run(sys.argv[1])
 if r['integrity']['status']!='verified' or r['data_origin']!='real_execution':
  raise SystemExit('Refusing recheck: parent evidence is not a verified real v1 record')
 CHECK
-  scp "${SSH_OPTS[@]}" -P "$VM_PORT" "$2/report.json" "root@127.0.0.1:$remote/parent-report.json" >> "$transport/upload.log" 2>&1
+  ssh "${SSH_OPTS[@]}" -p "$VM_PORT" root@127.0.0.1 "mkdir -p '$remote/parent'"
+  scp "${SSH_OPTS[@]}" -P "$VM_PORT" "$2/report.json" "$2/environment.json" "root@127.0.0.1:$remote/parent/" >> "$transport/upload.log" 2>&1
   runner_args+=(--recheck-from "$remote/parent")
   shift 2
  elif [[ "$1" == --output || "$1" == --output=* ]]; then
@@ -53,7 +54,7 @@ if (( ${#runner_args[@]} )); then printf -v extra ' %q' "${runner_args[@]}"; fi
 # Retrieve this transfer's outputs even when the runner exits nonzero.
 rc=0
 stage=guest_execution
-ssh "${SSH_OPTS[@]}" -p "$VM_PORT" root@127.0.0.1 "set -e; cd '$remote'; tar xzf source.tar.gz; if test -f parent-report.json; then mkdir parent; cp parent-report.json parent/report.json; fi; VMOBSERVE_CONTEXT=qemu-tcg python3 run_all.py --require-openeuler $extra" > "$transport/guest-run.log" 2>&1 || rc=$?
+ssh "${SSH_OPTS[@]}" -p "$VM_PORT" root@127.0.0.1 "set -e; cd '$remote'; tar xzf source.tar.gz; VMOBSERVE_CONTEXT=qemu-tcg python3 run_all.py --require-openeuler $extra" > "$transport/guest-run.log" 2>&1 || rc=$?
 stage=retrieval
 retrieval_rc=0
 scp -r "${SSH_OPTS[@]}" -P "$VM_PORT" "root@127.0.0.1:$remote/runs/" "$transport/" > "$transport/retrieval.log" 2>&1 || retrieval_rc=$?

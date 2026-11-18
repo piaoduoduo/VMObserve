@@ -1,0 +1,1 @@
+/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static: ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, BuildID[sha1]=b22a8099fc932d62b174e3600a41376ebcca70fe, for GNU/Linux 3.2.0, not stripped

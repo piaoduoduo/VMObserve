@@ -1,0 +1,2 @@
+{"kind":"observation","lab":"5.2","phase":"反向持锁时第二把锁返回 EBUSY 的线程数","observed":2}
+{"kind":"observation","lab":"5.2","phase":"统一顺序后完成双锁操作的线程数","observed":2}

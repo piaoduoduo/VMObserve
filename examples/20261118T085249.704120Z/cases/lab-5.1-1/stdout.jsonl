@@ -1,0 +1,3 @@
+{"kind":"observation","lab":"5.1","phase":"放入单槽缓冲区的次数","observed":32}
+{"kind":"observation","lab":"5.1","phase":"消费者取出的次数","observed":32}
+{"kind":"observation","lab":"5.1","phase":"取出顺序与写入顺序不符的次数","observed":0}

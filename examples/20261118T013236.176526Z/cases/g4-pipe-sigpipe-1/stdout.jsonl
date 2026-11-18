@@ -1,0 +1,3 @@
+{"kind":"event","event":"begin","pid":2651,"tid":2651,"time_ns":300582581819,"lab":"4.4-pipe","mode":"sigpipe"}
+{"kind":"event","event":"before_write","pid":2652,"tid":2652,"time_ns":300585920509,"role":"child","readers_remaining":0}
+{"kind":"event","event":"summary","pid":2651,"tid":2651,"time_ns":300587776569,"child_pid":2652,"exit_code":-1,"signal":13}

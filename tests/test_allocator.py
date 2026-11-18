@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "work"))
 from vmobserve.allocator import PHASES, parse_allocator, validate_allocator
-from vmobserve.server import Workbench
+from vmobserve.server import experiment_args, Workbench
 from vmobserve.runner import parser, plan_cases
 
 
@@ -60,7 +60,7 @@ class AllocatorTests(unittest.TestCase):
         plan = plan_cases(parser().parse_args(["--suite", "course"]))
         self.assertEqual(len(plan), 12)
         self.assertEqual({c["parameters"]["requested_kib"] for c in plan}, {1, 256, 1024, 16384})
-        self.assertEqual(Workbench("local").command(course=True)[-2:], ["--suite", "course"])
+        self.assertEqual(experiment_args("course")[-2:], ["--suite", "course"])
 
 
 if __name__ == "__main__":

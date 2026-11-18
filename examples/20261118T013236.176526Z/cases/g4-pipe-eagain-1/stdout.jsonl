@@ -1,0 +1,3 @@
+{"kind":"event","event":"begin","pid":2648,"tid":2648,"time_ns":300316409569,"lab":"4.4-pipe","mode":"eagain"}
+{"kind":"event","event":"empty_with_writer","pid":2648,"tid":2648,"time_ns":300318087529,"read_bytes":-1,"errno":11}
+{"kind":"event","event":"summary","pid":2648,"tid":2648,"time_ns":300318523999,"read_bytes":0,"errno":0,"writers_remaining":0}

@@ -17,6 +17,7 @@ from vmobserve.evidence import validate_measurements
 from vmobserve.export import csv_text
 from vmobserve.replay import legacy_report, load_run
 from vmobserve.server import Workbench
+from vmobserve.runner import compare_thp_environment
 
 FIXTURE = ROOT / "tests/fixtures/legacy-run"
 TEST_TMP = ROOT / "output/test-tmp"
@@ -41,6 +42,47 @@ def v1_copy(root):
 
 
 class ReviewRegressions(unittest.TestCase):
+    def test_home_example_is_replayable_without_private_run_directories(self):
+        app = Workbench("local", {"example": ROOT / "examples"})
+        item, = [r for r in app.catalog() if r["suites"] == ["sequence"]]
+        report = load_run(app.directory(item["id"]))
+        self.assertEqual(report["integrity"]["status"], "verified")
+        self.assertEqual(report["data_origin"], "real_execution")
+        self.assertEqual(len(report["cases"]), 3)
+        sample = next(s for s in report["cases"][0]["data"]["samples"] if s["phase"] == "alloc_1MiB")
+        self.assertEqual((sample["related_vma_count"], sample["related_rss_kib"]), (2, 16))
+
+    def test_environment_summary_cannot_override_the_original(self):
+        with tempfile.TemporaryDirectory(dir=TEST_TMP) as tmp:
+            root = Path(tmp) / "copy"
+            report = v1_copy(root)
+            original = read_json(root / "environment.json")
+            report["environment"]["kernel"] = "QA-only"
+            write_json(root / "report.json", report)
+            loaded = load_run(root)
+            self.assertEqual(loaded["environment"], original)
+            self.assertEqual(loaded["integrity"]["status"], "failed")
+            self.assertTrue(all(c["data"] is None for c in loaded["cases"]))
+            self.assertTrue(Workbench("local", {"test": Path(tmp)}).catalog()[0]["environment_issue"])
+
+    def test_packaged_systems_replay_distinguishes_eagain_from_eof(self):
+        report = load_run(ROOT / "examples/20261118T085249.704120Z")
+        self.assertEqual(report["integrity"]["status"], "verified")
+        self.assertEqual(len(report["cases"]), 9)
+        self.assertTrue(all(c["validation"]["status"] == "passed" for c in report["cases"]))
+        fifo = next(c for c in report["cases"] if c["parameters"]["lab"] == "7.2")
+        changed = copy.deepcopy(fifo["data"])
+        empty = next(row for row in changed["samples"] if row["observed"] == "EAGAIN")
+        empty["observed"] = 0
+        self.assertEqual(validate_measurements("io", changed)["status"], "failed")
+
+    def test_thp_recheck_compares_conditions_not_timestamps(self):
+        root = ROOT / "examples/20261116T090129.522833Z/environment.json"
+        env = read_json(root)
+        self.assertEqual(compare_thp_environment(env, dict(env, captured_at="later"))["status"], "matched_conditions")
+        self.assertEqual(compare_thp_environment(env, dict(env, kernel="other"))["status"], "cross_environment")
+        self.assertEqual(compare_thp_environment(env, dict(env, thp_enabled=None))["status"], "unknown")
+
     @classmethod
     def setUpClass(cls):
         cls.report = load_run(FIXTURE)
@@ -100,15 +142,20 @@ class ReviewRegressions(unittest.TestCase):
                                            (3, "failed", "failed"), (3, None, "failed"),
                                            (7, "completed_with_deviations", "failed")):
             with self.subTest(code=code, run_status=run_status), tempfile.TemporaryDirectory(dir=TEST_TMP) as tmp:
-                app = Workbench("local")
-                app.job = {"status": "running", "previous_run_ids": ["old"]}
-                runs = [{"id": "old", "status": "completed"}]
+                root = Path(tmp)
+                app = Workbench("local", {"local": root})
+                app.job = {"status": "running"}
+                (root / "unrelated").mkdir()
+                write_json(root / "unrelated/report.json", {"status": "completed_with_deviations"})
                 if run_status:
-                    runs.append({"id": "new", "status": run_status})
+                    (root / "new").mkdir()
+                    write_json(root / "new/report.json", {"status": run_status})
+                    (root / "stdout.log").write_text(f"RUN_DIRECTORY={root / 'new'}\n", encoding="utf-8")
                 result = {"status": "failed", "exit_code": code,
                           "error": {"code": "process_exit", "message": f"exit status {code}"}}
-                with patch("vmobserve.server.execute", return_value=result), patch.object(app, "catalog", return_value=runs):
-                    app._worker(Path(tmp), None, "sparse", None, False, False, False)
+                with patch("vmobserve.server.execute", return_value=result):
+                    app._worker(root, [])
+                self.assertEqual(app.job["new_run_ids"], ["local--new"] if run_status else [])
                 self.assertEqual(app.job["status"], expected)
                 self.assertEqual(app.job["exit_code"], code)
                 self.assertEqual(app.job["error"] is None, expected == "completed_with_deviations")

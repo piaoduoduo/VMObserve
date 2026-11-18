@@ -159,3 +159,7 @@
 ## 2026-11-16 第4组
 
 依据当期应用层实验文档物理12—16页和lab4五份原骨架。先检索GitHub与1037.wiki；1037请求超时，未取得同版完整历史实现。实际读取[pipe(7)](https://man7.org/linux/man-pages/man7/pipe.7.html)及[swapcontext(3)](https://man7.org/linux/man-pages/man3/swapcontext.3.html)，核对管道端点语义、独立栈与上下文返回。来源阅读与本轮真实结果详见GROUP4_COMPLETION_20261116.md。
+
+## 2026-11-16 第1、2组
+
+按要求先查GitHub/1037，1037超时；读取lyf1984/HUST_OS_LAB的README，属于不同课例。当前1—9页指导书与原代码为实施依据。实际克隆并读取openEuler社区README、CONTRIBUTING、AGENTS、LICENSE、iSulad SIG；浏览AtomGit issue 1422、PR 7765及实际diff；阅读isula-build官方用法和Git补丁文档。可定位链接、观察范围与本轮失败/成功记录见[第1、2组完成记录](GROUP12_COMPLETION_20261116.md)。

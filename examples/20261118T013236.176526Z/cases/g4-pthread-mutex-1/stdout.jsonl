@@ -1,0 +1,6 @@
+{"kind":"event","event":"begin","pid":2627,"tid":2627,"time_ns":295434728819,"lab":"4.2","mode":"mutex","expected":2000000,"address":"0x4041b4","heap_address":"0xde02a0"}
+{"kind":"event","event":"worker_start","pid":2627,"tid":2628,"time_ns":295438534539,"worker":1,"address":"0x4041b4","heap_address":"0xde02a0","stack_address":"0x7ff47a547ebc"}
+{"kind":"event","event":"worker_start","pid":2627,"tid":2629,"time_ns":295438716699,"worker":2,"address":"0x4041b4","heap_address":"0xde02a0","stack_address":"0x7ff479d46ebc"}
+{"kind":"event","event":"worker_end","pid":2627,"tid":2628,"time_ns":295774859399,"worker":1}
+{"kind":"event","event":"worker_end","pid":2627,"tid":2629,"time_ns":295792948439,"worker":2}
+{"kind":"event","event":"summary","pid":2627,"tid":2627,"time_ns":295793991309,"value":2000000,"expected":2000000,"mode":"mutex","heap_value":42}

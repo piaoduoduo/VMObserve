@@ -33,6 +33,23 @@ def legacy_report(root, old):
     return report
 
 
+def recorded_environment(root, report):
+    """Return the original environment and any discrepancy with its report summary."""
+    if "schema_version" not in report:
+        return report.get("environment", {}), None
+    expected = report.get("artifacts", {}).get("environment.json")
+    try:
+        path = safe_child(root, "environment.json")
+        if not expected or digest(path) != expected:
+            return {}, "environment.json: missing or unmatched environment hash"
+        env = read_json(path)
+        if not isinstance(env, dict):
+            return {}, "environment.json: expected an object"
+        return env, None if env == report.get("environment") else "环境摘要与已校验的 environment.json 不一致"
+    except (OSError, ValueError) as exc:
+        return {}, f"environment.json: {exc}"
+
+
 def load_run(directory):
     root = Path(directory).resolve()
     original = read_json(root / "report.json")
@@ -53,11 +70,17 @@ def load_run(directory):
         source_errors.append("source manifest missing")
     artifact_errors = {}
     for rel, sha in report.get("artifacts", {}).items():
+        if rel == "environment.json" and not legacy:
+            continue  # recorded_environment verifies the hash and reads the authoritative values.
         try:
             if digest(safe_child(root, rel)) != sha:
                 artifact_errors[rel] = "artifact hash mismatch: " + rel
         except (OSError, ValueError) as exc:
             artifact_errors[rel] = f"artifact unavailable: {rel}: {exc}"
+    if not legacy:
+        report["environment"], conflict = recorded_environment(root, original)
+        if conflict:
+            artifact_errors["environment.json"] = conflict
     raw_paths = {rel for case in report.get("cases", []) for rel in case.get("artifacts", {}).values()}
     shared_errors = source_errors + [error for rel, error in artifact_errors.items() if rel not in raw_paths]
     errors = source_errors + list(artifact_errors.values())
@@ -77,7 +100,8 @@ def load_run(directory):
             case_errors = [artifact_errors[rel] for rel in artifacts.values() if rel in artifact_errors]
             if case_errors:
                 raise ValueError("; ".join(case_errors))
-            data = parse_case(safe_child(root, artifacts["jsonl"]), safe_child(root, artifacts.get("kernel", artifacts.get("smaps"))), case["suite"], case["parameters"])
+            stderr = artifacts.get("stderr") or artifacts.get("kernel") or artifacts.get("smaps")
+            data = parse_case(safe_child(root, artifacts["jsonl"]), safe_child(root, stderr), case["suite"], case["parameters"])
             validation = validate_measurements(case["suite"], data)
             case.update(data=data, validation=validation, integrity="legacy_partial" if legacy else "verified")
         except (OSError, ValueError, KeyError, TypeError) as exc:

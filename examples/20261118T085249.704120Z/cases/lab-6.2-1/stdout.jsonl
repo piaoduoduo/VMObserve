@@ -1,0 +1,5 @@
+{"kind": "observation", "lab": "6.2", "phase": "原文件、硬链接、符号链接自身的 inode", "observed": [75, 75, 76]}
+{"kind": "observation", "lab": "6.2", "phase": "原文件的硬链接数", "observed": 2}
+{"kind": "observation", "lab": "6.2", "phase": "从硬链接看到的权限", "observed": "0o600"}
+{"kind": "observation", "lab": "6.2", "phase": "删除原路径后从硬链接读取", "observed": "hello"}
+{"kind": "observation", "lab": "6.2", "phase": "符号链接还在、目标还在", "observed": [true, false]}

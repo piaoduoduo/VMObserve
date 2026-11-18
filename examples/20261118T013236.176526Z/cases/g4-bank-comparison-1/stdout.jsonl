@@ -1,0 +1,8 @@
+{"kind":"event","event":"begin","pid":2658,"tid":2658,"time_ns":303331379009,"lab":"4.4-bank","mode":"comparison"}
+{"kind":"event","event":"deposit_worker","pid":2658,"tid":2659,"time_ns":303335984909,"worker":1,"variant":"unsafe"}
+{"kind":"event","event":"deposit_worker","pid":2658,"tid":2660,"time_ns":303336940639,"worker":2,"variant":"unsafe"}
+{"kind":"event","event":"counter_result","pid":2658,"tid":2658,"time_ns":303339244399,"variant":"unsafe","value":60245,"expected":100000}
+{"kind":"event","event":"deposit_worker","pid":2658,"tid":2661,"time_ns":303339897449,"worker":1,"variant":"mutex"}
+{"kind":"event","event":"deposit_worker","pid":2658,"tid":2662,"time_ns":303340201539,"worker":2,"variant":"mutex"}
+{"kind":"event","event":"counter_result","pid":2658,"tid":2658,"time_ns":303354449389,"variant":"mutex","value":100000,"expected":100000}
+{"kind":"event","event":"summary","pid":2658,"tid":2658,"time_ns":303354645789,"value":100000,"expected":100000,"unsafe_value":60245}

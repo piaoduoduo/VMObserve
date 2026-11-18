@@ -1,0 +1,4 @@
+{"kind":"event","event":"begin","pid":2649,"tid":2649,"time_ns":300449852159,"lab":"4.4-pipe","mode":"epipe"}
+{"kind":"event","event":"before_write","pid":2650,"tid":2650,"time_ns":300453953449,"role":"child","readers_remaining":0}
+{"kind":"event","event":"write_result","pid":2650,"tid":2650,"time_ns":300454871319,"role":"child","write_bytes":-1,"errno":32}
+{"kind":"event","event":"summary","pid":2649,"tid":2649,"time_ns":300456022919,"child_pid":2650,"exit_code":0,"signal":0}

@@ -30,8 +30,9 @@ int main(int argc,char **argv) {
         send_byte(go[1],'X');
     }
     close(ready[0]);close(go[1]);
-    int status=wait_child(child);
+    int status;
+    pid_t waited=wait_child(child,&status);
     int code=WIFEXITED(status)?WEXITSTATUS(status):-1,signal=WIFSIGNALED(status)?WTERMSIG(status):0;
-    event("summary",",\"role\":\"parent\",\"child_pid\":%ld,\"wait_return\":%ld,\"exit_code\":%d,\"signal\":%d,\"value\":%d",(long)child,(long)child,code,signal,private_value);
+    event("summary",",\"role\":\"parent\",\"child_pid\":%ld,\"wait_return\":%ld,\"exit_code\":%d,\"signal\":%d,\"value\":%d",(long)child,(long)waited,code,signal,private_value);
     return (signal==0 && code==(!strcmp(argv[2],"normal")?7:127) && private_value==7)?0:1;
 }

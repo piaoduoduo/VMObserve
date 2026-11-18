@@ -9,10 +9,10 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "work"))
-from vmobserve.sequence import trace_actions, attach_mappings, describe_allocations
+from vmobserve.sequence import trace_actions, attach_mappings, describe_allocations, allocation_overview
 from vmobserve.smaps import FIELDS
 from vmobserve.runner import parser, plan_cases, run
-from vmobserve.server import Workbench
+from vmobserve.server import experiment_args, Workbench
 
 
 def marker(name, edge, legacy=False):
@@ -38,7 +38,7 @@ class SequenceTests(unittest.TestCase):
     def test_isolated_plan_and_web_command(self):
         cases = plan_cases(parser().parse_args(['--suite', 'sequence']))
         self.assertEqual([c['id'] for c in cases], ['sequence-1','sequence-2','sequence-3'])
-        self.assertEqual(Workbench('local').command(sequence=True)[-2:], ['--suite','sequence'])
+        self.assertEqual(experiment_args("sequence")[-2:], ['--suite','sequence'])
 
     def test_observer_calls_excluded_and_empty_action_is_valid(self):
         actions = trace_actions(trace())
@@ -78,6 +78,9 @@ class SequenceTests(unittest.TestCase):
         samples = [{} for _ in range(5)]
         maps = [[mapping] for _ in samples]
         attach_mappings(samples, maps, ['1100','2100','3100'], [1024]*3)
+        overview = allocation_overview(samples[3])
+        self.assertEqual([r["blocks"] for r in overview["regions"]], [[1, 2, 3]])
+        self.assertEqual((overview["requested_kib"], overview["resident_kib"]), (3, 8))
         self.assertEqual(samples[3]['related_vma_count'], 1)
         self.assertEqual(samples[3]['related_rss_kib'], 8)
         self.assertEqual(len(samples[3]['blocks']), 3)

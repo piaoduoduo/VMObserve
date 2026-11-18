@@ -1,0 +1,7 @@
+{"kind":"event","event":"begin","pid":2663,"tid":2663,"time_ns":303519934389,"lab":"4.4-bank","mode":"condition"}
+{"kind":"event","event":"waiting","pid":2663,"tid":2664,"time_ns":303524360699,"worker":1,"amount":80,"balance":30}
+{"kind":"event","event":"waiting","pid":2663,"tid":2665,"time_ns":303524997109,"worker":2,"amount":50,"balance":30}
+{"kind":"event","event":"deposited","pid":2663,"tid":2666,"time_ns":303525707889,"amount":200,"balance":230,"waiters":2}
+{"kind":"event","event":"withdrawn","pid":2663,"tid":2664,"time_ns":303526464489,"worker":1,"amount":80,"balance":150}
+{"kind":"event","event":"withdrawn","pid":2663,"tid":2665,"time_ns":303527354509,"worker":2,"amount":50,"balance":100}
+{"kind":"event","event":"summary","pid":2663,"tid":2663,"time_ns":303527638549,"value":100,"expected":100,"waiters":2}

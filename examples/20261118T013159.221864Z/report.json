@@ -1,0 +1,4091 @@
+{
+  "schema_version": "vmobserve.run/v1",
+  "tool_version": "0.7.0",
+  "run_id": "20261118T013159.221864Z",
+  "data_origin": "real_execution",
+  "view_mode": "execution_record",
+  "status": "completed",
+  "started_at": "2026-11-18T01:31:59.228682+00:00",
+  "environment": {
+    "system": "Linux",
+    "kernel": "6.6.0-28.0.0.34.oe2403.x86_64",
+    "machine": "x86_64",
+    "os_release": "NAME=\"openEuler\"\nVERSION=\"24.03 (LTS)\"\nID=\"openEuler\"\nVERSION_ID=\"24.03\"\nPRETTY_NAME=\"openEuler 24.03 (LTS)\"\nANSI_COLOR=\"0;31\"",
+    "distribution": {
+      "NAME": "openEuler",
+      "VERSION": "24.03 (LTS)",
+      "ID": "openEuler",
+      "VERSION_ID": "24.03",
+      "PRETTY_NAME": "openEuler 24.03 (LTS)",
+      "ANSI_COLOR": "0;31"
+    },
+    "python": "3.11.6",
+    "libc": [
+      "glibc",
+      "2.38"
+    ],
+    "allocator_environment": {
+      "GLIBC_TUNABLES": null,
+      "MALLOC_MMAP_THRESHOLD_": null,
+      "MALLOC_TRIM_THRESHOLD_": null,
+      "MALLOC_PERTURB_": null,
+      "LD_PRELOAD": null
+    },
+    "page_bytes": 4096,
+    "thp_enabled": "[always] madvise never",
+    "thp_defrag": "always defer defer+madvise [madvise] never",
+    "pmd_size": "2097152",
+    "thp_sizes": {
+      "hugepages-32kB": "always inherit madvise [never]",
+      "hugepages-512kB": "always inherit madvise [never]",
+      "hugepages-2048kB": "always [inherit] madvise never",
+      "hugepages-1024kB": "always inherit madvise [never]",
+      "hugepages-64kB": "always inherit madvise [never]",
+      "hugepages-16kB": "always inherit madvise [never]",
+      "hugepages-256kB": "always inherit madvise [never]",
+      "hugepages-128kB": "always inherit madvise [never]"
+    },
+    "meminfo": "MemTotal:        1753684 kB\nMemFree:         1316616 kB\nMemAvailable:    1473792 kB\nBuffers:           18444 kB\nCached:           271224 kB\nSwapCached:            0 kB\nActive:           159940 kB\nInactive:         180764 kB\nActive(anon):        724 kB\nInactive(anon):    59636 kB\nActive(file):     159216 kB\nInactive(file):   121128 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:              1376 kB\nWriteback:             0 kB\nAnonPages:         48832 kB\nMapped:            81020 kB\nShmem:              9288 kB\nKReclaimable:      14948 kB\nSlab:              36712 kB\nSReclaimable:      14948 kB\nSUnreclaim:        21764 kB\nKernelStack:        2320 kB\nPageTables:         2160 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:      876840 kB\nCommitted_AS:     487648 kB\nVmallocTotal:   13743895347199 kB\nVmallocUsed:       15248 kB\nVmallocChunk:          0 kB\nPercpu:              928 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:      4096 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      120680 kB\nDirectMap2M:     1976320 kB\nDirectMap1G:           0 kB",
+    "captured_at": "2026-11-18T01:31:59.258588+00:00",
+    "execution_context": "qemu-tcg"
+  },
+  "sources": {
+    "run_all.py": "f94b36c625afdd3fe8fa1828cee3bc05840c82be0f3fb947a1993d77d602d473",
+    "launch.py": "ffc137660f6edb4d5786b44a247f3a71b43362fa8c88aa8e6a71b6621e4f3657",
+    "proj5-memory-pilot/memory_probe.c": "a518fd2b5265189230bc68dee42103e4c274af6644174d5737b67f734a3eed20",
+    "proj5-round2/thp_probe.c": "7a95878ef66c01114ae00f4550844c51b9c1c1958245f2b14ca06f450a849e1b",
+    "proj5-course/allocator_probe.c": "c3f4612c8cb68a7d1faafb5a0f52096182cde30e673daf5114c738c7f74703b6",
+    "proj5-course/layout_probe.c": "60795ef2090bed0e6531be424bc2e3ee09e46bfd298ac609db70a6da779c3b1a",
+    "proj5-course/group3_link.c": "459db3c54c0fa09368bbb187899955f3d3886099ef08a600bc8c9fd191351f35",
+    "proj5-course/group3_sequence.c": "14c31a0ba276cf5ed45bfe942b0ea31523f2f96c12c446fc4f5009ebd45e09c3",
+    "proj5-course/group3_demand.c": "c72e9e61279c515aa8c5614f5e5eecb416772ced94d39cc0ecc456d786832223",
+    "proj5-course/group3_stack.c": "125197bc6a6aae8ab0d69eb2c7ae66ed69acc8faf6f710f4c3230fc822a86bd4",
+    "course-labs/group4/lab4_1/fork_exec_wait.c": "363e8a1309fc3dda566de47a5610cb90620341695042f308d4bf9d22dcdf2d29",
+    "course-labs/group4/lab4_2/pthread_test.c": "575e85f16ffc4e4920c96d9687b52d66de9cba29b476a2f5637351e9eeb56073",
+    "course-labs/group4/lab4_3/user_thread_test.c": "1249083bfc46c799f83ad62a83b4ab97454abea650258088bf8b7c696187904e",
+    "course-labs/group4/lab4_4/pipe_communication.c": "77d8b3a1a1b4869ff9b28e2a6105e7844dda667250bf7e56deef616ad76c5e1c",
+    "course-labs/group4/lab4_4/thread_communication.c": "4dcfb86e4649cb503c6168d493e2eab0a182bc74adbf3069499817592b30bad8",
+    "common/probe.h": "5508d4521f4a530882a8e1f36ceb5e65cab91ece03026f54572116b0cc745a6c",
+    "proj5-course/access_pattern.h": "191b2771546e8365a8ede1f85db5373de3b91b291fecace74a865e3759031c45",
+    "proj5-course/group3_snapshot.h": "d18ba0edf15c13b9184161dc6a39ca1b87233c18b649539cd0494231df01c3c9",
+    "lessons/demand/WORKSHEET.md": "138339305b4ca9a6f1e12ed47455d6c854b8812d5c79b5a45945e9b3b3d59802",
+    "lessons/demand/student.h": "a4e4ca53cfb082999f08285b4ba24e1e38c98903ee25b2f311c16afbb4c1f10d",
+    "lessons/layout/WORKSHEET.md": "9db686a910cbb33c5b7495b2516176fde802a663587e0fc8bd9c7350d3ffe317",
+    "lessons/sequence/WORKSHEET.md": "00257712cb0e82b41305668f8a5a417ad41689f50a994a38e356ed86bd49fca6",
+    "vmobserve/__init__.py": "ab51628fc1717bec535be144aafd86662e4e9afe0ccccc109bd4bd76a17951d8",
+    "vmobserve/__main__.py": "3b93eb45fdc020f830329ad25e605b9f50db2c27c918a0b14e71a7c212fe71df",
+    "vmobserve/allocator.py": "308dbe04ba2c6886822ed0e671a8603cd1a67a34044946f97819e5780d0cceae",
+    "vmobserve/common.py": "eb07f230fbf3c8a0b94fe761d88c0177baba7c9dfb72348e4fdf7062cf7c1ee3",
+    "vmobserve/cow.py": "12f369f252a12c3bb31f8e22844885dd57a624b75ccf93227caafac79dbf08ca",
+    "vmobserve/diagnosis.py": "63f3730c11054e6d2c12cc925ca8cece37feb1e4dea6000679183f0c8c9b97a8",
+    "vmobserve/evidence.py": "4cbe8a204cf22d353606efe994bc6883f4342c0f4585963b049d14bd31367810",
+    "vmobserve/export.py": "22fdc6cc4a8b21689cc27496575d20e5dba4af4f43440050144600599737291c",
+    "vmobserve/group3.py": "0756122056432890039ad4cc29b832be51adc9f9dfe2a87ec0c3f890d5cc9c2d",
+    "vmobserve/group4.py": "9bb0759ecb522711f087d91ce9fcdf066ca9034fae9061521f6dd912a0974acf",
+    "vmobserve/layout.py": "9b50d90f32e72deee742c1fbfbe5a096d6e7e07845f3baa3c6325a080021497a",
+    "vmobserve/replay.py": "2fa8024df8d6fb114eda1d92972be42898b60410da1307e2d0b986c7b8cb0756",
+    "vmobserve/runner.py": "ad8268d70c87ac0c30bf35192755edde3809e6b0c8157fe4f461a1a87e925905",
+    "vmobserve/sequence.py": "d4aed43bf5991ef549eb73170ad7c64370ebe92d281159aa8d2699a7a5ec800f",
+    "vmobserve/server.py": "0c60f494a2a6318813499bbc9d45033df1f85e35f8679f0d0405b46eb6dd31dc",
+    "vmobserve/smaps.py": "1be9e84650a63cb4acc57296ffd92a2fa158aaa422d1064d02604a2c5a54f0ad",
+    "vmobserve/thp_policy.py": "1d599914b89a2a532f1e53fdc382256933eec1d1149799d70ec2e34d90a1d2f6",
+    "vmobserve/web/app.js": "2abbf8a54129eb555a448cfe85928aa4204e3455bc10bbec76af900cc5f973a3",
+    "vmobserve/web/index.html": "26acd5e301543122d6e00f75a4137bde381a85ed718ce7e85c0073f22d2533da",
+    "vmobserve/web/lesson.html": "96971b3fa1e8ddf5f44538f7b3294400f7a2c67e7aa5a3efb00027f02b7d0717",
+    "vmobserve/web/lesson.js": "c1ea984b711db305e77f2a78d6239da0fe7db2e976a35c039f933aca6cabb9a7",
+    "vmobserve/web/style.css": "929151e47b121ea37457a84a107cef383cdd10ef8714c7498bb1d1d26d589b03",
+    "package_sources.py": "4d3091fac8b344bef656810645805d3bae1cec53eccdb50d8fcc119abebbfba6",
+    "vm.ps1": "d3bc9cf58783f808b72e9953703a8a3a4af409a31e8fa7acaa4c8dd2594f961e",
+    "openeuler-vm/config.sh": "9824af1e0910a8857dc78a69284b3f791b5176357c8dce0b288c82072148b7ac",
+    "openeuler-vm/retest.sh": "64795a569e14197c4062beb0e0458e5effd9288dc2930ccd66e1ee52dac255c1",
+    "openeuler-vm/start.sh": "d9381156afce699ff92a930e34ac0e2e1e9ff3f62e64d4e84894fd99b8d09cc5",
+    "openeuler-vm/status.sh": "048b5f63b9e0fc16e073bf8fa1b19745a4bb3158098f8a6ffbaebc621a2d2841",
+    "openeuler-vm/wait.sh": "4cef1b3e8d43528c48e0da80929530038f9220294e662ac5fb55bae408de5a71",
+    "course-labs/group4/build.sh": "dc7cc5aa2b8bd57d28db328dbc91c57e616eb07d03805030c7dc79b76c0feadf",
+    "course-labs/group4/view_events.py": "15c82a3e982bbc9e41c921e1b63068396d9aff62f690421405e1227fff93214a",
+    "course-labs/group4/demo.sh": "d964458d5b31be075bd22c38502cd72ec52334bd6dc4d50207b63883f4afd5c2",
+    "course-labs/group4/README.md": "1ce6518b154239ad7b2676e763ed6c229f3e704060014c96647cc2af5e3dbc35",
+    "course-labs/group4/lab_common.h": "2522147bccdff0e5bb5dea54763e3c01b854c63b148b9140514740cf30564598",
+    "course-labs/group4/lab4_1/child_prog.c": "0f59e7dd417df641d09663516b6d7c22dbb92f5e069207f66378a68dac6dc0ed"
+  },
+  "artifacts": {
+    "cases/link-dynamic-1/stdout.jsonl": "91f763c136353eb8c1dfced3b08cd4dae45acc91d3517c7eec52209bac36beaa",
+    "cases/link-dynamic-1/smaps.stderr.txt": "981d61ab6e925e7063934e353f4d541ad900ef3018847fc5f870e6f445d2ec93",
+    "cases/link-dynamic-1/file.txt": "b6926d64fdfaa227ddfe2e70ad7a0af996d4a55652977ad66b2b3856fa044fe5",
+    "cases/link-dynamic-1/file.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/link-dynamic-1/ldd.txt": "68bcc79b0eecf45ad90aadf8e2b232e588f926facd83938e08c0fdb40f3a900d",
+    "cases/link-dynamic-1/ldd.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/link-dynamic-1/readelf.txt": "935fbd7e94299cd45ef7d1ac4d7cb4e299d87eec32b2017d0b35f77b5d2fad9a",
+    "cases/link-dynamic-1/readelf.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/link-static-1/stdout.jsonl": "9d6f493c7d4057b476ed822f353b9517e6f2360a06eba401ee8dca6ce3061afe",
+    "cases/link-static-1/smaps.stderr.txt": "9da034fb3fa3cb43e35b3ffe667da6bb8686640f905ddcea68b4b7a4994111ca",
+    "cases/link-static-1/file.txt": "079d949f062930553407f8b81bd46e8238f677100896ea2917bb99c42dd81d5e",
+    "cases/link-static-1/file.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/link-static-1/ldd.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/link-static-1/ldd.stderr.txt": "a34ab9523e85bf2b370e1afb84a5998de7007958c18b9a79ff32062b0035c29b",
+    "cases/link-static-1/readelf.txt": "e75d31f2019cadb647377e29b2e0a547d30833eb1d99df062a3c455438ee39d5",
+    "cases/link-static-1/readelf.stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cases/sequence-1/stdout.jsonl": "035c3720657baaff87b268f7fc1f8a044085e12971686eeefa3d794ed78512b5",
+    "cases/sequence-1/smaps.stderr.txt": "d6b2e6eb83a7bab98dff0351ab62f0b04a8342df3e59834627fa9e29d40e282f",
+    "cases/sequence-1/syscalls.txt": "19d895451f675c9ab6f376dc74b934f8fa04523e3abc37495d4398ec2da7fa28",
+    "cases/demand512-1/stdout.jsonl": "3c9bee801707706d03045cd99c835d0e9708eeee15c7fe82c00d8d9d2f23b834",
+    "cases/demand512-1/smaps.stderr.txt": "4ae93dd18e9f07fac47656487160939e2c1ee903c05f1c845cd1d042b949853d",
+    "cases/stack-normal-8192-1/stdout.jsonl": "2a47b1159433d68bb534261050f3bd0f4cee56c9867e882f1f01566160968e1f",
+    "cases/stack-normal-8192-1/smaps.stderr.txt": "93a795808d15b27b516ccfdd61561d615516b0f2cd69634c91cfa8a664535186",
+    "cases/stack-overflow-512-1/stdout.jsonl": "dce850beff1d5fcc04946c3b065c6dffc77016df3874bd525f9465677580143b",
+    "cases/stack-overflow-512-1/smaps.stderr.txt": "9ddf4c8da0120e73adca25df6fd3c7e645abc791f66227444cb9b1c71f3ad808",
+    "cases/stack-overflow-2048-1/stdout.jsonl": "064a892780598157a495b4c47ae469c535d892cdcd0fd64d81d8371eb6521298",
+    "cases/stack-overflow-2048-1/smaps.stderr.txt": "a8ca7e23b898712c425451dbd8c35c91d4bfd5211d6810ff902fce4106655140",
+    "cases/layout-1/stdout.jsonl": "9d1ba6f58c8922144059be728d398a045a66a58650c25efa04ab384f4cfdec3d",
+    "cases/layout-1/smaps.stderr.txt": "58e59b6ec1d6c792a96acd5e4a1bbfe49bde6be819d1970505f48006e9acad02",
+    "environment.json": "ac25c6645cb53a8c7be529c0f19aad921a6b13bac68b94edf21abb8f5c41d7d8",
+    "build/layout.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/strace.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stdout.log": "47214cb7a32d8be03220eb0f5ef9186fbd03556cf0fd580e1553d863d131d8dc",
+    "build/sequence.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/sequence.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/link-static.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/stack.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/demand512.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/layout.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/demand512.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/link-dynamic.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/link-static.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/link-dynamic.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/stack.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/strace.stdout.log": "b8268e77cf323ff46b10aaa6ffe991bd263a5ef543f1ef1a6171f8a28bf5045f"
+  },
+  "builds": {
+    "link-dynamic": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/source/proj5-course/group3_link.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+        "-fPIE",
+        "-pie"
+      ],
+      "started_at": "2026-11-18T01:31:59.945863+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:02.813853+00:00",
+      "duration_seconds": 2.873
+    },
+    "link-static": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/source/proj5-course/group3_link.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+        "-static",
+        "-no-pie",
+        "-DLINK_MODE=\"static\""
+      ],
+      "started_at": "2026-11-18T01:32:03.424888+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:05.789092+00:00",
+      "duration_seconds": 2.365
+    },
+    "sequence": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/source/proj5-course/group3_sequence.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/sequence"
+      ],
+      "started_at": "2026-11-18T01:32:06.213947+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:08.078069+00:00",
+      "duration_seconds": 1.864
+    },
+    "demand512": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/source/proj5-course/group3_demand.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/demand512"
+      ],
+      "started_at": "2026-11-18T01:32:08.484382+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:09.984635+00:00",
+      "duration_seconds": 1.5
+    },
+    "stack": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/source/proj5-course/group3_stack.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/stack",
+        "-O0",
+        "-fno-optimize-sibling-calls",
+        "-fno-omit-frame-pointer"
+      ],
+      "started_at": "2026-11-18T01:32:11.358654+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:12.617633+00:00",
+      "duration_seconds": 1.259
+    },
+    "layout": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/source/proj5-course/layout_probe.c",
+        "-o",
+        "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+        "-fPIE",
+        "-pie",
+        "-ldl"
+      ],
+      "started_at": "2026-11-18T01:32:15.575503+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-18T01:32:17.976127+00:00",
+      "duration_seconds": 2.401
+    }
+  },
+  "cases": [
+    {
+      "id": "link-dynamic-1",
+      "suite": "link-dynamic",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": [],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "ELF_interpreter",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "ELF_dependencies",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "runtime_shared_libraries",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "code_executable",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "readonly_not_writable",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "data_heap_stack_writable",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "dynamic",
+          "pid": 2138,
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "loaded",
+            "pid": 2138,
+            "address": "5645d99ea180",
+            "program_break": "5645d9f9a000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 58,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+            "mapping_header": "5645d99ea000-5645d99eb000 r-xp 00001000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+            "size_kib": 4,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1544,
+            "process_size_kib": 2480
+          }
+        ],
+        "file": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=f01937a58dd6f887c9fb593c7c7d2be4ead35730, for GNU/Linux 3.2.0, not stripped\n",
+        "ldd": "\tlinux-vdso.so.1 (0x00007ffcb7798000)\n\tlibc.so.6 => /lib64/libc.so.6 (0x00007fe0dd430000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007fe0dd628000)\n",
+        "interpreter": true,
+        "needed": [
+          "libc.so.6"
+        ],
+        "symbols": [
+          {
+            "kind": "symbol",
+            "name": "function",
+            "address": "5645d99ea180",
+            "mapping": {
+              "start": "5645d99ea000",
+              "end": "5645d99eb000",
+              "header": "5645d99ea000-5645d99eb000 r-xp 00001000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "permissions": "r-xp",
+              "file_offset": 4096,
+              "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "size_kib": 4,
+              "rss_kib": 4,
+              "pss_kib": 4,
+              "private_dirty_kib": 4,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "readonly",
+            "address": "5645d99eb1a8",
+            "mapping": {
+              "start": "5645d99eb000",
+              "end": "5645d99ec000",
+              "header": "5645d99eb000-5645d99ec000 r--p 00002000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "permissions": "r--p",
+              "file_offset": 8192,
+              "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "size_kib": 4,
+              "rss_kib": 4,
+              "pss_kib": 4,
+              "private_dirty_kib": 4,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "initialized",
+            "address": "5645d99ed090",
+            "mapping": {
+              "start": "5645d99ed000",
+              "end": "5645d99ee000",
+              "header": "5645d99ed000-5645d99ee000 rw-p 00003000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "permissions": "rw-p",
+              "file_offset": 12288,
+              "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "size_kib": 4,
+              "rss_kib": 4,
+              "pss_kib": 4,
+              "private_dirty_kib": 4,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "uninitialized",
+            "address": "5645d99ed0e0",
+            "mapping": {
+              "start": "5645d99ed000",
+              "end": "5645d99ee000",
+              "header": "5645d99ed000-5645d99ee000 rw-p 00003000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "permissions": "rw-p",
+              "file_offset": 12288,
+              "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "size_kib": 4,
+              "rss_kib": 4,
+              "pss_kib": 4,
+              "private_dirty_kib": 4,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "heap",
+            "address": "5645d9f792a0",
+            "mapping": {
+              "start": "5645d9f79000",
+              "end": "5645d9f9a000",
+              "header": "5645d9f79000-5645d9f9a000 rw-p 00000000 00:00 0                          [heap]",
+              "permissions": "rw-p",
+              "file_offset": 0,
+              "pathname": "[heap]",
+              "size_kib": 132,
+              "rss_kib": 4,
+              "pss_kib": 4,
+              "private_dirty_kib": 4,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "stack",
+            "address": "7ffe5304629c",
+            "mapping": {
+              "start": "7ffe53027000",
+              "end": "7ffe53048000",
+              "header": "7ffe53027000-7ffe53048000 rw-p 00000000 00:00 0                          [stack]",
+              "permissions": "rw-p",
+              "file_offset": 0,
+              "pathname": "[stack]",
+              "size_kib": 132,
+              "rss_kib": 12,
+              "pss_kib": 12,
+              "private_dirty_kib": 12,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          }
+        ],
+        "library_mappings": [
+          "/usr/lib64/ld-linux-x86-64.so.2",
+          "/usr/lib64/libc.so.6"
+        ],
+        "segments": [
+          {
+            "offset": "000000",
+            "vaddr": "0000000000000000",
+            "filesz": 2568,
+            "memsz": 2568,
+            "flags": "R",
+            "start": "0x5645d99e9000",
+            "end": "0x5645d99e9a08",
+            "mappings": [
+              "5645d99e9000-5645d99ea000 r--p 00000000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic"
+            ]
+          },
+          {
+            "offset": "001000",
+            "vaddr": "0000000000001000",
+            "filesz": 1509,
+            "memsz": 1509,
+            "flags": "R E",
+            "start": "0x5645d99ea000",
+            "end": "0x5645d99ea5e5",
+            "mappings": [
+              "5645d99ea000-5645d99eb000 r-xp 00001000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic"
+            ]
+          },
+          {
+            "offset": "002000",
+            "vaddr": "0000000000002000",
+            "filesz": 884,
+            "memsz": 884,
+            "flags": "R",
+            "start": "0x5645d99eb000",
+            "end": "0x5645d99eb374",
+            "mappings": [
+              "5645d99eb000-5645d99ec000 r--p 00002000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic"
+            ]
+          },
+          {
+            "offset": "002dd0",
+            "vaddr": "0000000000003dd0",
+            "filesz": 708,
+            "memsz": 74768,
+            "flags": "RW",
+            "start": "0x5645d99ecdd0",
+            "end": "0x5645d99ff1e0",
+            "mappings": [
+              "5645d99ec000-5645d99ed000 r--p 00002000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "5645d99ed000-5645d99ee000 rw-p 00003000 fc:02 396542                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic",
+              "5645d99ee000-5645d9a00000 rw-p 00000000 00:00 0 "
+            ]
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/link-dynamic-1/stdout.jsonl",
+        "smaps": "cases/link-dynamic-1/smaps.stderr.txt",
+        "file": "cases/link-dynamic-1/file.txt",
+        "file_stderr": "cases/link-dynamic-1/file.stderr.txt",
+        "ldd": "cases/link-dynamic-1/ldd.txt",
+        "ldd_stderr": "cases/link-dynamic-1/ldd.stderr.txt",
+        "readelf": "cases/link-dynamic-1/readelf.txt",
+        "readelf_stderr": "cases/link-dynamic-1/readelf.stderr.txt"
+      },
+      "inspection": {
+        "file": {
+          "command": [
+            "file",
+            "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic"
+          ],
+          "started_at": "2026-11-18T01:32:02.870512+00:00",
+          "status": "completed",
+          "exit_code": 0,
+          "error": null,
+          "finished_at": "2026-11-18T01:32:02.959471+00:00",
+          "duration_seconds": 0.089
+        },
+        "ldd": {
+          "command": [
+            "ldd",
+            "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic"
+          ],
+          "started_at": "2026-11-18T01:32:02.961223+00:00",
+          "status": "completed",
+          "exit_code": 0,
+          "error": null,
+          "finished_at": "2026-11-18T01:32:03.150839+00:00",
+          "duration_seconds": 0.19
+        },
+        "readelf": {
+          "command": [
+            "readelf",
+            "-W",
+            "-h",
+            "-l",
+            "-d",
+            "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic"
+          ],
+          "started_at": "2026-11-18T01:32:03.152661+00:00",
+          "status": "completed",
+          "exit_code": 0,
+          "error": null,
+          "finished_at": "2026-11-18T01:32:03.283117+00:00",
+          "duration_seconds": 0.131
+        }
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic"
+        ],
+        "started_at": "2026-11-18T01:32:03.284981+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:03.329843+00:00",
+        "duration_seconds": 0.045
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "link-static-1",
+      "suite": "link-static",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": [],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "ELF_interpreter",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "ELF_dependencies",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "runtime_shared_libraries",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "code_executable",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "readonly_not_writable",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "data_heap_stack_writable",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "static",
+          "pid": 2155,
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "loaded",
+            "pid": 2155,
+            "address": "401740",
+            "program_break": "516000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 26,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+            "mapping_header": "00401000-00474000 r-xp 00001000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+            "size_kib": 460,
+            "rss_kib": 460,
+            "pss_kib": 460,
+            "private_dirty_kib": 460,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 648,
+            "process_size_kib": 1036
+          }
+        ],
+        "file": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static: ELF 64-bit LSB executable, x86-64, version 1 (GNU/Linux), statically linked, BuildID[sha1]=b22a8099fc932d62b174e3600a41376ebcca70fe, for GNU/Linux 3.2.0, not stripped\n",
+        "ldd": "\tnot a dynamic executable\n",
+        "interpreter": false,
+        "needed": [],
+        "symbols": [
+          {
+            "kind": "symbol",
+            "name": "function",
+            "address": "401740",
+            "mapping": {
+              "start": "00401000",
+              "end": "00474000",
+              "header": "00401000-00474000 r-xp 00001000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "permissions": "r-xp",
+              "file_offset": 4096,
+              "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "size_kib": 460,
+              "rss_kib": 460,
+              "pss_kib": 460,
+              "private_dirty_kib": 460,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "readonly",
+            "address": "477b30",
+            "mapping": {
+              "start": "00474000",
+              "end": "0049a000",
+              "header": "00474000-0049a000 r--p 00074000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "permissions": "r--p",
+              "file_offset": 475136,
+              "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "size_kib": 152,
+              "rss_kib": 112,
+              "pss_kib": 112,
+              "private_dirty_kib": 112,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "initialized",
+            "address": "49f0d0",
+            "mapping": {
+              "start": "0049f000",
+              "end": "004a1000",
+              "header": "0049f000-004a1000 rw-p 0009e000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "permissions": "rw-p",
+              "file_offset": 647168,
+              "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "size_kib": 8,
+              "rss_kib": 8,
+              "pss_kib": 8,
+              "private_dirty_kib": 8,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "uninitialized",
+            "address": "4a0b20",
+            "mapping": {
+              "start": "0049f000",
+              "end": "004a1000",
+              "header": "0049f000-004a1000 rw-p 0009e000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "permissions": "rw-p",
+              "file_offset": 647168,
+              "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "size_kib": 8,
+              "rss_kib": 8,
+              "pss_kib": 8,
+              "private_dirty_kib": 8,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "heap",
+            "address": "4f5660",
+            "mapping": {
+              "start": "004f4000",
+              "end": "00516000",
+              "header": "004f4000-00516000 rw-p 00000000 00:00 0                                  [heap]",
+              "permissions": "rw-p",
+              "file_offset": 0,
+              "pathname": "[heap]",
+              "size_kib": 136,
+              "rss_kib": 8,
+              "pss_kib": 8,
+              "private_dirty_kib": 8,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          },
+          {
+            "kind": "symbol",
+            "name": "stack",
+            "address": "7ffdaa6b539c",
+            "mapping": {
+              "start": "7ffdaa695000",
+              "end": "7ffdaa6b6000",
+              "header": "7ffdaa695000-7ffdaa6b6000 rw-p 00000000 00:00 0                          [stack]",
+              "permissions": "rw-p",
+              "file_offset": 0,
+              "pathname": "[stack]",
+              "size_kib": 132,
+              "rss_kib": 8,
+              "pss_kib": 8,
+              "private_dirty_kib": 8,
+              "shared_dirty_kib": 0,
+              "huge_kib": 0,
+              "swap_kib": 0
+            }
+          }
+        ],
+        "library_mappings": [],
+        "segments": [
+          {
+            "offset": "000000",
+            "vaddr": "0000000000400000",
+            "filesz": 1288,
+            "memsz": 1288,
+            "flags": "R",
+            "start": "0x400000",
+            "end": "0x400508",
+            "mappings": [
+              "00400000-00401000 r--p 00000000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static"
+            ]
+          },
+          {
+            "offset": "001000",
+            "vaddr": "0000000000401000",
+            "filesz": 468797,
+            "memsz": 468797,
+            "flags": "R E",
+            "start": "0x401000",
+            "end": "0x47373d",
+            "mappings": [
+              "00401000-00474000 r-xp 00001000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static"
+            ]
+          },
+          {
+            "offset": "074000",
+            "vaddr": "0000000000474000",
+            "filesz": 151766,
+            "memsz": 151766,
+            "flags": "R",
+            "start": "0x474000",
+            "end": "0x4990d6",
+            "mappings": [
+              "00474000-0049a000 r--p 00074000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static"
+            ]
+          },
+          {
+            "offset": "099a58",
+            "vaddr": "000000000049aa58",
+            "filesz": 24680,
+            "memsz": 121224,
+            "flags": "RW",
+            "start": "0x49aa58",
+            "end": "0x4b83e0",
+            "mappings": [
+              "0049a000-0049f000 r--p 00099000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "0049f000-004a1000 rw-p 0009e000 fc:02 396555                             /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static",
+              "004a1000-004b9000 rw-p 00000000 00:00 0 "
+            ]
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/link-static-1/stdout.jsonl",
+        "smaps": "cases/link-static-1/smaps.stderr.txt",
+        "file": "cases/link-static-1/file.txt",
+        "file_stderr": "cases/link-static-1/file.stderr.txt",
+        "ldd": "cases/link-static-1/ldd.txt",
+        "ldd_stderr": "cases/link-static-1/ldd.stderr.txt",
+        "readelf": "cases/link-static-1/readelf.txt",
+        "readelf_stderr": "cases/link-static-1/readelf.stderr.txt"
+      },
+      "inspection": {
+        "file": {
+          "command": [
+            "file",
+            "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static"
+          ],
+          "started_at": "2026-11-18T01:32:05.805977+00:00",
+          "status": "completed",
+          "exit_code": 0,
+          "error": null,
+          "finished_at": "2026-11-18T01:32:05.885708+00:00",
+          "duration_seconds": 0.08
+        },
+        "ldd": {
+          "command": [
+            "ldd",
+            "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static"
+          ],
+          "started_at": "2026-11-18T01:32:05.887071+00:00",
+          "status": "failed",
+          "exit_code": 1,
+          "error": {
+            "code": "process_exit",
+            "message": "exit status 1"
+          },
+          "finished_at": "2026-11-18T01:32:06.016385+00:00",
+          "duration_seconds": 0.129
+        },
+        "readelf": {
+          "command": [
+            "readelf",
+            "-W",
+            "-h",
+            "-l",
+            "-d",
+            "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static"
+          ],
+          "started_at": "2026-11-18T01:32:06.017941+00:00",
+          "status": "completed",
+          "exit_code": 0,
+          "error": null,
+          "finished_at": "2026-11-18T01:32:06.093973+00:00",
+          "duration_seconds": 0.076
+        }
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-static"
+        ],
+        "started_at": "2026-11-18T01:32:06.095881+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:06.152763+00:00",
+        "duration_seconds": 0.057
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "sequence-1",
+      "suite": "sequence",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": [],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "three_live_blocks",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "sequence_counts",
+            "observed": [
+              0,
+              1,
+              2,
+              3,
+              0
+            ],
+            "expected": [
+              0,
+              1,
+              2,
+              3,
+              0
+            ],
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "trace_completed",
+            "observed": 4,
+            "expected": 4,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "sequence",
+          "pid": 2196,
+          "sizes": [
+            1024,
+            262144,
+            1048576
+          ],
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 2196,
+            "address": "0",
+            "program_break": "2121000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 65,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1468,
+            "process_size_kib": 2284,
+            "blocks": [],
+            "related_vma_count": 0,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 0,
+            "related_rss_kib": 0,
+            "related_pss_kib": 0,
+            "related_private_dirty_kib": 0,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_1KiB",
+            "pid": 2196,
+            "address": "21212a0",
+            "program_break": "2142000",
+            "count": 1,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 67,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[heap]",
+            "mapping_header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+            "size_kib": 132,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1476,
+            "process_size_kib": 2416,
+            "blocks": [
+              {
+                "address": "21212a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "02121000",
+                  "end": "02142000",
+                  "header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "02121000",
+                    "end": "02142000",
+                    "header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 1,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 132,
+            "related_rss_kib": 4,
+            "related_pss_kib": 4,
+            "related_private_dirty_kib": 4,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_256KiB",
+            "pid": 2196,
+            "address": "7f9c965ef010",
+            "program_break": "2142000",
+            "count": 2,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 68,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f9c965ef000-7f9c96632000 rw-p 00000000 00:00 0 ",
+            "size_kib": 268,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1480,
+            "process_size_kib": 2676,
+            "blocks": [
+              {
+                "address": "21212a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "02121000",
+                  "end": "02142000",
+                  "header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "02121000",
+                    "end": "02142000",
+                    "header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f9c965ef010",
+                "requested_bytes": 262144,
+                "alive": true,
+                "mapping": {
+                  "start": "7f9c965ef000",
+                  "end": "7f9c96632000",
+                  "header": "7f9c965ef000-7f9c96632000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 268,
+                  "rss_kib": 8,
+                  "pss_kib": 8,
+                  "private_dirty_kib": 8,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f9c965ef000",
+                    "end": "7f9c96632000",
+                    "header": "7f9c965ef000-7f9c96632000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 268,
+                    "rss_kib": 8,
+                    "pss_kib": 8,
+                    "private_dirty_kib": 8,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 2,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 400,
+            "related_rss_kib": 12,
+            "related_pss_kib": 12,
+            "related_private_dirty_kib": 12,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_1MiB",
+            "pid": 2196,
+            "address": "7f9c964ee010",
+            "program_break": "2142000",
+            "count": 3,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 69,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f9c964ee000-7f9c96632000 rw-p 00000000 00:00 0 ",
+            "size_kib": 1296,
+            "rss_kib": 12,
+            "pss_kib": 12,
+            "private_dirty_kib": 12,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1484,
+            "process_size_kib": 3704,
+            "blocks": [
+              {
+                "address": "21212a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "02121000",
+                  "end": "02142000",
+                  "header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "02121000",
+                    "end": "02142000",
+                    "header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f9c965ef010",
+                "requested_bytes": 262144,
+                "alive": true,
+                "mapping": {
+                  "start": "7f9c964ee000",
+                  "end": "7f9c96632000",
+                  "header": "7f9c964ee000-7f9c96632000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 1296,
+                  "rss_kib": 12,
+                  "pss_kib": 12,
+                  "private_dirty_kib": 12,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f9c964ee000",
+                    "end": "7f9c96632000",
+                    "header": "7f9c964ee000-7f9c96632000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 1296,
+                    "rss_kib": 12,
+                    "pss_kib": 12,
+                    "private_dirty_kib": 12,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f9c964ee010",
+                "requested_bytes": 1048576,
+                "alive": true,
+                "mapping": {
+                  "start": "7f9c964ee000",
+                  "end": "7f9c96632000",
+                  "header": "7f9c964ee000-7f9c96632000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 1296,
+                  "rss_kib": 12,
+                  "pss_kib": 12,
+                  "private_dirty_kib": 12,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f9c964ee000",
+                    "end": "7f9c96632000",
+                    "header": "7f9c964ee000-7f9c96632000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 1296,
+                    "rss_kib": 12,
+                    "pss_kib": 12,
+                    "private_dirty_kib": 12,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 2,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 1428,
+            "related_rss_kib": 16,
+            "related_pss_kib": 16,
+            "related_private_dirty_kib": 16,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 2196,
+            "address": "21212a0",
+            "program_break": "2142000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 69,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[heap]",
+            "mapping_header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+            "size_kib": 132,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1476,
+            "process_size_kib": 2416,
+            "blocks": [
+              {
+                "address": "21212a0",
+                "requested_bytes": 1024,
+                "alive": false,
+                "mapping": {
+                  "start": "02121000",
+                  "end": "02142000",
+                  "header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "02121000",
+                    "end": "02142000",
+                    "header": "02121000-02142000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f9c965ef010",
+                "requested_bytes": 262144,
+                "alive": false,
+                "mapping": null,
+                "mappings": []
+              },
+              {
+                "address": "7f9c964ee010",
+                "requested_bytes": 1048576,
+                "alive": false,
+                "mapping": null,
+                "mappings": []
+              }
+            ],
+            "related_vma_count": 1,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 132,
+            "related_rss_kib": 4,
+            "related_pss_kib": 4,
+            "related_private_dirty_kib": 4,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          }
+        ],
+        "allocations": [
+          "21212a0",
+          "7f9c965ef010",
+          "7f9c964ee010"
+        ],
+        "actions": [
+          {
+            "action": "malloc_1",
+            "phase": "alloc_1KiB",
+            "begin_line": 19,
+            "end_line": 21,
+            "events": [
+              {
+                "line": 20,
+                "text": "brk(0x2142000)                          = 0x2142000",
+                "name": "brk",
+                "result": "0x2142000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "brk(0x2142000)                          = 0x2142000"
+            ],
+            "requested_bytes": 1024,
+            "returned_address": "21212a0",
+            "allocation_source": "new_brk_range",
+            "source_line": 20
+          },
+          {
+            "action": "malloc_2",
+            "phase": "alloc_256KiB",
+            "begin_line": 30,
+            "end_line": 32,
+            "events": [
+              {
+                "line": 31,
+                "text": "mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f9c965ef000",
+                "name": "mmap",
+                "result": "0x7f9c965ef000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f9c965ef000"
+            ],
+            "requested_bytes": 262144,
+            "returned_address": "7f9c965ef010",
+            "allocation_source": "new_mmap_range",
+            "source_line": 31
+          },
+          {
+            "action": "malloc_3",
+            "phase": "alloc_1MiB",
+            "begin_line": 41,
+            "end_line": 43,
+            "events": [
+              {
+                "line": 42,
+                "text": "mmap(NULL, 1052672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f9c964ee000",
+                "name": "mmap",
+                "result": "0x7f9c964ee000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "mmap(NULL, 1052672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f9c964ee000"
+            ],
+            "requested_bytes": 1048576,
+            "returned_address": "7f9c964ee010",
+            "allocation_source": "new_mmap_range",
+            "source_line": 42
+          },
+          {
+            "action": "free_all",
+            "phase": "freed",
+            "begin_line": 53,
+            "end_line": 56,
+            "events": [
+              {
+                "line": 54,
+                "text": "munmap(0x7f9c965ef000, 266240)          = 0",
+                "name": "munmap",
+                "result": "0",
+                "success": true
+              },
+              {
+                "line": 55,
+                "text": "munmap(0x7f9c964ee000, 1052672)         = 0",
+                "name": "munmap",
+                "result": "0",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "munmap(0x7f9c965ef000, 266240)          = 0",
+              "munmap(0x7f9c964ee000, 1052672)         = 0"
+            ]
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/sequence-1/stdout.jsonl",
+        "smaps": "cases/sequence-1/smaps.stderr.txt",
+        "syscalls": "cases/sequence-1/syscalls.txt"
+      },
+      "execution": {
+        "command": [
+          "strace",
+          "-qq",
+          "-s",
+          "256",
+          "-e",
+          "trace=brk,mmap,munmap,mremap,write",
+          "-o",
+          "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/cases/sequence-1/syscalls.txt",
+          "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/sequence"
+        ],
+        "started_at": "2026-11-18T01:32:08.108598+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:08.338030+00:00",
+        "duration_seconds": 0.23
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "demand512-1",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": [],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "original_values",
+            "observed": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "expected": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "resident_growth",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "full_residency",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "demand512",
+          "pid": 2202,
+          "bytes": 536870912,
+          "stride": 4096,
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 2202,
+            "address": "0",
+            "program_break": "63b000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 56,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1432,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "allocated",
+            "pid": 2202,
+            "address": "7fbf5cd35010",
+            "program_break": "65c000",
+            "count": 0,
+            "action_minor": 2,
+            "action_major": 0,
+            "total_minor": 59,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fbf5cd35000-7fbf7cd38000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524300,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1444,
+            "process_size_kib": 526708
+          },
+          {
+            "kind": "sample",
+            "phase": "write_quarter",
+            "pid": 2202,
+            "address": "7fbf5cd35010",
+            "program_break": "65c000",
+            "count": 32768,
+            "action_minor": 266,
+            "action_major": 0,
+            "total_minor": 325,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fbf5cd35000-7fbf7cd38000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524300,
+            "rss_kib": 131888,
+            "pss_kib": 131888,
+            "private_dirty_kib": 131888,
+            "shared_dirty_kib": 0,
+            "huge_kib": 131072,
+            "swap_kib": 0,
+            "process_rss_kib": 133324,
+            "process_size_kib": 526708
+          },
+          {
+            "kind": "sample",
+            "phase": "write_half",
+            "pid": 2202,
+            "address": "7fbf5cd35010",
+            "program_break": "65c000",
+            "count": 65536,
+            "action_minor": 64,
+            "action_major": 0,
+            "total_minor": 389,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fbf5cd35000-7fbf7cd38000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524300,
+            "rss_kib": 262960,
+            "pss_kib": 262960,
+            "private_dirty_kib": 262960,
+            "shared_dirty_kib": 0,
+            "huge_kib": 262144,
+            "swap_kib": 0,
+            "process_rss_kib": 264396,
+            "process_size_kib": 526708
+          },
+          {
+            "kind": "sample",
+            "phase": "write_all",
+            "pid": 2202,
+            "address": "7fbf5cd35010",
+            "program_break": "65c000",
+            "count": 131072,
+            "action_minor": 436,
+            "action_major": 0,
+            "total_minor": 825,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fbf5cd35000-7fbf7cd38000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524300,
+            "rss_kib": 524292,
+            "pss_kib": 524292,
+            "private_dirty_kib": 524292,
+            "shared_dirty_kib": 0,
+            "huge_kib": 522240,
+            "swap_kib": 0,
+            "process_rss_kib": 525728,
+            "process_size_kib": 526708
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 2202,
+            "address": "7fbf5cd35010",
+            "program_break": "65c000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 825,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1440,
+            "process_size_kib": 2416
+          }
+        ],
+        "values": {
+          "kind": "values",
+          "checked": 131072,
+          "mismatches": 0
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/demand512-1/stdout.jsonl",
+        "smaps": "cases/demand512-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/demand512"
+        ],
+        "started_at": "2026-11-18T01:32:10.026486+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:11.232184+00:00",
+        "duration_seconds": 1.206
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "stack-normal-8192-1",
+      "suite": "stack",
+      "parameters": {
+        "repeat": 1,
+        "mode": "normal",
+        "limit_kib": 8192
+      },
+      "arguments": [
+        "normal",
+        "8192"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "termination_signal",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "termination_exit",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "normal_return",
+            "observed": 1,
+            "expected": 1,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "stack_grew",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "stack_faults",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "recursion_depth",
+            "observed": 64,
+            "expected": 64,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "normal",
+          "pid": 2245,
+          "limit_kib": 8192,
+          "frame_bytes": 8192,
+          "target_depth": 64,
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_stack",
+            "pid": 2245,
+            "address": "7ffcb9c0759c",
+            "program_break": "22cb000",
+            "count": 0,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 29,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7ffcb9be8000-7ffcb9c09000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 132,
+            "rss_kib": 12,
+            "pss_kib": 10,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1116,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2245,
+            "address": "7ffcb9be6990",
+            "program_break": "22cb000",
+            "count": 16,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 63,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7ffcb9be5000-7ffcb9c09000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 144,
+            "rss_kib": 144,
+            "pss_kib": 142,
+            "private_dirty_kib": 140,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1252,
+            "process_size_kib": 2296
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2245,
+            "address": "7ffcb9bc5d90",
+            "program_break": "22cb000",
+            "count": 32,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 96,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7ffcb9bc5000-7ffcb9c09000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 272,
+            "rss_kib": 272,
+            "pss_kib": 270,
+            "private_dirty_kib": 268,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1380,
+            "process_size_kib": 2424
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2245,
+            "address": "7ffcb9ba5190",
+            "program_break": "22cb000",
+            "count": 48,
+            "action_minor": 33,
+            "action_major": 0,
+            "total_minor": 129,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7ffcb9ba4000-7ffcb9c09000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 404,
+            "rss_kib": 404,
+            "pss_kib": 402,
+            "private_dirty_kib": 400,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1512,
+            "process_size_kib": 2556
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2245,
+            "address": "7ffcb9b84590",
+            "program_break": "22cb000",
+            "count": 64,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 161,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7ffcb9b83000-7ffcb9c09000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 536,
+            "rss_kib": 536,
+            "pss_kib": 534,
+            "private_dirty_kib": 532,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1644,
+            "process_size_kib": 2688
+          }
+        ],
+        "outcome": {
+          "kind": "outcome",
+          "child_pid": 2245,
+          "signal": 0,
+          "exit_code": 0,
+          "minor": 162,
+          "major": 0,
+          "maxrss_kib": 1644
+        },
+        "returned": [
+          {
+            "kind": "returned",
+            "checksum": 3104
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/stack-normal-8192-1/stdout.jsonl",
+        "smaps": "cases/stack-normal-8192-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/stack",
+          "normal",
+          "8192"
+        ],
+        "started_at": "2026-11-18T01:32:12.658387+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:12.700026+00:00",
+        "duration_seconds": 0.042
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "stack-overflow-512-1",
+      "suite": "stack",
+      "parameters": {
+        "repeat": 1,
+        "mode": "overflow",
+        "limit_kib": 512
+      },
+      "arguments": [
+        "overflow",
+        "512"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "termination_signal",
+            "observed": 11,
+            "expected": 11,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "termination_exit",
+            "observed": -1,
+            "expected": -1,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "normal_return",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "stack_grew",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "stack_faults",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "overflow",
+          "pid": 2247,
+          "limit_kib": 512,
+          "frame_bytes": 8192,
+          "target_depth": 4096,
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_stack",
+            "pid": 2247,
+            "address": "7ffec053f67c",
+            "program_break": "133c000",
+            "count": 0,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 27,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7ffec051f000-7ffec0540000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 132,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1020,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2247,
+            "address": "7ffec051ea70",
+            "program_break": "133c000",
+            "count": 16,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 61,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7ffec051d000-7ffec0540000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 140,
+            "rss_kib": 140,
+            "pss_kib": 140,
+            "private_dirty_kib": 140,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1156,
+            "process_size_kib": 2292
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2247,
+            "address": "7ffec04fde70",
+            "program_break": "133c000",
+            "count": 32,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 94,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7ffec04fd000-7ffec0540000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 268,
+            "rss_kib": 268,
+            "pss_kib": 268,
+            "private_dirty_kib": 268,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1284,
+            "process_size_kib": 2420
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2247,
+            "address": "7ffec04dd270",
+            "program_break": "133c000",
+            "count": 48,
+            "action_minor": 33,
+            "action_major": 0,
+            "total_minor": 127,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7ffec04dc000-7ffec0540000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 400,
+            "rss_kib": 400,
+            "pss_kib": 400,
+            "private_dirty_kib": 400,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1416,
+            "process_size_kib": 2552
+          }
+        ],
+        "outcome": {
+          "kind": "outcome",
+          "child_pid": 2247,
+          "signal": 11,
+          "exit_code": -1,
+          "minor": 155,
+          "major": 0,
+          "maxrss_kib": 1528
+        },
+        "returned": []
+      },
+      "artifacts": {
+        "jsonl": "cases/stack-overflow-512-1/stdout.jsonl",
+        "smaps": "cases/stack-overflow-512-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/stack",
+          "overflow",
+          "512"
+        ],
+        "started_at": "2026-11-18T01:32:12.860978+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:13.999961+00:00",
+        "duration_seconds": 1.138
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "stack-overflow-2048-1",
+      "suite": "stack",
+      "parameters": {
+        "repeat": 1,
+        "mode": "overflow",
+        "limit_kib": 2048
+      },
+      "arguments": [
+        "overflow",
+        "2048"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "termination_signal",
+            "observed": 11,
+            "expected": 11,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "termination_exit",
+            "observed": -1,
+            "expected": -1,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "normal_return",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "stack_grew",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "stack_faults",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "overflow",
+          "pid": 2260,
+          "limit_kib": 2048,
+          "frame_bytes": 8192,
+          "target_depth": 4096,
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_stack",
+            "pid": 2260,
+            "address": "7fffb8db2edc",
+            "program_break": "17fa000",
+            "count": 0,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 28,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8d93000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 132,
+            "rss_kib": 12,
+            "pss_kib": 10,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1064,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8d922d0",
+            "program_break": "17fa000",
+            "count": 16,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 62,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8d91000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 140,
+            "rss_kib": 140,
+            "pss_kib": 138,
+            "private_dirty_kib": 136,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1196,
+            "process_size_kib": 2292
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8d716d0",
+            "program_break": "17fa000",
+            "count": 32,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 94,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8d70000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 272,
+            "rss_kib": 272,
+            "pss_kib": 270,
+            "private_dirty_kib": 268,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1328,
+            "process_size_kib": 2424
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8d50ad0",
+            "program_break": "17fa000",
+            "count": 48,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 127,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8d50000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 400,
+            "rss_kib": 400,
+            "pss_kib": 398,
+            "private_dirty_kib": 396,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1456,
+            "process_size_kib": 2552
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8d2fed0",
+            "program_break": "17fa000",
+            "count": 64,
+            "action_minor": 33,
+            "action_major": 0,
+            "total_minor": 160,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8d2f000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 532,
+            "rss_kib": 532,
+            "pss_kib": 530,
+            "private_dirty_kib": 528,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1588,
+            "process_size_kib": 2684
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8d0f2d0",
+            "program_break": "17fa000",
+            "count": 80,
+            "action_minor": 33,
+            "action_major": 0,
+            "total_minor": 193,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8d0e000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 664,
+            "rss_kib": 664,
+            "pss_kib": 662,
+            "private_dirty_kib": 660,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1720,
+            "process_size_kib": 2816
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8cee6d0",
+            "program_break": "17fa000",
+            "count": 96,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 225,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8ced000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 796,
+            "rss_kib": 796,
+            "pss_kib": 794,
+            "private_dirty_kib": 792,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1852,
+            "process_size_kib": 2948
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8ccdad0",
+            "program_break": "17fa000",
+            "count": 112,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 258,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8ccd000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 924,
+            "rss_kib": 924,
+            "pss_kib": 922,
+            "private_dirty_kib": 920,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1980,
+            "process_size_kib": 3076
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8caced0",
+            "program_break": "17fa000",
+            "count": 128,
+            "action_minor": 33,
+            "action_major": 0,
+            "total_minor": 291,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8cac000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 1056,
+            "rss_kib": 1056,
+            "pss_kib": 1054,
+            "private_dirty_kib": 1052,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 2112,
+            "process_size_kib": 3208
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8c8c2d0",
+            "program_break": "17fa000",
+            "count": 144,
+            "action_minor": 33,
+            "action_major": 0,
+            "total_minor": 324,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8c8b000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 1188,
+            "rss_kib": 1188,
+            "pss_kib": 1186,
+            "private_dirty_kib": 1184,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 2244,
+            "process_size_kib": 3340
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8c6b6d0",
+            "program_break": "17fa000",
+            "count": 160,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 356,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8c6a000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 1320,
+            "rss_kib": 1320,
+            "pss_kib": 1318,
+            "private_dirty_kib": 1316,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 2376,
+            "process_size_kib": 3472
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8c4aad0",
+            "program_break": "17fa000",
+            "count": 176,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 389,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8c4a000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 1448,
+            "rss_kib": 1448,
+            "pss_kib": 1446,
+            "private_dirty_kib": 1444,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 2504,
+            "process_size_kib": 3600
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8c29ed0",
+            "program_break": "17fa000",
+            "count": 192,
+            "action_minor": 33,
+            "action_major": 0,
+            "total_minor": 422,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8c29000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 1580,
+            "rss_kib": 1580,
+            "pss_kib": 1578,
+            "private_dirty_kib": 1576,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 2636,
+            "process_size_kib": 3732
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8c092d0",
+            "program_break": "17fa000",
+            "count": 208,
+            "action_minor": 33,
+            "action_major": 0,
+            "total_minor": 455,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8c08000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 1712,
+            "rss_kib": 1712,
+            "pss_kib": 1710,
+            "private_dirty_kib": 1708,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 2768,
+            "process_size_kib": 3864
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8be86d0",
+            "program_break": "17fa000",
+            "count": 224,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 487,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8be7000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 1844,
+            "rss_kib": 1844,
+            "pss_kib": 1842,
+            "private_dirty_kib": 1840,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 2900,
+            "process_size_kib": 3996
+          },
+          {
+            "kind": "sample",
+            "phase": "stack",
+            "pid": 2260,
+            "address": "7fffb8bc7ad0",
+            "program_break": "17fa000",
+            "count": 240,
+            "action_minor": 32,
+            "action_major": 0,
+            "total_minor": 520,
+            "total_major": 0,
+            "role": "child",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[stack]",
+            "mapping_header": "7fffb8bc7000-7fffb8db4000 rw-p 00000000 00:00 0                          [stack]",
+            "size_kib": 1972,
+            "rss_kib": 1972,
+            "pss_kib": 1970,
+            "private_dirty_kib": 1968,
+            "shared_dirty_kib": 4,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 3028,
+            "process_size_kib": 4124
+          }
+        ],
+        "outcome": {
+          "kind": "outcome",
+          "child_pid": 2260,
+          "signal": 11,
+          "exit_code": -1,
+          "minor": 538,
+          "major": 0,
+          "maxrss_kib": 3100
+        },
+        "returned": []
+      },
+      "artifacts": {
+        "jsonl": "cases/stack-overflow-2048-1/stdout.jsonl",
+        "smaps": "cases/stack-overflow-2048-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/stack",
+          "overflow",
+          "2048"
+        ],
+        "started_at": "2026-11-18T01:32:14.202351+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:15.113881+00:00",
+        "duration_seconds": 0.912
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "layout-1",
+      "suite": "layout",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": [],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "name": "function_permissions",
+            "observed": "r-x",
+            "expected": "r-x",
+            "passed": true,
+            "category": "mechanism"
+          },
+          {
+            "name": "readonly_permissions",
+            "observed": "r--",
+            "expected": "r--",
+            "passed": true,
+            "category": "mechanism"
+          },
+          {
+            "name": "initialized_permissions",
+            "observed": "rw-",
+            "expected": "rw-",
+            "passed": true,
+            "category": "mechanism"
+          },
+          {
+            "name": "uninitialized_permissions",
+            "observed": "rw-",
+            "expected": "rw-",
+            "passed": true,
+            "category": "mechanism"
+          },
+          {
+            "name": "heap_permissions",
+            "observed": "rw-",
+            "expected": "rw-",
+            "passed": true,
+            "category": "mechanism"
+          },
+          {
+            "name": "stack_permissions",
+            "observed": "rw-",
+            "expected": "rw-",
+            "passed": true,
+            "category": "mechanism"
+          },
+          {
+            "name": "libc_malloc_permissions",
+            "observed": "r-x",
+            "expected": "r-x",
+            "passed": true,
+            "category": "mechanism"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "probe_version": 1,
+          "pid": 2325,
+          "page_bytes": 4096,
+          "method": "dl_iterate_phdr+smaps",
+          "executable": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout"
+        },
+        "samples": [
+          {
+            "phase": "layout",
+            "role": "parent",
+            "pid": 2325,
+            "symbol": "function",
+            "symbol_label": "程序函数",
+            "address": "55fdbe17b520",
+            "scope": "address_containing_vma",
+            "mapping_start": "55fdbe17b000",
+            "mapping_end": "55fdbe17c000",
+            "permissions": "r-xp",
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "mapping_header": "55fdbe17b000-55fdbe17c000 r-xp 00001000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "elf_object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "elf_segment_index": 3,
+            "size_kib": 4,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "phase": "layout",
+            "role": "parent",
+            "pid": 2325,
+            "symbol": "readonly",
+            "symbol_label": "只读常量",
+            "address": "55fdbe17c220",
+            "scope": "address_containing_vma",
+            "mapping_start": "55fdbe17c000",
+            "mapping_end": "55fdbe17d000",
+            "permissions": "r--p",
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "mapping_header": "55fdbe17c000-55fdbe17d000 r--p 00002000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "elf_object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "elf_segment_index": 4,
+            "size_kib": 4,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "phase": "layout",
+            "role": "parent",
+            "pid": 2325,
+            "symbol": "initialized",
+            "symbol_label": "已初始化全局变量",
+            "address": "55fdbe17e0a8",
+            "scope": "address_containing_vma",
+            "mapping_start": "55fdbe17e000",
+            "mapping_end": "55fdbe17f000",
+            "permissions": "rw-p",
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "mapping_header": "55fdbe17e000-55fdbe17f000 rw-p 00003000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "elf_object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "elf_segment_index": 5,
+            "size_kib": 4,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "phase": "layout",
+            "role": "parent",
+            "pid": 2325,
+            "symbol": "uninitialized",
+            "symbol_label": "未初始化全局数组",
+            "address": "55fdbe180100",
+            "scope": "address_containing_vma",
+            "mapping_start": "55fdbe17f000",
+            "mapping_end": "55fdbe187000",
+            "permissions": "rw-p",
+            "pathname": "",
+            "mapping_header": "55fdbe17f000-55fdbe187000 rw-p 00000000 00:00 0 ",
+            "elf_object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "elf_segment_index": 5,
+            "size_kib": 32,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "phase": "layout",
+            "role": "parent",
+            "pid": 2325,
+            "symbol": "heap",
+            "symbol_label": "malloc 返回地址",
+            "address": "55fdbfb4d2a0",
+            "scope": "address_containing_vma",
+            "mapping_start": "55fdbfb4d000",
+            "mapping_end": "55fdbfb6e000",
+            "permissions": "rw-p",
+            "pathname": "[heap]",
+            "mapping_header": "55fdbfb4d000-55fdbfb6e000 rw-p 00000000 00:00 0                          [heap]",
+            "elf_object": null,
+            "elf_segment_index": null,
+            "size_kib": 132,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "phase": "layout",
+            "role": "parent",
+            "pid": 2325,
+            "symbol": "stack",
+            "symbol_label": "栈局部变量",
+            "address": "7ffc0765126c",
+            "scope": "address_containing_vma",
+            "mapping_start": "7ffc07632000",
+            "mapping_end": "7ffc07653000",
+            "permissions": "rw-p",
+            "pathname": "[stack]",
+            "mapping_header": "7ffc07632000-7ffc07653000 rw-p 00000000 00:00 0                          [stack]",
+            "elf_object": null,
+            "elf_segment_index": null,
+            "size_kib": 132,
+            "rss_kib": 12,
+            "pss_kib": 12,
+            "private_dirty_kib": 12,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "phase": "layout",
+            "role": "parent",
+            "pid": 2325,
+            "symbol": "libc_malloc",
+            "symbol_label": "libc malloc 函数",
+            "address": "7f5febbfcf60",
+            "scope": "address_containing_vma",
+            "mapping_start": "7f5febb6a000",
+            "mapping_end": "7f5febd2f000",
+            "permissions": "r-xp",
+            "pathname": "/usr/lib64/libc.so.6",
+            "mapping_header": "7f5febb6a000-7f5febd2f000 r-xp 00000000 fc:02 921967                     /usr/lib64/libc.so.6",
+            "elf_object": "/lib64/libc.so.6",
+            "elf_segment_index": 2,
+            "size_kib": 1812,
+            "rss_kib": 1140,
+            "pss_kib": 54,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          }
+        ],
+        "segments": [
+          {
+            "kind": "segment",
+            "object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "is_main": true,
+            "index": 2,
+            "load_bias": "55fdbe17a000",
+            "vaddr": "0",
+            "offset": 0,
+            "filesz": 2736,
+            "memsz": 2736,
+            "flags": "r--",
+            "start": "55fdbe17a000",
+            "end": "55fdbe17aab0",
+            "mappings": [
+              "55fdbe17a000-55fdbe17b000 r--p 00000000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout"
+            ]
+          },
+          {
+            "kind": "segment",
+            "object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "is_main": true,
+            "index": 3,
+            "load_bias": "55fdbe17a000",
+            "vaddr": "1000",
+            "offset": 4096,
+            "filesz": 1749,
+            "memsz": 1749,
+            "flags": "r-x",
+            "start": "55fdbe17b000",
+            "end": "55fdbe17b6d5",
+            "mappings": [
+              "55fdbe17b000-55fdbe17c000 r-xp 00001000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout"
+            ]
+          },
+          {
+            "kind": "segment",
+            "object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "is_main": true,
+            "index": 4,
+            "load_bias": "55fdbe17a000",
+            "vaddr": "2000",
+            "offset": 8192,
+            "filesz": 1020,
+            "memsz": 1020,
+            "flags": "r--",
+            "start": "55fdbe17c000",
+            "end": "55fdbe17c3fc",
+            "mappings": [
+              "55fdbe17c000-55fdbe17d000 r--p 00002000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout"
+            ]
+          },
+          {
+            "kind": "segment",
+            "object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "is_main": true,
+            "index": 5,
+            "load_bias": "55fdbe17a000",
+            "vaddr": "3dd0",
+            "offset": 11728,
+            "filesz": 732,
+            "memsz": 33584,
+            "flags": "rw-",
+            "start": "55fdbe17ddd0",
+            "end": "55fdbe186100",
+            "mappings": [
+              "55fdbe17d000-55fdbe17e000 r--p 00002000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+              "55fdbe17e000-55fdbe17f000 rw-p 00003000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+              "55fdbe17f000-55fdbe187000 rw-p 00000000 00:00 0 "
+            ]
+          },
+          {
+            "kind": "segment",
+            "object": "linux-vdso.so.1",
+            "is_main": false,
+            "index": 0,
+            "load_bias": "7ffc07767000",
+            "vaddr": "0",
+            "offset": 0,
+            "filesz": 3926,
+            "memsz": 3926,
+            "flags": "r-x",
+            "start": "7ffc07767000",
+            "end": "7ffc07767f56",
+            "mappings": [
+              "7ffc07767000-7ffc07769000 r-xp 00000000 00:00 0                          [vdso]"
+            ]
+          },
+          {
+            "kind": "segment",
+            "object": "/lib64/libc.so.6",
+            "is_main": false,
+            "index": 2,
+            "load_bias": "7f5febb6a000",
+            "vaddr": "0",
+            "offset": 0,
+            "filesz": 1854727,
+            "memsz": 1854727,
+            "flags": "r-x",
+            "start": "7f5febb6a000",
+            "end": "7f5febd2ed07",
+            "mappings": [
+              "7f5febb6a000-7f5febd2f000 r-xp 00000000 fc:02 921967                     /usr/lib64/libc.so.6"
+            ]
+          },
+          {
+            "kind": "segment",
+            "object": "/lib64/libc.so.6",
+            "is_main": false,
+            "index": 3,
+            "load_bias": "7f5febb6a000",
+            "vaddr": "1c5ba0",
+            "offset": 1858464,
+            "filesz": 19240,
+            "memsz": 74224,
+            "flags": "rw-",
+            "start": "7f5febd2fba0",
+            "end": "7f5febd41d90",
+            "mappings": [
+              "7f5febd2f000-7f5febd33000 r--p 001c5000 fc:02 921967                     /usr/lib64/libc.so.6",
+              "7f5febd33000-7f5febd35000 rw-p 001c9000 fc:02 921967                     /usr/lib64/libc.so.6",
+              "7f5febd35000-7f5febd44000 rw-p 00000000 00:00 0 "
+            ]
+          },
+          {
+            "kind": "segment",
+            "object": "/lib64/ld-linux-x86-64.so.2",
+            "is_main": false,
+            "index": 0,
+            "load_bias": "7f5febd4b000",
+            "vaddr": "0",
+            "offset": 0,
+            "filesz": 179496,
+            "memsz": 179496,
+            "flags": "r-x",
+            "start": "7f5febd4b000",
+            "end": "7f5febd76d28",
+            "mappings": [
+              "7f5febd4b000-7f5febd77000 r-xp 00000000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2"
+            ]
+          },
+          {
+            "kind": "segment",
+            "object": "/lib64/ld-linux-x86-64.so.2",
+            "is_main": false,
+            "index": 1,
+            "load_bias": "7f5febd4b000",
+            "vaddr": "2c5e0",
+            "offset": 181728,
+            "filesz": 11024,
+            "memsz": 11480,
+            "flags": "rw-",
+            "start": "7f5febd775e0",
+            "end": "7f5febd7a2b8",
+            "mappings": [
+              "7f5febd77000-7f5febd79000 r--p 0002c000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2",
+              "7f5febd79000-7f5febd7b000 rw-p 0002e000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2"
+            ]
+          }
+        ],
+        "mappings": [
+          {
+            "start": "55fdbe17a000",
+            "end": "55fdbe17b000",
+            "header": "55fdbe17a000-55fdbe17b000 r--p 00000000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "permissions": "r--p",
+            "file_offset": 0,
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "size_kib": 4,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "55fdbe17b000",
+            "end": "55fdbe17c000",
+            "header": "55fdbe17b000-55fdbe17c000 r-xp 00001000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "permissions": "r-xp",
+            "file_offset": 4096,
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "size_kib": 4,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "55fdbe17c000",
+            "end": "55fdbe17d000",
+            "header": "55fdbe17c000-55fdbe17d000 r--p 00002000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "permissions": "r--p",
+            "file_offset": 8192,
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "size_kib": 4,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "55fdbe17d000",
+            "end": "55fdbe17e000",
+            "header": "55fdbe17d000-55fdbe17e000 r--p 00002000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "permissions": "r--p",
+            "file_offset": 8192,
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "size_kib": 4,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "55fdbe17e000",
+            "end": "55fdbe17f000",
+            "header": "55fdbe17e000-55fdbe17f000 rw-p 00003000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "permissions": "rw-p",
+            "file_offset": 12288,
+            "pathname": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+            "size_kib": 4,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "55fdbe17f000",
+            "end": "55fdbe187000",
+            "header": "55fdbe17f000-55fdbe187000 rw-p 00000000 00:00 0 ",
+            "permissions": "rw-p",
+            "file_offset": 0,
+            "pathname": "",
+            "size_kib": 32,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "55fdbfb4d000",
+            "end": "55fdbfb6e000",
+            "header": "55fdbfb4d000-55fdbfb6e000 rw-p 00000000 00:00 0                          [heap]",
+            "permissions": "rw-p",
+            "file_offset": 0,
+            "pathname": "[heap]",
+            "size_kib": 132,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7f5febb68000",
+            "end": "7f5febb6a000",
+            "header": "7f5febb68000-7f5febb6a000 rw-p 00000000 00:00 0 ",
+            "permissions": "rw-p",
+            "file_offset": 0,
+            "pathname": "",
+            "size_kib": 8,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7f5febb6a000",
+            "end": "7f5febd2f000",
+            "header": "7f5febb6a000-7f5febd2f000 r-xp 00000000 fc:02 921967                     /usr/lib64/libc.so.6",
+            "permissions": "r-xp",
+            "file_offset": 0,
+            "pathname": "/usr/lib64/libc.so.6",
+            "size_kib": 1812,
+            "rss_kib": 1140,
+            "pss_kib": 54,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7f5febd2f000",
+            "end": "7f5febd33000",
+            "header": "7f5febd2f000-7f5febd33000 r--p 001c5000 fc:02 921967                     /usr/lib64/libc.so.6",
+            "permissions": "r--p",
+            "file_offset": 1855488,
+            "pathname": "/usr/lib64/libc.so.6",
+            "size_kib": 16,
+            "rss_kib": 16,
+            "pss_kib": 16,
+            "private_dirty_kib": 16,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7f5febd33000",
+            "end": "7f5febd35000",
+            "header": "7f5febd33000-7f5febd35000 rw-p 001c9000 fc:02 921967                     /usr/lib64/libc.so.6",
+            "permissions": "rw-p",
+            "file_offset": 1871872,
+            "pathname": "/usr/lib64/libc.so.6",
+            "size_kib": 8,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7f5febd35000",
+            "end": "7f5febd44000",
+            "header": "7f5febd35000-7f5febd44000 rw-p 00000000 00:00 0 ",
+            "permissions": "rw-p",
+            "file_offset": 0,
+            "pathname": "",
+            "size_kib": 60,
+            "rss_kib": 28,
+            "pss_kib": 28,
+            "private_dirty_kib": 28,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7f5febd4b000",
+            "end": "7f5febd77000",
+            "header": "7f5febd4b000-7f5febd77000 r-xp 00000000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2",
+            "permissions": "r-xp",
+            "file_offset": 0,
+            "pathname": "/usr/lib64/ld-linux-x86-64.so.2",
+            "size_kib": 176,
+            "rss_kib": 176,
+            "pss_kib": 8,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7f5febd77000",
+            "end": "7f5febd79000",
+            "header": "7f5febd77000-7f5febd79000 r--p 0002c000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2",
+            "permissions": "r--p",
+            "file_offset": 180224,
+            "pathname": "/usr/lib64/ld-linux-x86-64.so.2",
+            "size_kib": 8,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7f5febd79000",
+            "end": "7f5febd7b000",
+            "header": "7f5febd79000-7f5febd7b000 rw-p 0002e000 fc:02 921964                     /usr/lib64/ld-linux-x86-64.so.2",
+            "permissions": "rw-p",
+            "file_offset": 188416,
+            "pathname": "/usr/lib64/ld-linux-x86-64.so.2",
+            "size_kib": 8,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7ffc07632000",
+            "end": "7ffc07653000",
+            "header": "7ffc07632000-7ffc07653000 rw-p 00000000 00:00 0                          [stack]",
+            "permissions": "rw-p",
+            "file_offset": 0,
+            "pathname": "[stack]",
+            "size_kib": 132,
+            "rss_kib": 12,
+            "pss_kib": 12,
+            "private_dirty_kib": 12,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7ffc07763000",
+            "end": "7ffc07767000",
+            "header": "7ffc07763000-7ffc07767000 r--p 00000000 00:00 0                          [vvar]",
+            "permissions": "r--p",
+            "file_offset": 0,
+            "pathname": "[vvar]",
+            "size_kib": 16,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "7ffc07767000",
+            "end": "7ffc07769000",
+            "header": "7ffc07767000-7ffc07769000 r-xp 00000000 00:00 0                          [vdso]",
+            "permissions": "r-xp",
+            "file_offset": 0,
+            "pathname": "[vdso]",
+            "size_kib": 8,
+            "rss_kib": 4,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          },
+          {
+            "start": "ffffffffff600000",
+            "end": "ffffffffff601000",
+            "header": "ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]",
+            "permissions": "--xp",
+            "file_offset": 0,
+            "pathname": "[vsyscall]",
+            "size_kib": 4,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/layout-1/stdout.jsonl",
+        "smaps": "cases/layout-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout"
+        ],
+        "started_at": "2026-11-18T01:32:18.062052+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-18T01:32:18.150765+00:00",
+        "duration_seconds": 0.089
+      },
+      "error": null,
+      "integrity": "verified"
+    }
+  ],
+  "error": null,
+  "related_run": null,
+  "scope": "Mechanism/function verification; no hardware performance inference, especially under QEMU TCG.",
+  "plan": [
+    {
+      "id": "link-dynamic-1",
+      "suite": "link-dynamic",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": []
+    },
+    {
+      "id": "link-static-1",
+      "suite": "link-static",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": []
+    },
+    {
+      "id": "sequence-1",
+      "suite": "sequence",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": []
+    },
+    {
+      "id": "demand512-1",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": []
+    },
+    {
+      "id": "stack-normal-8192-1",
+      "suite": "stack",
+      "parameters": {
+        "repeat": 1,
+        "mode": "normal",
+        "limit_kib": 8192
+      },
+      "arguments": [
+        "normal",
+        "8192"
+      ]
+    },
+    {
+      "id": "stack-overflow-512-1",
+      "suite": "stack",
+      "parameters": {
+        "repeat": 1,
+        "mode": "overflow",
+        "limit_kib": 512
+      },
+      "arguments": [
+        "overflow",
+        "512"
+      ]
+    },
+    {
+      "id": "stack-overflow-2048-1",
+      "suite": "stack",
+      "parameters": {
+        "repeat": 1,
+        "mode": "overflow",
+        "limit_kib": 2048
+      },
+      "arguments": [
+        "overflow",
+        "2048"
+      ]
+    },
+    {
+      "id": "layout-1",
+      "suite": "layout",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": []
+    }
+  ],
+  "compiler_check": {
+    "command": [
+      "gcc",
+      "--version"
+    ],
+    "started_at": "2026-11-18T01:31:59.719079+00:00",
+    "status": "completed",
+    "exit_code": 0,
+    "error": null,
+    "finished_at": "2026-11-18T01:31:59.807777+00:00",
+    "duration_seconds": 0.088
+  },
+  "trace_tool": {
+    "command": [
+      "strace",
+      "--version"
+    ],
+    "started_at": "2026-11-18T01:31:59.809746+00:00",
+    "status": "completed",
+    "exit_code": 0,
+    "error": null,
+    "finished_at": "2026-11-18T01:31:59.941615+00:00",
+    "duration_seconds": 0.132,
+    "version": "strace -- version 6.6\nCopyright (c) 1991-2023 The strace developers <https://strace.io>.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\nOptional features enabled: stack-trace=libdw stack-demangle m32-mpers mx32-mpers"
+  },
+  "finished_at": "2026-11-18T01:32:18.294702+00:00",
+  "completed": true,
+  "diagnosis": {
+    "rule_version": "2026-11-13.1",
+    "findings": [
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.1 动态链接与装入",
+        "explanation": "ELF解释器：True；依赖：libc.so.6；已将装载段和六类地址关联到实际映射。",
+        "evidence": [
+          {
+            "case_id": "link-dynamic-1",
+            "artifacts": {
+              "jsonl": "cases/link-dynamic-1/stdout.jsonl",
+              "smaps": "cases/link-dynamic-1/smaps.stderr.txt",
+              "file": "cases/link-dynamic-1/file.txt",
+              "file_stderr": "cases/link-dynamic-1/file.stderr.txt",
+              "ldd": "cases/link-dynamic-1/ldd.txt",
+              "ldd_stderr": "cases/link-dynamic-1/ldd.stderr.txt",
+              "readelf": "cases/link-dynamic-1/readelf.txt",
+              "readelf_stderr": "cases/link-dynamic-1/readelf.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "ELF_interpreter",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "ELF_dependencies",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "runtime_shared_libraries",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "code_executable",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "readonly_not_writable",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "data_heap_stack_writable",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.1 静态链接对照",
+        "explanation": "ELF解释器：False；依赖：无；已将装载段和六类地址关联到实际映射。",
+        "evidence": [
+          {
+            "case_id": "link-static-1",
+            "artifacts": {
+              "jsonl": "cases/link-static-1/stdout.jsonl",
+              "smaps": "cases/link-static-1/smaps.stderr.txt",
+              "file": "cases/link-static-1/file.txt",
+              "file_stderr": "cases/link-static-1/file.stderr.txt",
+              "ldd": "cases/link-static-1/ldd.txt",
+              "ldd_stderr": "cases/link-static-1/ldd.stderr.txt",
+              "readelf": "cases/link-static-1/readelf.txt",
+              "readelf_stderr": "cases/link-static-1/readelf.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "ELF_interpreter",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "ELF_dependencies",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "runtime_shared_libraries",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "code_executable",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "readonly_not_writable",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "data_heap_stack_writable",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.2 同进程连续 malloc",
+        "explanation": "malloc_1：brk；malloc_2：mmap；malloc_3：mmap；free_all：munmap / munmap",
+        "evidence": [
+          {
+            "case_id": "sequence-1",
+            "artifacts": {
+              "jsonl": "cases/sequence-1/stdout.jsonl",
+              "smaps": "cases/sequence-1/smaps.stderr.txt",
+              "syscalls": "cases/sequence-1/syscalls.txt"
+            },
+            "checks": [
+              {
+                "id": "three_live_blocks",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "sequence_counts",
+                "observed": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  0
+                ],
+                "expected": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  0
+                ],
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "trace_completed",
+                "observed": 4,
+                "expected": 4,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "系统调用仅统计动作标记之间的 brk/mmap/munmap/mremap；包含返回值和原始行号。相关 VMA 按地址范围去重，指标包含管理信息及同区其他对象。释放后只查原地址范围，不读写旧指针；保留映射不等于泄漏。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 原尺寸按需调页",
+        "explanation": "512 MiB、4096字节步长，按A/B/C分批写入；映射RSS依次为 8 KiB / 131888 KiB / 262960 KiB / 524292 KiB。",
+        "evidence": [
+          {
+            "case_id": "demand512-1",
+            "artifacts": {
+              "jsonl": "cases/demand512-1/stdout.jsonl",
+              "smaps": "cases/demand512-1/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "original_values",
+                "observed": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "expected": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "resident_growth",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "full_residency",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 栈增长与溢出",
+        "explanation": "栈限制8192 KiB，最后采样深度64，子进程终止信号0；父进程保存了退出状态。",
+        "evidence": [
+          {
+            "case_id": "stack-normal-8192-1",
+            "artifacts": {
+              "jsonl": "cases/stack-normal-8192-1/stdout.jsonl",
+              "smaps": "cases/stack-normal-8192-1/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "termination_signal",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "termination_exit",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "normal_return",
+                "observed": 1,
+                "expected": 1,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "stack_grew",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "stack_faults",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "recursion_depth",
+                "observed": 64,
+                "expected": 64,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 栈增长与溢出",
+        "explanation": "栈限制512 KiB，最后采样深度48，子进程终止信号11；父进程保存了退出状态。",
+        "evidence": [
+          {
+            "case_id": "stack-overflow-512-1",
+            "artifacts": {
+              "jsonl": "cases/stack-overflow-512-1/stdout.jsonl",
+              "smaps": "cases/stack-overflow-512-1/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "termination_signal",
+                "observed": 11,
+                "expected": 11,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "termination_exit",
+                "observed": -1,
+                "expected": -1,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "normal_return",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "stack_grew",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "stack_faults",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 栈增长与溢出",
+        "explanation": "栈限制2048 KiB，最后采样深度240，子进程终止信号11；父进程保存了退出状态。",
+        "evidence": [
+          {
+            "case_id": "stack-overflow-2048-1",
+            "artifacts": {
+              "jsonl": "cases/stack-overflow-2048-1/stdout.jsonl",
+              "smaps": "cases/stack-overflow-2048-1/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "termination_signal",
+                "observed": 11,
+                "expected": 11,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "termination_exit",
+                "observed": -1,
+                "expected": -1,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "normal_return",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "stack_grew",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "stack_faults",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "address_mapping",
+        "confidence": "confirmed",
+        "title": "七类程序地址已对应到真实映射与装载段",
+        "explanation": "按地址所在区间关联原始 smaps；程序代码、全局数据和库函数进一步对应加载后的 ELF PT_LOAD。堆和栈按实际映射显示。",
+        "evidence": [
+          {
+            "case_id": "layout-1",
+            "jsonl": "cases/layout-1/stdout.jsonl",
+            "smaps": "cases/layout-1/smaps.stderr.txt",
+            "points": [
+              {
+                "symbol": "function",
+                "address": "55fdbe17b520",
+                "mapping_header": "55fdbe17b000-55fdbe17c000 r-xp 00001000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+                "elf_object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+                "elf_segment_index": 3
+              },
+              {
+                "symbol": "readonly",
+                "address": "55fdbe17c220",
+                "mapping_header": "55fdbe17c000-55fdbe17d000 r--p 00002000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+                "elf_object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+                "elf_segment_index": 4
+              },
+              {
+                "symbol": "initialized",
+                "address": "55fdbe17e0a8",
+                "mapping_header": "55fdbe17e000-55fdbe17f000 rw-p 00003000 fc:02 396686                     /root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+                "elf_object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+                "elf_segment_index": 5
+              },
+              {
+                "symbol": "uninitialized",
+                "address": "55fdbe180100",
+                "mapping_header": "55fdbe17f000-55fdbe187000 rw-p 00000000 00:00 0 ",
+                "elf_object": "/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/layout",
+                "elf_segment_index": 5
+              },
+              {
+                "symbol": "heap",
+                "address": "55fdbfb4d2a0",
+                "mapping_header": "55fdbfb4d000-55fdbfb6e000 rw-p 00000000 00:00 0                          [heap]",
+                "elf_object": null,
+                "elf_segment_index": null
+              },
+              {
+                "symbol": "stack",
+                "address": "7ffc0765126c",
+                "mapping_header": "7ffc07632000-7ffc07653000 rw-p 00000000 00:00 0                          [stack]",
+                "elf_object": null,
+                "elf_segment_index": null
+              },
+              {
+                "symbol": "libc_malloc",
+                "address": "7f5febbfcf60",
+                "mapping_header": "7f5febb6a000-7f5febd2f000 r-xp 00000000 fc:02 921967                     /usr/lib64/libc.so.6",
+                "elf_object": "/lib64/libc.so.6",
+                "elf_segment_index": 2
+              }
+            ]
+          }
+        ],
+        "limitations": "这些是虚拟地址；未采集物理页框。一个装载段可能跨多条映射，映射权限可受装载器调整。相同映射的驻留量不可按变量重复相加。",
+        "next_steps": [
+          "先预测函数、常量和变量所在区域，再逐项对照。",
+          "再运行一次，比较地址和权限；绝对地址变化不等于程序行为变化。"
+        ]
+      }
+    ],
+    "comparisons": [],
+    "cow_observations": [],
+    "policy_comparisons": [],
+    "references": [
+      "https://docs.kernel.org/filesystems/proc.html",
+      "https://docs.kernel.org/admin-guide/mm/transhuge.html",
+      "https://man7.org/linux/man-pages/man2/getrusage.2.html",
+      "https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html"
+    ],
+    "confidence_labels": {
+      "confirmed": "已确认（限列出的观测与对照）",
+      "probable": "可能原因",
+      "insufficient_evidence": "证据不足"
+    }
+  }
+}

@@ -5,7 +5,7 @@ import sys,unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'work'))
 from vmobserve import group4
 from vmobserve.runner import parser,plan_cases,source_files
-from vmobserve.server import Workbench
+from vmobserve.server import experiment_args, Workbench
 from vmobserve.export import csv_text
 
 class Group4Tests(unittest.TestCase):
@@ -60,7 +60,7 @@ class Group4Tests(unittest.TestCase):
         for task,count in [('4.1',6),('4.2',6),('4.3',6),('4.4',24)]:
             args=parser().parse_args(['--suite','group4','--group4-task',task])
             self.assertEqual(len(plan_cases(args)),count)
-            command=Workbench('local').command(group4=True,group4_task=task)
+            command=experiment_args("group4",group4_task=task)
             self.assertEqual(command[command.index('--group4-task')+1],task)
         self.assertTrue(any(p.name=='child_prog.c' for p in source_files()))
         self.assertEqual(len(plan_cases(parser().parse_args([]))),33)

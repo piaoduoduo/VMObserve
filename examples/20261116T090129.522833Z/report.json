@@ -1,0 +1,2303 @@
+{
+  "schema_version": "vmobserve.run/v1",
+  "tool_version": "0.6.1",
+  "run_id": "20261116T090129.522833Z",
+  "data_origin": "real_execution",
+  "view_mode": "execution_record",
+  "status": "completed",
+  "started_at": "2026-11-16T09:01:29.528295+00:00",
+  "environment": {
+    "system": "Linux",
+    "kernel": "6.6.0-28.0.0.34.oe2403.x86_64",
+    "machine": "x86_64",
+    "os_release": "NAME=\"openEuler\"\nVERSION=\"24.03 (LTS)\"\nID=\"openEuler\"\nVERSION_ID=\"24.03\"\nPRETTY_NAME=\"openEuler 24.03 (LTS)\"\nANSI_COLOR=\"0;31\"",
+    "distribution": {
+      "NAME": "openEuler",
+      "VERSION": "24.03 (LTS)",
+      "ID": "openEuler",
+      "VERSION_ID": "24.03",
+      "PRETTY_NAME": "openEuler 24.03 (LTS)",
+      "ANSI_COLOR": "0;31"
+    },
+    "python": "3.11.6",
+    "libc": [
+      "glibc",
+      "2.38"
+    ],
+    "allocator_environment": {
+      "GLIBC_TUNABLES": null,
+      "MALLOC_MMAP_THRESHOLD_": null,
+      "MALLOC_TRIM_THRESHOLD_": null,
+      "MALLOC_PERTURB_": null,
+      "LD_PRELOAD": null
+    },
+    "page_bytes": 4096,
+    "thp_enabled": "[always] madvise never",
+    "thp_defrag": "always defer defer+madvise [madvise] never",
+    "pmd_size": "2097152",
+    "thp_sizes": {
+      "hugepages-32kB": "always inherit madvise [never]",
+      "hugepages-512kB": "always inherit madvise [never]",
+      "hugepages-2048kB": "always [inherit] madvise never",
+      "hugepages-1024kB": "always inherit madvise [never]",
+      "hugepages-64kB": "always inherit madvise [never]",
+      "hugepages-16kB": "always inherit madvise [never]",
+      "hugepages-256kB": "always inherit madvise [never]",
+      "hugepages-128kB": "always inherit madvise [never]"
+    },
+    "meminfo": "MemTotal:        1753684 kB\nMemFree:         1260756 kB\nMemAvailable:    1524664 kB\nBuffers:           15760 kB\nCached:           380512 kB\nSwapCached:            0 kB\nActive:           318420 kB\nInactive:         104048 kB\nActive(anon):        668 kB\nInactive(anon):    34752 kB\nActive(file):     317752 kB\nInactive(file):    69296 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:               612 kB\nWriteback:             0 kB\nAnonPages:         26212 kB\nMapped:            34364 kB\nShmem:              9220 kB\nKReclaimable:      15004 kB\nSlab:              32956 kB\nSReclaimable:      15004 kB\nSUnreclaim:        17952 kB\nKernelStack:        1424 kB\nPageTables:         1056 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:      876840 kB\nCommitted_AS:     106360 kB\nVmallocTotal:   13743895347199 kB\nVmallocUsed:       13680 kB\nVmallocChunk:          0 kB\nPercpu:              832 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:         0 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:      100200 kB\nDirectMap2M:     1996800 kB\nDirectMap1G:           0 kB",
+    "captured_at": "2026-11-16T09:01:29.551069+00:00",
+    "execution_context": "qemu-tcg"
+  },
+  "sources": {
+    "run_all.py": "f94b36c625afdd3fe8fa1828cee3bc05840c82be0f3fb947a1993d77d602d473",
+    "launch.py": "ffc137660f6edb4d5786b44a247f3a71b43362fa8c88aa8e6a71b6621e4f3657",
+    "proj5-memory-pilot/memory_probe.c": "a518fd2b5265189230bc68dee42103e4c274af6644174d5737b67f734a3eed20",
+    "proj5-round2/thp_probe.c": "7a95878ef66c01114ae00f4550844c51b9c1c1958245f2b14ca06f450a849e1b",
+    "proj5-course/allocator_probe.c": "c3f4612c8cb68a7d1faafb5a0f52096182cde30e673daf5114c738c7f74703b6",
+    "proj5-course/layout_probe.c": "60795ef2090bed0e6531be424bc2e3ee09e46bfd298ac609db70a6da779c3b1a",
+    "proj5-course/group3_link.c": "459db3c54c0fa09368bbb187899955f3d3886099ef08a600bc8c9fd191351f35",
+    "proj5-course/group3_sequence.c": "14c31a0ba276cf5ed45bfe942b0ea31523f2f96c12c446fc4f5009ebd45e09c3",
+    "proj5-course/group3_demand.c": "c72e9e61279c515aa8c5614f5e5eecb416772ced94d39cc0ecc456d786832223",
+    "proj5-course/group3_stack.c": "125197bc6a6aae8ab0d69eb2c7ae66ed69acc8faf6f710f4c3230fc822a86bd4",
+    "common/probe.h": "5508d4521f4a530882a8e1f36ceb5e65cab91ece03026f54572116b0cc745a6c",
+    "proj5-course/access_pattern.h": "191b2771546e8365a8ede1f85db5373de3b91b291fecace74a865e3759031c45",
+    "proj5-course/group3_snapshot.h": "d18ba0edf15c13b9184161dc6a39ca1b87233c18b649539cd0494231df01c3c9",
+    "lessons/demand/WORKSHEET.md": "138339305b4ca9a6f1e12ed47455d6c854b8812d5c79b5a45945e9b3b3d59802",
+    "lessons/demand/student.h": "a4e4ca53cfb082999f08285b4ba24e1e38c98903ee25b2f311c16afbb4c1f10d",
+    "lessons/layout/WORKSHEET.md": "9db686a910cbb33c5b7495b2516176fde802a663587e0fc8bd9c7350d3ffe317",
+    "lessons/sequence/WORKSHEET.md": "00257712cb0e82b41305668f8a5a417ad41689f50a994a38e356ed86bd49fca6",
+    "vmobserve/__init__.py": "45c2f3c3ef3c3dbb9fc8d72275b7fd79bb67cd9d94fb0f1d64565413d56a8b26",
+    "vmobserve/__main__.py": "3b93eb45fdc020f830329ad25e605b9f50db2c27c918a0b14e71a7c212fe71df",
+    "vmobserve/allocator.py": "308dbe04ba2c6886822ed0e671a8603cd1a67a34044946f97819e5780d0cceae",
+    "vmobserve/common.py": "eb07f230fbf3c8a0b94fe761d88c0177baba7c9dfb72348e4fdf7062cf7c1ee3",
+    "vmobserve/cow.py": "12f369f252a12c3bb31f8e22844885dd57a624b75ccf93227caafac79dbf08ca",
+    "vmobserve/diagnosis.py": "33551de90ec99ad479f9c5f2743e67813ffebbea5978aeade1d7a1cb3c9c0da4",
+    "vmobserve/evidence.py": "673a0c3f55cee88a33357b524f338cf7ec9841129e0a3546f2480b168a715e3a",
+    "vmobserve/export.py": "d1857efa6ad4bc69b2bebdcf3560617130aefc8616c8255205ca848ae81879b2",
+    "vmobserve/group3.py": "9ccbe28194b70881155b3491a31360f30db18c49235d2b28c91da57e9df20ab4",
+    "vmobserve/layout.py": "9b50d90f32e72deee742c1fbfbe5a096d6e7e07845f3baa3c6325a080021497a",
+    "vmobserve/replay.py": "6c62d1227843e85d19bfa604febf874f10e6fd40aa27cce3a5d6d3b9353ceafc",
+    "vmobserve/runner.py": "5a188c29efba70cf6ae7be2b8406a319fcce5c2859cd55cecf2f591a65c54bea",
+    "vmobserve/sequence.py": "d4aed43bf5991ef549eb73170ad7c64370ebe92d281159aa8d2699a7a5ec800f",
+    "vmobserve/server.py": "099c866b8f84ff7e6e8fad4ae8de75939b47f1d844bccac55508ae97a12cbdc5",
+    "vmobserve/smaps.py": "1be9e84650a63cb4acc57296ffd92a2fa158aaa422d1064d02604a2c5a54f0ad",
+    "vmobserve/thp_policy.py": "1d599914b89a2a532f1e53fdc382256933eec1d1149799d70ec2e34d90a1d2f6",
+    "vmobserve/web/app.js": "08c6251fae1df0b8b924a7925e1dc3b3d40bee30a49f79fa00c544c67a5d273c",
+    "vmobserve/web/index.html": "a303983387b347d6add9748d9e8c502c0d842da78d87e8a1104edc52738988d6",
+    "vmobserve/web/lesson.html": "96971b3fa1e8ddf5f44538f7b3294400f7a2c67e7aa5a3efb00027f02b7d0717",
+    "vmobserve/web/lesson.js": "c1ea984b711db305e77f2a78d6239da0fe7db2e976a35c039f933aca6cabb9a7",
+    "vmobserve/web/style.css": "6dff39b89b31de785d4c39508cd88bc91a68aee9bbd095fa285616b21b7f103d",
+    "package_sources.py": "4d3091fac8b344bef656810645805d3bae1cec53eccdb50d8fcc119abebbfba6",
+    "vm.ps1": "d3bc9cf58783f808b72e9953703a8a3a4af409a31e8fa7acaa4c8dd2594f961e",
+    "openeuler-vm/config.sh": "9824af1e0910a8857dc78a69284b3f791b5176357c8dce0b288c82072148b7ac",
+    "openeuler-vm/retest.sh": "64795a569e14197c4062beb0e0458e5effd9288dc2930ccd66e1ee52dac255c1",
+    "openeuler-vm/start.sh": "d9381156afce699ff92a930e34ac0e2e1e9ff3f62e64d4e84894fd99b8d09cc5",
+    "openeuler-vm/status.sh": "048b5f63b9e0fc16e073bf8fa1b19745a4bb3158098f8a6ffbaebc621a2d2841",
+    "openeuler-vm/wait.sh": "4cef1b3e8d43528c48e0da80929530038f9220294e662ac5fb55bae408de5a71"
+  },
+  "artifacts": {
+    "cases/sequence-1/stdout.jsonl": "6cddeb8739e5a57fc0b2b3cb14e8b3515613c21e7195d943fc664aa8c29883d4",
+    "cases/sequence-1/smaps.stderr.txt": "c2d490576494b7cd392a60dc24997245d7bc6d0b734323a1bb6ea8e412de6096",
+    "cases/sequence-1/syscalls.txt": "491c998d146df70e74eed324c84ad86a5d2ede7634de854bda7d9b1974d50a0a",
+    "cases/sequence-2/stdout.jsonl": "8931b5d405e6c86b2a02eadfcf07e08790b12373043b1d4fd7f61ac94a89e703",
+    "cases/sequence-2/smaps.stderr.txt": "4ab4ce8449b56c7724de45cd23495fb11bd8084143c50ff1f6d64c4099b8ab8d",
+    "cases/sequence-2/syscalls.txt": "52fb524ea8991feb90defcd0be1dbe5f20f811125d42c2ba37eaffa452c109e8",
+    "cases/sequence-3/stdout.jsonl": "2f654dd268ee26a59c514c5d273013ed8d7b1e08d94dae1f5958ca7324bf208c",
+    "cases/sequence-3/smaps.stderr.txt": "4ecd2c846dbb65529633880286997a1803c8449253a1a2c443349c5ad8bdac7c",
+    "cases/sequence-3/syscalls.txt": "c6175e0c4eccca04df6fe94b18dc9bec19b28cf339479a15dcb23ea7267cdd0b",
+    "environment.json": "b19bb2dfb634578d6adddbd92b0bbacf4fd1b97d18a7846dd3ebaba55c73bd9c",
+    "build/strace.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stdout.log": "47214cb7a32d8be03220eb0f5ef9186fbd03556cf0fd580e1553d863d131d8dc",
+    "build/sequence.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/sequence.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/strace.stdout.log": "b8268e77cf323ff46b10aaa6ffe991bd263a5ef543f1ef1a6171f8a28bf5045f"
+  },
+  "builds": {
+    "sequence": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/source/proj5-course/group3_sequence.c",
+        "-o",
+        "/root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence"
+      ],
+      "started_at": "2026-11-16T09:01:29.942913+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-16T09:01:32.506337+00:00",
+      "duration_seconds": 2.564
+    }
+  },
+  "cases": [
+    {
+      "id": "sequence-1",
+      "suite": "sequence",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": [],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "three_live_blocks",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "sequence_counts",
+            "observed": [
+              0,
+              1,
+              2,
+              3,
+              0
+            ],
+            "expected": [
+              0,
+              1,
+              2,
+              3,
+              0
+            ],
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "trace_completed",
+            "observed": 4,
+            "expected": 4,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "sequence",
+          "pid": 1853,
+          "sizes": [
+            1024,
+            262144,
+            1048576
+          ],
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 1853,
+            "address": "0",
+            "program_break": "81f000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 66,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1424,
+            "process_size_kib": 2284,
+            "blocks": [],
+            "related_vma_count": 0,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 0,
+            "related_rss_kib": 0,
+            "related_pss_kib": 0,
+            "related_private_dirty_kib": 0,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_1KiB",
+            "pid": 1853,
+            "address": "81f2a0",
+            "program_break": "840000",
+            "count": 1,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 68,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[heap]",
+            "mapping_header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+            "size_kib": 132,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1432,
+            "process_size_kib": 2416,
+            "blocks": [
+              {
+                "address": "81f2a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "0081f000",
+                  "end": "00840000",
+                  "header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "0081f000",
+                    "end": "00840000",
+                    "header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 1,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 132,
+            "related_rss_kib": 4,
+            "related_pss_kib": 4,
+            "related_private_dirty_kib": 4,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_256KiB",
+            "pid": 1853,
+            "address": "7f81741c7010",
+            "program_break": "840000",
+            "count": 2,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 69,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f81741c7000-7f817420a000 rw-p 00000000 00:00 0 ",
+            "size_kib": 268,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1436,
+            "process_size_kib": 2676,
+            "blocks": [
+              {
+                "address": "81f2a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "0081f000",
+                  "end": "00840000",
+                  "header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "0081f000",
+                    "end": "00840000",
+                    "header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f81741c7010",
+                "requested_bytes": 262144,
+                "alive": true,
+                "mapping": {
+                  "start": "7f81741c7000",
+                  "end": "7f817420a000",
+                  "header": "7f81741c7000-7f817420a000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 268,
+                  "rss_kib": 8,
+                  "pss_kib": 8,
+                  "private_dirty_kib": 8,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f81741c7000",
+                    "end": "7f817420a000",
+                    "header": "7f81741c7000-7f817420a000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 268,
+                    "rss_kib": 8,
+                    "pss_kib": 8,
+                    "private_dirty_kib": 8,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 2,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 400,
+            "related_rss_kib": 12,
+            "related_pss_kib": 12,
+            "related_private_dirty_kib": 12,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_1MiB",
+            "pid": 1853,
+            "address": "7f81740c6010",
+            "program_break": "840000",
+            "count": 3,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 70,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f81740c6000-7f817420a000 rw-p 00000000 00:00 0 ",
+            "size_kib": 1296,
+            "rss_kib": 12,
+            "pss_kib": 12,
+            "private_dirty_kib": 12,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1440,
+            "process_size_kib": 3704,
+            "blocks": [
+              {
+                "address": "81f2a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "0081f000",
+                  "end": "00840000",
+                  "header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "0081f000",
+                    "end": "00840000",
+                    "header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f81741c7010",
+                "requested_bytes": 262144,
+                "alive": true,
+                "mapping": {
+                  "start": "7f81740c6000",
+                  "end": "7f817420a000",
+                  "header": "7f81740c6000-7f817420a000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 1296,
+                  "rss_kib": 12,
+                  "pss_kib": 12,
+                  "private_dirty_kib": 12,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f81740c6000",
+                    "end": "7f817420a000",
+                    "header": "7f81740c6000-7f817420a000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 1296,
+                    "rss_kib": 12,
+                    "pss_kib": 12,
+                    "private_dirty_kib": 12,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f81740c6010",
+                "requested_bytes": 1048576,
+                "alive": true,
+                "mapping": {
+                  "start": "7f81740c6000",
+                  "end": "7f817420a000",
+                  "header": "7f81740c6000-7f817420a000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 1296,
+                  "rss_kib": 12,
+                  "pss_kib": 12,
+                  "private_dirty_kib": 12,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f81740c6000",
+                    "end": "7f817420a000",
+                    "header": "7f81740c6000-7f817420a000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 1296,
+                    "rss_kib": 12,
+                    "pss_kib": 12,
+                    "private_dirty_kib": 12,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 2,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 1428,
+            "related_rss_kib": 16,
+            "related_pss_kib": 16,
+            "related_private_dirty_kib": 16,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 1853,
+            "address": "81f2a0",
+            "program_break": "840000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 70,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[heap]",
+            "mapping_header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+            "size_kib": 132,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1432,
+            "process_size_kib": 2416,
+            "blocks": [
+              {
+                "address": "81f2a0",
+                "requested_bytes": 1024,
+                "alive": false,
+                "mapping": {
+                  "start": "0081f000",
+                  "end": "00840000",
+                  "header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "0081f000",
+                    "end": "00840000",
+                    "header": "0081f000-00840000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f81741c7010",
+                "requested_bytes": 262144,
+                "alive": false,
+                "mapping": null,
+                "mappings": []
+              },
+              {
+                "address": "7f81740c6010",
+                "requested_bytes": 1048576,
+                "alive": false,
+                "mapping": null,
+                "mappings": []
+              }
+            ],
+            "related_vma_count": 1,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 132,
+            "related_rss_kib": 4,
+            "related_pss_kib": 4,
+            "related_private_dirty_kib": 4,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          }
+        ],
+        "allocations": [
+          "81f2a0",
+          "7f81741c7010",
+          "7f81740c6010"
+        ],
+        "actions": [
+          {
+            "action": "malloc_1",
+            "phase": "alloc_1KiB",
+            "begin_line": 19,
+            "end_line": 21,
+            "events": [
+              {
+                "line": 20,
+                "text": "brk(0x840000)                           = 0x840000",
+                "name": "brk",
+                "result": "0x840000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "brk(0x840000)                           = 0x840000"
+            ],
+            "requested_bytes": 1024,
+            "returned_address": "81f2a0",
+            "allocation_source": "new_brk_range",
+            "source_line": 20
+          },
+          {
+            "action": "malloc_2",
+            "phase": "alloc_256KiB",
+            "begin_line": 30,
+            "end_line": 32,
+            "events": [
+              {
+                "line": 31,
+                "text": "mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f81741c7000",
+                "name": "mmap",
+                "result": "0x7f81741c7000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f81741c7000"
+            ],
+            "requested_bytes": 262144,
+            "returned_address": "7f81741c7010",
+            "allocation_source": "new_mmap_range",
+            "source_line": 31
+          },
+          {
+            "action": "malloc_3",
+            "phase": "alloc_1MiB",
+            "begin_line": 41,
+            "end_line": 43,
+            "events": [
+              {
+                "line": 42,
+                "text": "mmap(NULL, 1052672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f81740c6000",
+                "name": "mmap",
+                "result": "0x7f81740c6000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "mmap(NULL, 1052672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f81740c6000"
+            ],
+            "requested_bytes": 1048576,
+            "returned_address": "7f81740c6010",
+            "allocation_source": "new_mmap_range",
+            "source_line": 42
+          },
+          {
+            "action": "free_all",
+            "phase": "freed",
+            "begin_line": 53,
+            "end_line": 56,
+            "events": [
+              {
+                "line": 54,
+                "text": "munmap(0x7f81741c7000, 266240)          = 0",
+                "name": "munmap",
+                "result": "0",
+                "success": true
+              },
+              {
+                "line": 55,
+                "text": "munmap(0x7f81740c6000, 1052672)         = 0",
+                "name": "munmap",
+                "result": "0",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "munmap(0x7f81741c7000, 266240)          = 0",
+              "munmap(0x7f81740c6000, 1052672)         = 0"
+            ]
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/sequence-1/stdout.jsonl",
+        "smaps": "cases/sequence-1/smaps.stderr.txt",
+        "syscalls": "cases/sequence-1/syscalls.txt"
+      },
+      "execution": {
+        "command": [
+          "strace",
+          "-qq",
+          "-s",
+          "256",
+          "-e",
+          "trace=brk,mmap,munmap,mremap,write",
+          "-o",
+          "/root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/cases/sequence-1/syscalls.txt",
+          "/root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence"
+        ],
+        "started_at": "2026-11-16T09:01:32.530010+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-16T09:01:32.758991+00:00",
+        "duration_seconds": 0.229
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "sequence-2",
+      "suite": "sequence",
+      "parameters": {
+        "repeat": 2
+      },
+      "arguments": [],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "three_live_blocks",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "sequence_counts",
+            "observed": [
+              0,
+              1,
+              2,
+              3,
+              0
+            ],
+            "expected": [
+              0,
+              1,
+              2,
+              3,
+              0
+            ],
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "trace_completed",
+            "observed": 4,
+            "expected": 4,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "sequence",
+          "pid": 1857,
+          "sizes": [
+            1024,
+            262144,
+            1048576
+          ],
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 1857,
+            "address": "0",
+            "program_break": "c2c000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 67,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1464,
+            "process_size_kib": 2284,
+            "blocks": [],
+            "related_vma_count": 0,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 0,
+            "related_rss_kib": 0,
+            "related_pss_kib": 0,
+            "related_private_dirty_kib": 0,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_1KiB",
+            "pid": 1857,
+            "address": "c2c2a0",
+            "program_break": "c4d000",
+            "count": 1,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 69,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[heap]",
+            "mapping_header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+            "size_kib": 132,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1472,
+            "process_size_kib": 2416,
+            "blocks": [
+              {
+                "address": "c2c2a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "00c2c000",
+                  "end": "00c4d000",
+                  "header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "00c2c000",
+                    "end": "00c4d000",
+                    "header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 1,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 132,
+            "related_rss_kib": 4,
+            "related_pss_kib": 4,
+            "related_private_dirty_kib": 4,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_256KiB",
+            "pid": 1857,
+            "address": "7f1bcde4a010",
+            "program_break": "c4d000",
+            "count": 2,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 70,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1bcde4a000-7f1bcde8d000 rw-p 00000000 00:00 0 ",
+            "size_kib": 268,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1476,
+            "process_size_kib": 2676,
+            "blocks": [
+              {
+                "address": "c2c2a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "00c2c000",
+                  "end": "00c4d000",
+                  "header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "00c2c000",
+                    "end": "00c4d000",
+                    "header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f1bcde4a010",
+                "requested_bytes": 262144,
+                "alive": true,
+                "mapping": {
+                  "start": "7f1bcde4a000",
+                  "end": "7f1bcde8d000",
+                  "header": "7f1bcde4a000-7f1bcde8d000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 268,
+                  "rss_kib": 8,
+                  "pss_kib": 8,
+                  "private_dirty_kib": 8,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f1bcde4a000",
+                    "end": "7f1bcde8d000",
+                    "header": "7f1bcde4a000-7f1bcde8d000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 268,
+                    "rss_kib": 8,
+                    "pss_kib": 8,
+                    "private_dirty_kib": 8,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 2,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 400,
+            "related_rss_kib": 12,
+            "related_pss_kib": 12,
+            "related_private_dirty_kib": 12,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_1MiB",
+            "pid": 1857,
+            "address": "7f1bcdd49010",
+            "program_break": "c4d000",
+            "count": 3,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 71,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1bcdd49000-7f1bcde8d000 rw-p 00000000 00:00 0 ",
+            "size_kib": 1296,
+            "rss_kib": 12,
+            "pss_kib": 12,
+            "private_dirty_kib": 12,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1480,
+            "process_size_kib": 3704,
+            "blocks": [
+              {
+                "address": "c2c2a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "00c2c000",
+                  "end": "00c4d000",
+                  "header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "00c2c000",
+                    "end": "00c4d000",
+                    "header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f1bcde4a010",
+                "requested_bytes": 262144,
+                "alive": true,
+                "mapping": {
+                  "start": "7f1bcdd49000",
+                  "end": "7f1bcde8d000",
+                  "header": "7f1bcdd49000-7f1bcde8d000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 1296,
+                  "rss_kib": 12,
+                  "pss_kib": 12,
+                  "private_dirty_kib": 12,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f1bcdd49000",
+                    "end": "7f1bcde8d000",
+                    "header": "7f1bcdd49000-7f1bcde8d000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 1296,
+                    "rss_kib": 12,
+                    "pss_kib": 12,
+                    "private_dirty_kib": 12,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f1bcdd49010",
+                "requested_bytes": 1048576,
+                "alive": true,
+                "mapping": {
+                  "start": "7f1bcdd49000",
+                  "end": "7f1bcde8d000",
+                  "header": "7f1bcdd49000-7f1bcde8d000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 1296,
+                  "rss_kib": 12,
+                  "pss_kib": 12,
+                  "private_dirty_kib": 12,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f1bcdd49000",
+                    "end": "7f1bcde8d000",
+                    "header": "7f1bcdd49000-7f1bcde8d000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 1296,
+                    "rss_kib": 12,
+                    "pss_kib": 12,
+                    "private_dirty_kib": 12,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 2,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 1428,
+            "related_rss_kib": 16,
+            "related_pss_kib": 16,
+            "related_private_dirty_kib": 16,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 1857,
+            "address": "c2c2a0",
+            "program_break": "c4d000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 71,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[heap]",
+            "mapping_header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+            "size_kib": 132,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1472,
+            "process_size_kib": 2416,
+            "blocks": [
+              {
+                "address": "c2c2a0",
+                "requested_bytes": 1024,
+                "alive": false,
+                "mapping": {
+                  "start": "00c2c000",
+                  "end": "00c4d000",
+                  "header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "00c2c000",
+                    "end": "00c4d000",
+                    "header": "00c2c000-00c4d000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f1bcde4a010",
+                "requested_bytes": 262144,
+                "alive": false,
+                "mapping": null,
+                "mappings": []
+              },
+              {
+                "address": "7f1bcdd49010",
+                "requested_bytes": 1048576,
+                "alive": false,
+                "mapping": null,
+                "mappings": []
+              }
+            ],
+            "related_vma_count": 1,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 132,
+            "related_rss_kib": 4,
+            "related_pss_kib": 4,
+            "related_private_dirty_kib": 4,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          }
+        ],
+        "allocations": [
+          "c2c2a0",
+          "7f1bcde4a010",
+          "7f1bcdd49010"
+        ],
+        "actions": [
+          {
+            "action": "malloc_1",
+            "phase": "alloc_1KiB",
+            "begin_line": 19,
+            "end_line": 21,
+            "events": [
+              {
+                "line": 20,
+                "text": "brk(0xc4d000)                           = 0xc4d000",
+                "name": "brk",
+                "result": "0xc4d000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "brk(0xc4d000)                           = 0xc4d000"
+            ],
+            "requested_bytes": 1024,
+            "returned_address": "c2c2a0",
+            "allocation_source": "new_brk_range",
+            "source_line": 20
+          },
+          {
+            "action": "malloc_2",
+            "phase": "alloc_256KiB",
+            "begin_line": 30,
+            "end_line": 32,
+            "events": [
+              {
+                "line": 31,
+                "text": "mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f1bcde4a000",
+                "name": "mmap",
+                "result": "0x7f1bcde4a000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f1bcde4a000"
+            ],
+            "requested_bytes": 262144,
+            "returned_address": "7f1bcde4a010",
+            "allocation_source": "new_mmap_range",
+            "source_line": 31
+          },
+          {
+            "action": "malloc_3",
+            "phase": "alloc_1MiB",
+            "begin_line": 41,
+            "end_line": 43,
+            "events": [
+              {
+                "line": 42,
+                "text": "mmap(NULL, 1052672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f1bcdd49000",
+                "name": "mmap",
+                "result": "0x7f1bcdd49000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "mmap(NULL, 1052672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f1bcdd49000"
+            ],
+            "requested_bytes": 1048576,
+            "returned_address": "7f1bcdd49010",
+            "allocation_source": "new_mmap_range",
+            "source_line": 42
+          },
+          {
+            "action": "free_all",
+            "phase": "freed",
+            "begin_line": 53,
+            "end_line": 56,
+            "events": [
+              {
+                "line": 54,
+                "text": "munmap(0x7f1bcde4a000, 266240)          = 0",
+                "name": "munmap",
+                "result": "0",
+                "success": true
+              },
+              {
+                "line": 55,
+                "text": "munmap(0x7f1bcdd49000, 1052672)         = 0",
+                "name": "munmap",
+                "result": "0",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "munmap(0x7f1bcde4a000, 266240)          = 0",
+              "munmap(0x7f1bcdd49000, 1052672)         = 0"
+            ]
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/sequence-2/stdout.jsonl",
+        "smaps": "cases/sequence-2/smaps.stderr.txt",
+        "syscalls": "cases/sequence-2/syscalls.txt"
+      },
+      "execution": {
+        "command": [
+          "strace",
+          "-qq",
+          "-s",
+          "256",
+          "-e",
+          "trace=brk,mmap,munmap,mremap,write",
+          "-o",
+          "/root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/cases/sequence-2/syscalls.txt",
+          "/root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence"
+        ],
+        "started_at": "2026-11-16T09:01:32.962103+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-16T09:01:33.191022+00:00",
+        "duration_seconds": 0.229
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "sequence-3",
+      "suite": "sequence",
+      "parameters": {
+        "repeat": 3
+      },
+      "arguments": [],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "three_live_blocks",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "sequence_counts",
+            "observed": [
+              0,
+              1,
+              2,
+              3,
+              0
+            ],
+            "expected": [
+              0,
+              1,
+              2,
+              3,
+              0
+            ],
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "trace_completed",
+            "observed": 4,
+            "expected": 4,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "sequence",
+          "pid": 1861,
+          "sizes": [
+            1024,
+            262144,
+            1048576
+          ],
+          "page_bytes": 4096
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 1861,
+            "address": "0",
+            "program_break": "985000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 64,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1288,
+            "process_size_kib": 2284,
+            "blocks": [],
+            "related_vma_count": 0,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 0,
+            "related_rss_kib": 0,
+            "related_pss_kib": 0,
+            "related_private_dirty_kib": 0,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_1KiB",
+            "pid": 1861,
+            "address": "9852a0",
+            "program_break": "9a6000",
+            "count": 1,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 66,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[heap]",
+            "mapping_header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+            "size_kib": 132,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1296,
+            "process_size_kib": 2416,
+            "blocks": [
+              {
+                "address": "9852a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "00985000",
+                  "end": "009a6000",
+                  "header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "00985000",
+                    "end": "009a6000",
+                    "header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 1,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 132,
+            "related_rss_kib": 4,
+            "related_pss_kib": 4,
+            "related_private_dirty_kib": 4,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_256KiB",
+            "pid": 1861,
+            "address": "7f33ac793010",
+            "program_break": "9a6000",
+            "count": 2,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 67,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f33ac793000-7f33ac7d6000 rw-p 00000000 00:00 0 ",
+            "size_kib": 268,
+            "rss_kib": 8,
+            "pss_kib": 8,
+            "private_dirty_kib": 8,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1300,
+            "process_size_kib": 2676,
+            "blocks": [
+              {
+                "address": "9852a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "00985000",
+                  "end": "009a6000",
+                  "header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "00985000",
+                    "end": "009a6000",
+                    "header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f33ac793010",
+                "requested_bytes": 262144,
+                "alive": true,
+                "mapping": {
+                  "start": "7f33ac793000",
+                  "end": "7f33ac7d6000",
+                  "header": "7f33ac793000-7f33ac7d6000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 268,
+                  "rss_kib": 8,
+                  "pss_kib": 8,
+                  "private_dirty_kib": 8,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f33ac793000",
+                    "end": "7f33ac7d6000",
+                    "header": "7f33ac793000-7f33ac7d6000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 268,
+                    "rss_kib": 8,
+                    "pss_kib": 8,
+                    "private_dirty_kib": 8,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 2,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 400,
+            "related_rss_kib": 12,
+            "related_pss_kib": 12,
+            "related_private_dirty_kib": 12,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "alloc_1MiB",
+            "pid": 1861,
+            "address": "7f33ac692010",
+            "program_break": "9a6000",
+            "count": 3,
+            "action_minor": 1,
+            "action_major": 0,
+            "total_minor": 68,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f33ac692000-7f33ac7d6000 rw-p 00000000 00:00 0 ",
+            "size_kib": 1296,
+            "rss_kib": 12,
+            "pss_kib": 12,
+            "private_dirty_kib": 12,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1304,
+            "process_size_kib": 3704,
+            "blocks": [
+              {
+                "address": "9852a0",
+                "requested_bytes": 1024,
+                "alive": true,
+                "mapping": {
+                  "start": "00985000",
+                  "end": "009a6000",
+                  "header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "00985000",
+                    "end": "009a6000",
+                    "header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f33ac793010",
+                "requested_bytes": 262144,
+                "alive": true,
+                "mapping": {
+                  "start": "7f33ac692000",
+                  "end": "7f33ac7d6000",
+                  "header": "7f33ac692000-7f33ac7d6000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 1296,
+                  "rss_kib": 12,
+                  "pss_kib": 12,
+                  "private_dirty_kib": 12,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f33ac692000",
+                    "end": "7f33ac7d6000",
+                    "header": "7f33ac692000-7f33ac7d6000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 1296,
+                    "rss_kib": 12,
+                    "pss_kib": 12,
+                    "private_dirty_kib": 12,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f33ac692010",
+                "requested_bytes": 1048576,
+                "alive": true,
+                "mapping": {
+                  "start": "7f33ac692000",
+                  "end": "7f33ac7d6000",
+                  "header": "7f33ac692000-7f33ac7d6000 rw-p 00000000 00:00 0 ",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "",
+                  "size_kib": 1296,
+                  "rss_kib": 12,
+                  "pss_kib": 12,
+                  "private_dirty_kib": 12,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "7f33ac692000",
+                    "end": "7f33ac7d6000",
+                    "header": "7f33ac692000-7f33ac7d6000 rw-p 00000000 00:00 0 ",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "",
+                    "size_kib": 1296,
+                    "rss_kib": 12,
+                    "pss_kib": 12,
+                    "private_dirty_kib": 12,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              }
+            ],
+            "related_vma_count": 2,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 1428,
+            "related_rss_kib": 16,
+            "related_pss_kib": 16,
+            "related_private_dirty_kib": 16,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 1861,
+            "address": "9852a0",
+            "program_break": "9a6000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 68,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "[heap]",
+            "mapping_header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+            "size_kib": 132,
+            "rss_kib": 4,
+            "pss_kib": 4,
+            "private_dirty_kib": 4,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1296,
+            "process_size_kib": 2416,
+            "blocks": [
+              {
+                "address": "9852a0",
+                "requested_bytes": 1024,
+                "alive": false,
+                "mapping": {
+                  "start": "00985000",
+                  "end": "009a6000",
+                  "header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+                  "permissions": "rw-p",
+                  "file_offset": 0,
+                  "pathname": "[heap]",
+                  "size_kib": 132,
+                  "rss_kib": 4,
+                  "pss_kib": 4,
+                  "private_dirty_kib": 4,
+                  "shared_dirty_kib": 0,
+                  "huge_kib": 0,
+                  "swap_kib": 0
+                },
+                "mappings": [
+                  {
+                    "start": "00985000",
+                    "end": "009a6000",
+                    "header": "00985000-009a6000 rw-p 00000000 00:00 0                                  [heap]",
+                    "permissions": "rw-p",
+                    "file_offset": 0,
+                    "pathname": "[heap]",
+                    "size_kib": 132,
+                    "rss_kib": 4,
+                    "pss_kib": 4,
+                    "private_dirty_kib": 4,
+                    "shared_dirty_kib": 0,
+                    "huge_kib": 0,
+                    "swap_kib": 0
+                  }
+                ]
+              },
+              {
+                "address": "7f33ac793010",
+                "requested_bytes": 262144,
+                "alive": false,
+                "mapping": null,
+                "mappings": []
+              },
+              {
+                "address": "7f33ac692010",
+                "requested_bytes": 1048576,
+                "alive": false,
+                "mapping": null,
+                "mappings": []
+              }
+            ],
+            "related_vma_count": 1,
+            "related_scope": "whole_vmas_intersecting_live_or_former_blocks",
+            "related_size_kib": 132,
+            "related_rss_kib": 4,
+            "related_pss_kib": 4,
+            "related_private_dirty_kib": 4,
+            "related_shared_dirty_kib": 0,
+            "related_huge_kib": 0,
+            "related_swap_kib": 0
+          }
+        ],
+        "allocations": [
+          "9852a0",
+          "7f33ac793010",
+          "7f33ac692010"
+        ],
+        "actions": [
+          {
+            "action": "malloc_1",
+            "phase": "alloc_1KiB",
+            "begin_line": 19,
+            "end_line": 21,
+            "events": [
+              {
+                "line": 20,
+                "text": "brk(0x9a6000)                           = 0x9a6000",
+                "name": "brk",
+                "result": "0x9a6000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "brk(0x9a6000)                           = 0x9a6000"
+            ],
+            "requested_bytes": 1024,
+            "returned_address": "9852a0",
+            "allocation_source": "new_brk_range",
+            "source_line": 20
+          },
+          {
+            "action": "malloc_2",
+            "phase": "alloc_256KiB",
+            "begin_line": 30,
+            "end_line": 32,
+            "events": [
+              {
+                "line": 31,
+                "text": "mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f33ac793000",
+                "name": "mmap",
+                "result": "0x7f33ac793000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "mmap(NULL, 266240, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f33ac793000"
+            ],
+            "requested_bytes": 262144,
+            "returned_address": "7f33ac793010",
+            "allocation_source": "new_mmap_range",
+            "source_line": 31
+          },
+          {
+            "action": "malloc_3",
+            "phase": "alloc_1MiB",
+            "begin_line": 41,
+            "end_line": 43,
+            "events": [
+              {
+                "line": 42,
+                "text": "mmap(NULL, 1052672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f33ac692000",
+                "name": "mmap",
+                "result": "0x7f33ac692000",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "mmap(NULL, 1052672, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0) = 0x7f33ac692000"
+            ],
+            "requested_bytes": 1048576,
+            "returned_address": "7f33ac692010",
+            "allocation_source": "new_mmap_range",
+            "source_line": 42
+          },
+          {
+            "action": "free_all",
+            "phase": "freed",
+            "begin_line": 53,
+            "end_line": 56,
+            "events": [
+              {
+                "line": 54,
+                "text": "munmap(0x7f33ac793000, 266240)          = 0",
+                "name": "munmap",
+                "result": "0",
+                "success": true
+              },
+              {
+                "line": 55,
+                "text": "munmap(0x7f33ac692000, 1052672)         = 0",
+                "name": "munmap",
+                "result": "0",
+                "success": true
+              }
+            ],
+            "syscalls": [
+              "munmap(0x7f33ac793000, 266240)          = 0",
+              "munmap(0x7f33ac692000, 1052672)         = 0"
+            ]
+          }
+        ]
+      },
+      "artifacts": {
+        "jsonl": "cases/sequence-3/stdout.jsonl",
+        "smaps": "cases/sequence-3/smaps.stderr.txt",
+        "syscalls": "cases/sequence-3/syscalls.txt"
+      },
+      "execution": {
+        "command": [
+          "strace",
+          "-qq",
+          "-s",
+          "256",
+          "-e",
+          "trace=brk,mmap,munmap,mremap,write",
+          "-o",
+          "/root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/cases/sequence-3/syscalls.txt",
+          "/root/proj5-transfers/20261116T090120-557/runs/20261116T090129.522833Z/build/sequence"
+        ],
+        "started_at": "2026-11-16T09:01:33.377640+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-16T09:01:33.606219+00:00",
+        "duration_seconds": 0.229
+      },
+      "error": null,
+      "integrity": "verified"
+    }
+  ],
+  "error": null,
+  "related_run": null,
+  "scope": "Mechanism/function verification; no hardware performance inference, especially under QEMU TCG.",
+  "plan": [
+    {
+      "id": "sequence-1",
+      "suite": "sequence",
+      "parameters": {
+        "repeat": 1
+      },
+      "arguments": []
+    },
+    {
+      "id": "sequence-2",
+      "suite": "sequence",
+      "parameters": {
+        "repeat": 2
+      },
+      "arguments": []
+    },
+    {
+      "id": "sequence-3",
+      "suite": "sequence",
+      "parameters": {
+        "repeat": 3
+      },
+      "arguments": []
+    }
+  ],
+  "compiler_check": {
+    "command": [
+      "gcc",
+      "--version"
+    ],
+    "started_at": "2026-11-16T09:01:29.785310+00:00",
+    "status": "completed",
+    "exit_code": 0,
+    "error": null,
+    "finished_at": "2026-11-16T09:01:29.863872+00:00",
+    "duration_seconds": 0.078
+  },
+  "trace_tool": {
+    "command": [
+      "strace",
+      "--version"
+    ],
+    "started_at": "2026-11-16T09:01:29.866152+00:00",
+    "status": "completed",
+    "exit_code": 0,
+    "error": null,
+    "finished_at": "2026-11-16T09:01:29.939176+00:00",
+    "duration_seconds": 0.073,
+    "version": "strace -- version 6.6\nCopyright (c) 1991-2023 The strace developers <https://strace.io>.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\nOptional features enabled: stack-trace=libdw stack-demangle m32-mpers mx32-mpers"
+  },
+  "finished_at": "2026-11-16T09:01:33.788399+00:00",
+  "completed": true,
+  "diagnosis": {
+    "rule_version": "2026-11-13.1",
+    "findings": [
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.2 同进程连续 malloc",
+        "explanation": "malloc_1：brk；malloc_2：mmap；malloc_3：mmap；free_all：munmap / munmap",
+        "evidence": [
+          {
+            "case_id": "sequence-1",
+            "artifacts": {
+              "jsonl": "cases/sequence-1/stdout.jsonl",
+              "smaps": "cases/sequence-1/smaps.stderr.txt",
+              "syscalls": "cases/sequence-1/syscalls.txt"
+            },
+            "checks": [
+              {
+                "id": "three_live_blocks",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "sequence_counts",
+                "observed": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  0
+                ],
+                "expected": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  0
+                ],
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "trace_completed",
+                "observed": 4,
+                "expected": 4,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "系统调用仅统计动作标记之间的 brk/mmap/munmap/mremap；包含返回值和原始行号。相关 VMA 按地址范围去重，指标包含管理信息及同区其他对象。释放后只查原地址范围，不读写旧指针；保留映射不等于泄漏。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.2 同进程连续 malloc",
+        "explanation": "malloc_1：brk；malloc_2：mmap；malloc_3：mmap；free_all：munmap / munmap",
+        "evidence": [
+          {
+            "case_id": "sequence-2",
+            "artifacts": {
+              "jsonl": "cases/sequence-2/stdout.jsonl",
+              "smaps": "cases/sequence-2/smaps.stderr.txt",
+              "syscalls": "cases/sequence-2/syscalls.txt"
+            },
+            "checks": [
+              {
+                "id": "three_live_blocks",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "sequence_counts",
+                "observed": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  0
+                ],
+                "expected": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  0
+                ],
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "trace_completed",
+                "observed": 4,
+                "expected": 4,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "系统调用仅统计动作标记之间的 brk/mmap/munmap/mremap；包含返回值和原始行号。相关 VMA 按地址范围去重，指标包含管理信息及同区其他对象。释放后只查原地址范围，不读写旧指针；保留映射不等于泄漏。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.2 同进程连续 malloc",
+        "explanation": "malloc_1：brk；malloc_2：mmap；malloc_3：mmap；free_all：munmap / munmap",
+        "evidence": [
+          {
+            "case_id": "sequence-3",
+            "artifacts": {
+              "jsonl": "cases/sequence-3/stdout.jsonl",
+              "smaps": "cases/sequence-3/smaps.stderr.txt",
+              "syscalls": "cases/sequence-3/syscalls.txt"
+            },
+            "checks": [
+              {
+                "id": "three_live_blocks",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "sequence_counts",
+                "observed": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  0
+                ],
+                "expected": [
+                  0,
+                  1,
+                  2,
+                  3,
+                  0
+                ],
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "trace_completed",
+                "observed": 4,
+                "expected": 4,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "系统调用仅统计动作标记之间的 brk/mmap/munmap/mremap；包含返回值和原始行号。相关 VMA 按地址范围去重，指标包含管理信息及同区其他对象。释放后只查原地址范围，不读写旧指针；保留映射不等于泄漏。"
+      }
+    ],
+    "comparisons": [],
+    "cow_observations": [],
+    "policy_comparisons": [],
+    "references": [
+      "https://docs.kernel.org/filesystems/proc.html",
+      "https://docs.kernel.org/admin-guide/mm/transhuge.html",
+      "https://man7.org/linux/man-pages/man2/getrusage.2.html",
+      "https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html"
+    ],
+    "confidence_labels": {
+      "confirmed": "已确认（限列出的观测与对照）",
+      "probable": "可能原因",
+      "insufficient_evidence": "证据不足"
+    }
+  }
+}

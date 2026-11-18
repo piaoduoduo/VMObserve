@@ -1,8 +1,26 @@
 # 11月18日操作系统实验验收速查
 
-准备日期：2026-11-16。用户已更正为后天；老师未指定验收范围。按前序基础、第3组、4.1、4.2、4.3—4.4的顺序准备，到老师要求的位置即可。下面是本机已验证入口，页码为27页《应用层实验文档.pdf》的物理页码。
+11月18日代码复查已完成。普通用户 GCC 演示依次使用 .i、.s、.o 生成下一阶段产物，运行后核对 hello 输出。容器通过宿主的 NSpid 和 cgroup 对应实际实例，中途失败会停止该容器。第3组校验 512 MiB 实验各阶段的分配地址，第4组直接记录 waitpid 返回的 PID。openEuler 第3组 8/8、第4组 14/14、容器 COW 2/2 均通过，本轮每种配置各跑一次。Git 两种补丁离线复测通过，另有 60 项自动检查通过。 [本轮复测记录](../output/verification/code-review-20261118/review.json) · [修订资料包](../output/acceptance-20261118/os-lab-groups1-4-20261118-reviewed.zip)
 
-## 先打开能用的入口
+准备日期：2026-11-16。用户已更正为后天；老师未指定验收范围。按第1、2组优先，第3组、4.1/4.2随后，4.3/4.4备用的顺序准备，到老师要求的位置即可。下面是本机已验证入口，页码为27页《应用层实验文档.pdf》的物理页码。
+
+## 先演示第1、2组
+
+在项目根目录PowerShell运行：
+
+```powershell
+cd D:\Work\CodexWorkspace\2026-11-10\ba
+./work/course-labs/group12/demo.ps1 status
+./work/course-labs/group12/demo.ps1 basics
+./work/course-labs/group12/demo.ps1 git
+./work/course-labs/group12/demo.ps1 container
+```
+
+basics覆盖1.1/1.2/2.1/2.2；git覆盖1.3；container覆盖2.3。以上使用已保存的公开仓库与本地镜像，不需现场下载。需手工输入命令时用 `demo.ps1 shell`；能力赛容器联动用 `demo.ps1 linkage`。机器重启后先执行 `./work/vm.ps1 start`、`./work/vm.ps1 wait`。
+
+优先看[第1、2组命令与思考题参考](../work/course-labs/group12/README.md)，对照[实际完成记录](GROUP12_COMPLETION_20261116.md)。普通用户权限演示显示644；原hello动态链接；除零和非法指针分别实测信号8/11；两类Git补丁完整树一致；容器原hello退出0，宿主PID与命名空间证据齐全。
+
+## 第3、4组备用入口
 
 在PowerShell运行：
 
@@ -41,7 +59,7 @@ wsl -d Ubuntu -- bash /mnt/d/Work/CodexWorkspace/2026-11-10/ba/work/course-labs/
 | 4 | 4.1—4.2，第12—14页 | 下面两项进程/线程演示 | 能指出代码中创建、等待、共享与加锁的位置 |
 | 5 | 4.3—4.4，第14—16页 | 用户线程、管道、共享账户 | 老师进度到这里时再展开 |
 
-基础预检原文在 `output/verification/v0.7-group4/basics-openeuler/`。本轮使用已有root测试环境；普通用户创建/日常操作、1.3个人Git补丁与社区流程、2.3容器构建尚未完整演练。检查发现当前两环境没有isula和isula-build，因此不能把第1、2组整体写为完成。
+第1、2组已在后续补齐，当前证据位于 `output/verification/group12-20261116/`。1.3对应第4—6页，展示分支、自己的练习提交、diff补丁及format-patch；2.3对应第8—9页，展示已缓存镜像、容器内编译输出与宿主进程观察。先前root基础预检保留为历史记录。
 
 ## 4.1：先讲这四句话
 
@@ -81,7 +99,7 @@ wsl -d Ubuntu -- bash /mnt/d/Work/CodexWorkspace/2026-11-10/ba/work/course-labs/
 
 ## 携带包与自己练习
 
-便携包位于 `output/acceptance-20261118/os-lab-ready-20261118.zip`。含6份第4组C源码、公共头文件、构建/演示脚本、基础预检、实际输出和离线报告。解压后，在Linux终端进入文件夹：
+11月16日归档的便携包位于 `output/acceptance-20261118/os-lab-groups1-4-20261118.zip`，增加第1、2组源码、Git补丁、构建及容器观察日志、能力赛容器报告和本轮说明。镜像已缓存在本机虚拟机；包内包含的是源代码与证据，不能在新机器上代替完整环境。原包 `os-lab-ready-20261118.zip` 保留。含6份第4组C源码、公共头文件、构建/演示脚本、基础预检、实际输出和离线报告。解压后，在Linux终端进入文件夹：
 
 ```bash
 bash basics/preflight.sh
@@ -93,4 +111,4 @@ bash group4/demo.sh all
 
 依赖GCC、Python3、ps、timeout；基础预检另需strace、file、ldd。脚本不联网安装。WSL下做chmod权限演示时，将解压文件夹放进Linux自己的目录，例如`~/os-lab-ready`；本轮直接在Windows挂载盘上测试时，chmod没有呈现Linux权限位，openEuler本地文件系统则显示了640。
 
-建议本人至少运行一次4.1和4.2，打开对应源码，口头解释以上几句话，再看第3组现象。当前保存的是AI实际运行与检查结果，教师验收、个人思考题和正式报告由后续真实记录补齐。
+建议本人先运行basics、git、container，能指出每步命令与对应现象；有时间再练第3组及4.1/4.2。当前保存的是AI实际运行与检查结果，教师验收、个人思考题和正式报告由后续真实记录补齐。

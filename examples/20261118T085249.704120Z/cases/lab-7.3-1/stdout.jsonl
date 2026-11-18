@@ -1,0 +1,3 @@
+{"kind": "observation", "lab": "7.3", "phase": "块设备、类型与挂载点", "observed": "sr0    rom  \nvda    disk \n├─vda1 part /boot\n└─vda2 part /\nvdb    disk"}
+{"kind": "observation", "lab": "7.3", "phase": "系统中的网络接口", "observed": ["ens3", "lo"]}
+{"kind": "observation", "lab": "7.3", "phase": "回环接口累计收发字节", "observed": [0, 0]}

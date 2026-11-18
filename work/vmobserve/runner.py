@@ -4,13 +4,15 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import sys
 
 from . import SCHEMA_VERSION, __version__
 from .common import digest, execute, read_json, run_id, timestamp, write_json
 from .cow import COW_CHOICES, cow_fractions
 from .diagnosis import diagnose
 from .evidence import parse_case, validate_measurements
-from . import group3, group4
+from .replay import recorded_environment
+from . import group3, group4, systems
 
 WORK = Path(__file__).resolve().parents[1]
 SOURCES = {"baseline": "proj5-memory-pilot/memory_probe.c", "thp": "proj5-round2/thp_probe.c", "course": "proj5-course/allocator_probe.c", "layout": "proj5-course/layout_probe.c"}
@@ -19,6 +21,7 @@ SOURCES.update({"link-dynamic": "proj5-course/group3_link.c", "link-static": "pr
                 "sequence": "proj5-course/group3_sequence.c", "demand512": "proj5-course/group3_demand.c",
                 "stack": "proj5-course/group3_stack.c"})
 SOURCES.update(group4.SOURCES)
+SOURCES.update(systems.SUITES)
 
 def read_optional(path):
     try:
@@ -61,6 +64,8 @@ def source_files():
 
 
 def plan_cases(args):
+    if args.suite == "systems":
+        return systems.plan(args.repeats, args.lab)
     cases = group3.plan(args.repeats) if args.suite == "group3" else group4.plan(args.repeats, args.group4_task) if args.suite == "group4" else []
     if args.suite == "sequence":
         cases = [c for c in group3.plan(args.repeats) if c["suite"] == "sequence"]
@@ -98,6 +103,16 @@ def plan_cases(args):
     return cases
 
 
+def compare_thp_environment(parent, current):
+    keys = ("kernel", "machine", "os_release", "execution_context", "page_bytes",
+            "pmd_size", "thp_enabled", "thp_defrag", "thp_sizes")
+    missing = [k for k in keys if parent.get(k) is None or current.get(k) is None]
+    changes = {k: {"parent": parent[k], "current": current[k]} for k in keys
+               if k not in missing and parent[k] != current[k]}
+    status = "cross_environment" if changes else "unknown" if missing else "matched_conditions"
+    return {"status": status, "checked": list(keys), "differences": changes, "missing": missing}
+
+
 def run(args):
     out = args.output.resolve() / run_id()
     out.mkdir(parents=True, exist_ok=False)
@@ -113,9 +128,13 @@ def run(args):
     try:
         if args.recheck_from:
             previous = read_json(args.recheck_from / "report.json")
-            if previous.get("data_origin") != "real_execution" or not any(c.get("suite") == "thp" for c in previous.get("cases", [])):
+            if previous.get("schema_version") != SCHEMA_VERSION or previous.get("data_origin") != "real_execution" or not any(c.get("suite") == "thp" for c in previous.get("cases", [])):
                 raise ValueError("recheck requires a v1 real THP execution record")
+            parent_env, conflict = recorded_environment(args.recheck_from, previous)
+            if conflict:
+                raise ValueError(conflict)
             report["related_run"] = {"run_id": previous["run_id"], "report_sha256": digest(args.recheck_from / "report.json"),
+                                     "environment_comparison": compare_thp_environment(parent_env, report["environment"]),
                                      "recipe": "thp_" + (args.pattern if args.pattern != "all" else "sparse") + ("_process_pair" if args.recheck_kind == "process" else "_pair"), "relation": "new_controlled_recheck"}
             args.suite, args.pattern, args.thp = "thp", args.pattern if args.pattern != "all" else "sparse", "both"
             if args.recheck_kind == "process":
@@ -156,6 +175,10 @@ def run(args):
                        str(out / "source" / SOURCES[suite]), "-o", str(out / "build" / suite)]
             if suite in group4.SOURCES:
                 command += ["-pthread", "-g"]
+            if suite == "sync":
+                command.append("-pthread")
+            if suite == "io":
+                command = [sys.executable, "-m", "py_compile", str(out / "source" / SOURCES[suite])]
             if suite == "course" and args.course_code == "student":
                 command += ['-DVMOBSERVE_ACCESS_HEADER="../lessons/demand/student.h"', '-DVMOBSERVE_ACCESS_NAME="student"']
             if suite == "layout":
@@ -180,11 +203,14 @@ def run(args):
                     continue
                 folder = out / "cases" / case["id"]
                 folder.mkdir(parents=True)
-                raw, smaps = folder / "stdout.jsonl", folder / ("kernel.stderr.txt" if suite in group4.SOURCES else "smaps.stderr.txt")
-                case["artifacts"] = {"jsonl": raw.relative_to(out).as_posix(), "kernel" if suite in group4.SOURCES else "smaps": smaps.relative_to(out).as_posix()}
+                stream = "stderr" if suite in systems.SUITES else "kernel" if suite in group4.SOURCES else "smaps"
+                raw, smaps = folder / "stdout.jsonl", folder / ("stderr.txt" if stream == "stderr" else stream + ".stderr.txt")
+                case["artifacts"] = {"jsonl": raw.relative_to(out).as_posix(), stream: smaps.relative_to(out).as_posix()}
                 case["status"] = "running"
                 checkpoint()
                 command = group3.prepare(case, folder, out / "build" / suite, execute, args.timeout) if suite in group3.SUITES else group4.command(case, out / "build" / suite) if suite in group4.SOURCES else [str(out / "build" / suite), *case["arguments"]]
+                if suite == "io":
+                    command = [sys.executable, str(out / "source" / SOURCES[suite]), *case["arguments"]]
                 case["execution"] = execute(command, raw, smaps, args.timeout)
                 case["status"] = case["execution"]["status"]
                 case["error"] = case["execution"]["error"]
@@ -231,7 +257,8 @@ def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--require-openeuler", action="store_true")
     p.add_argument("--output", type=Path, default=WORK / "runs")
-    p.add_argument("--suite", choices=("all", "baseline", "thp", "course", "layout", "group3", "group4", "sequence"), default="all")
+    p.add_argument("--suite", choices=("all", "baseline", "thp", "course", "layout", "group3", "group4", "sequence", "systems"), default="all")
+    p.add_argument("--lab", choices=("all", *systems.LABS), default="all")
     p.add_argument("--group4-task", choices=("all", "4.1", "4.2", "4.3", "4.4"), default="all")
     p.add_argument("--repeats", type=int, choices=range(1, 6), default=3)
     p.add_argument("--cow-fraction", choices=COW_CHOICES, default="1/4",

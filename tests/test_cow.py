@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "work"))
 from vmobserve.evidence import parse_case, validate_measurements
 from vmobserve.runner import parser, plan_cases
-from vmobserve.server import Workbench
+from vmobserve.server import experiment_args, Workbench
 
 FIXTURE = ROOT / "tests/fixtures/legacy-run/proj5-memory-pilot/results"
 TEST_TMP = ROOT / "output/test-tmp"
@@ -85,8 +85,8 @@ class CowTests(unittest.TestCase):
 
     def test_web_command_transmits_fraction_and_rejects_invalid_values(self):
         app = Workbench("local")
-        self.assertEqual(app.command(cow_fraction="1/8")[-4:], ["--suite", "baseline", "--cow-fraction", "1/8"])
-        self.assertEqual(app.command(cow_fraction="all")[-1], "all")
+        self.assertEqual(experiment_args("cow", cow_fraction="1/8")[-4:], ["--suite", "baseline", "--cow-fraction", "1/8"])
+        self.assertEqual(experiment_args("cow", cow_fraction="all")[-1], "all")
         for bad in ("1/3", "../", "1;echo", None):
             with self.assertRaises(ValueError):
                 app.start("cow", cow_fraction=bad)

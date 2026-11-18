@@ -1,0 +1,6 @@
+{"kind":"condition","mode":"overflow","pid":2247,"limit_kib":512,"frame_bytes":8192,"target_depth":4096,"page_bytes":4096}
+{"kind":"sample","phase":"before_stack","pid":2247,"address":"7ffec053f67c","program_break":"133c000","count":0,"action_minor":1,"action_major":0,"total_minor":27,"total_major":0}
+{"kind":"sample","phase":"stack","pid":2247,"address":"7ffec051ea70","program_break":"133c000","count":16,"action_minor":32,"action_major":0,"total_minor":61,"total_major":0}
+{"kind":"sample","phase":"stack","pid":2247,"address":"7ffec04fde70","program_break":"133c000","count":32,"action_minor":32,"action_major":0,"total_minor":94,"total_major":0}
+{"kind":"sample","phase":"stack","pid":2247,"address":"7ffec04dd270","program_break":"133c000","count":48,"action_minor":33,"action_major":0,"total_minor":127,"total_major":0}
+{"kind":"outcome","child_pid":2247,"signal":11,"exit_code":-1,"minor":155,"major":0,"maxrss_kib":1528}

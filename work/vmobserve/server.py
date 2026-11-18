@@ -13,16 +13,47 @@ from urllib.parse import parse_qs, urlparse
 from .common import execute, read_json, run_id, timestamp, write_json
 from .cow import COW_CHOICES
 from .export import csv_text, html_text
-from .replay import load_run, safe_child
+from .replay import load_run, recorded_environment, safe_child
 from .runner import WORK
+from .systems import LABS
 
 WEB = Path(__file__).parent / "web"
+
+
+WEB_PAGES = {"/": "index.html", "/lesson": "lesson.html",
+             **{"/" + name: name for name in ("app.js", "ui.js", "course-views.js", "memory-views.js",
+                                                 "sequence-view.js", "evidence-view.js", "curriculum.js", "lesson.js", "style.css")}}
+
+
+def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all"):
+    if isinstance(mode, str) and mode.startswith("lab-") and mode[4:] in LABS:
+        return ["--suite", "systems", "--lab", mode[4:], "--repeats", "1"]
+    if pattern not in ("sparse", "full") or cow_fraction not in COW_CHOICES:
+        raise ValueError("unknown access pattern or COW fraction")
+    if group4_task not in ("all", "4.1", "4.2", "4.3", "4.4"):
+        raise ValueError("unknown group4 task")
+    if mode in ("sequence", "layout", "course"):
+        return ["--suite", mode]
+    options = {
+        "complete": [],
+        "student": ["--suite", "course", "--course-code", "student"],
+        "cow": ["--suite", "baseline", "--cow-fraction", cow_fraction],
+        "group3": ["--suite", "group3", "--timeout", "120"],
+        "group4": ["--suite", "group4", "--group4-task", group4_task, "--timeout", "120"],
+        "policy": ["--suite", "thp", "--thp", "on", "--thp-process", "pair", "--pattern", pattern],
+        "recheck": ["--pattern", pattern],
+        "policy-recheck": ["--pattern", pattern, "--recheck-kind", "process"],
+    }
+    if mode not in options:
+        raise ValueError("unknown execution mode")
+    return options[mode]
 
 
 class Workbench:
     def __init__(self, executor, roots=None):
         self.executor = executor
-        self.roots = roots or {"openeuler": WORK / "openeuler-vm/guest-runs", "local": WORK / "runs"}
+        self.roots = roots if roots is not None else {"openeuler": WORK / "openeuler-vm/guest-runs", "local": WORK / "runs",
+                                                       "example": WORK.parent / "examples"}
         self.token = secrets.token_urlsafe(32)
         self.lock = threading.Lock()
         self.job = None
@@ -33,12 +64,14 @@ class Workbench:
             for path in sorted(root.glob("*/report.json"), reverse=True):
                 try:
                     data = read_json(path)
-                    env = data.get("environment", {})
+                    env, issue = recorded_environment(path.parent, data)
                     items.append({"id": f"{group}--{path.parent.name}", "run_id": path.parent.name,
                                   "group": group, "kernel": env.get("kernel", "unknown"),
-                                  "distribution": env.get("distribution", {}).get("PRETTY_NAME") or ("openEuler 24.03" if "openEuler" in env.get("os_release", "") else "Ubuntu WSL"),
+                                  "distribution": env.get("distribution", {}).get("PRETTY_NAME") or env.get("system") or "环境未核验",
+                                  "environment_issue": issue,
                                   "status": data.get("status", "completed" if data.get("completed") else "failed"),
                                   "count": len(data["cases"]) if "cases" in data else 18,
+                                  "case_keys": [[c["suite"], c.get("parameters", {}).get("lab")] for c in data.get("cases", [])],
                                   "suites": sorted({c["suite"] for c in data["cases"]}) if "cases" in data else ["baseline", "thp"],
                                   "data_origin": data.get("data_origin", "real_execution"),
                                   "legacy": "schema_version" not in data})
@@ -56,9 +89,7 @@ class Workbench:
             raise ValueError("unknown run")
         return path
 
-    def command(self, parent=None, pattern="sparse", cow_fraction=None, course=False, student=False, policy=False, layout=False, group3=False, sequence=False, group4=False, group4_task="all"):
-        if cow_fraction is not None and cow_fraction not in COW_CHOICES:
-            raise ValueError("unknown COW fraction")
+    def command(self, options, parent=None):
         if self.executor == "openeuler-vm":
             script = WORK / "openeuler-vm/retest.sh"
             if os.name == "nt":
@@ -66,46 +97,22 @@ class Workbench:
                     return subprocess.check_output(["wsl", "-d", "Ubuntu", "--", "wslpath", "-a", Path(path).as_posix()], text=True, timeout=10).strip()
                 cmd = ["wsl", "-d", "Ubuntu", "--", "bash", linux_path(script)]
                 if parent:
-                    cmd += ["--recheck-from", linux_path(parent)]
+                    parent = linux_path(parent)
             else:
                 cmd = ["bash", str(script)]
-                if parent:
-                    cmd += ["--recheck-from", str(parent)]
         else:
             cmd = [sys.executable, str(WORK / "run_all.py")]
-            if parent:
-                cmd += ["--recheck-from", str(parent)]
         if parent:
-            cmd += ["--pattern", pattern]
-            if policy:
-                cmd += ["--recheck-kind", "process"]
-        elif group4:
-            cmd += ["--suite", "group4", "--group4-task", group4_task, "--timeout", "120"]
-        elif sequence:
-            cmd += ["--suite", "sequence"]
-        elif group3:
-            cmd += ["--suite", "group3", "--timeout", "120"]
-        elif layout:
-            cmd += ["--suite", "layout"]
-        elif policy:
-            cmd += ["--suite", "thp", "--thp", "on", "--thp-process", "pair", "--pattern", pattern]
-        elif student:
-            cmd += ["--suite", "course", "--course-code", "student"]
-        elif course:
-            cmd += ["--suite", "course"]
-        elif cow_fraction is not None:
-            cmd += ["--suite", "baseline", "--cow-fraction", cow_fraction]
-        return cmd
+            cmd += ["--recheck-from", str(parent)]
+        return cmd + options
 
     def start(self, mode, identifier=None, pattern="sparse", cow_fraction="all", group4_task="all"):
-        if mode not in ("complete", "recheck", "cow", "course", "student", "policy", "policy-recheck", "layout", "group3", "group4", "sequence") or pattern not in ("sparse", "full") or cow_fraction not in COW_CHOICES:
-            raise ValueError("unknown execution mode")
-        if group4_task not in ("all", "4.1", "4.2", "4.3", "4.4"):
-            raise ValueError("unknown group4 task")
+        options = experiment_args(mode, pattern, cow_fraction, group4_task)
         parent = self.directory(identifier or "") if mode in ("recheck", "policy-recheck") else None
         if parent:
             report = load_run(parent)
-            if report["integrity"]["status"] != "verified" or report["data_origin"] != "real_execution" or report.get("original_schema"):
+            if (report["integrity"]["status"] != "verified" or report["data_origin"] != "real_execution"
+                    or not any(c["suite"] == "thp" for c in report["cases"])):
                 raise ValueError("recheck requires a verified v1 real execution; run a full experiment first")
         with self.lock:
             if self.job and self.job["status"] == "running":
@@ -114,26 +121,32 @@ class Workbench:
             folder.mkdir(parents=True)
             self.job = {"id": folder.name, "status": "running", "mode": mode,
                         "started_at": timestamp(), "target": self.executor, "parent": identifier,
-                        "pattern": pattern, "cow_fraction": cow_fraction if mode == "cow" else None,
-                        "previous_run_ids": [r["id"] for r in self.catalog()]}
+                        "pattern": pattern, "cow_fraction": cow_fraction if mode == "cow" else None}
             write_json(folder / "job.json", self.job)
-            threading.Thread(target=self._worker, args=(folder, parent, pattern, self.job["cow_fraction"], mode == "course", mode == "student", mode in ("policy", "policy-recheck"), mode == "layout", mode == "group3", mode == "sequence", mode == "group4", group4_task), daemon=True).start()
+            threading.Thread(target=self._worker, args=(folder, options, parent), daemon=True).start()
             return dict(self.job)
 
-    def _worker(self, folder, parent, pattern, cow_fraction, course, student, policy, layout=False, group3=False, sequence=False, group4=False, group4_task="all"):
+    def _worker(self, folder, options, parent=None):
         try:
-            result = execute(self.command(parent, pattern, cow_fraction, course, student, policy, layout, group3, sequence, group4, group4_task), folder / "stdout.log", folder / "stderr.log", 1200)
+            result = execute(self.command(options, parent), folder / "stdout.log", folder / "stderr.log", 1200)
         except Exception as exc:
             result = {"status": "failed", "error": {"code": "job_start_failed", "message": str(exc)}}
         with self.lock:
             self.job.update(result)
             self.job["finished_at"] = timestamp()
-            new_runs = [r for r in self.catalog() if r["id"] not in self.job["previous_run_ids"]]
-            self.job["new_run_ids"] = [r["id"] for r in new_runs]
+            # Both runners print the path of their own result; another terminal can run in parallel.
+            vm = self.executor == "openeuler-vm"
+            prefix = "EVIDENCE_DIRECTORY=" if vm else "RUN_DIRECTORY="
+            stdout = folder / "stdout.log"
+            names = [Path(line[len(prefix):]).name for line in stdout.read_text(encoding="utf-8", errors="replace").splitlines()
+                     if line.startswith(prefix)] if stdout.exists() else []
+            group = "openeuler" if vm else "local"
+            ids = [f"{group}--{name}" for name in names if (self.roots[group] / name / "report.json").is_file()]
+            self.job["new_run_ids"] = ids
             # Exit 3 is the runner's completed-with-deviations result. Require
             # its saved report as well, so an unrelated transport exit stays failed.
             if (result.get("status") == "failed" and result.get("exit_code") == 3 and
-                    len(new_runs) == 1 and new_runs[0]["status"] == "completed_with_deviations"):
+                    len(ids) == 1 and read_json(self.directory(ids[0]) / "report.json").get("status") == "completed_with_deviations"):
                 self.job.update(status="completed_with_deviations", error=None)
             # Failed transport stdout/stderr are visible as errors, never substituted with old success.
             self.job["log"] = "\n".join(p.read_text(encoding="utf-8", errors="replace")[-10000:] for p in (folder / "stdout.log", folder / "stderr.log") if p.exists())
@@ -165,12 +178,19 @@ def handler_for(app):
             query = parse_qs(parsed.query)
             try:
                 path = parsed.path
-                if path in ("/", "/app.js", "/style.css", "/lesson", "/lesson.js"):
-                    file = WEB / {"/": "index.html", "/app.js": "app.js", "/style.css": "style.css", "/lesson": "lesson.html", "/lesson.js": "lesson.js"}[path]
+                page = "index.html" if path.startswith("/labs/") and path.count("/") == 2 else WEB_PAGES.get(path)
+                if page:
+                    file = WEB / page
                     mime = {".html": "text/html", ".js": "text/javascript", ".css": "text/css"}[file.suffix]
                     return self.send(file.read_bytes(), mime + "; charset=utf-8")
+                if path == "/api/course-basics":
+                    return self.send(read_json(WORK / "lessons/catalog/basics.json"))
                 if path == "/api/lesson":
-                    return self.send({"student_path": str(WORK / "lessons/demand/student.h"),
+                    original_ps = read_json(WORK / "lessons/demand/original-ps.json")
+                    if query.get("view") == ["observations"]:
+                        return self.send({"original_ps": original_ps})
+                    return self.send({"original_ps": original_ps,
+                                      "student_path": str(WORK / "lessons/demand/student.h"),
                                       "student": (WORK / "lessons/demand/student.h").read_text(encoding="utf-8"),
                                       "reference": (WORK / "proj5-course/access_pattern.h").read_text(encoding="utf-8"),
                                       "worksheet": (WORK / "lessons/demand/WORKSHEET.md").read_text(encoding="utf-8")})
@@ -190,7 +210,7 @@ def handler_for(app):
                 if path == "/api/evidence":
                     case = next(c for c in report["cases"] if c["id"] == query.get("case", [""])[0])
                     kind = query.get("kind", ["jsonl"])[0]
-                    if kind not in ("jsonl", "smaps", "syscalls", "file", "ldd", "readelf", "ldd_stderr", "kernel"):
+                    if kind not in ("jsonl", "smaps", "syscalls", "file", "ldd", "readelf", "ldd_stderr", "kernel", "stderr"):
                         raise ValueError("invalid evidence type")
                     raw = safe_child(directory, case["artifacts"][kind])
                     if raw.stat().st_size > 2 * 1024 * 1024:

@@ -1,0 +1,8 @@
+{"kind":"condition","mode":"dynamic","pid":2138,"page_bytes":4096}
+{"kind":"symbol","name":"function","address":"5645d99ea180"}
+{"kind":"symbol","name":"readonly","address":"5645d99eb1a8"}
+{"kind":"symbol","name":"initialized","address":"5645d99ed090"}
+{"kind":"symbol","name":"uninitialized","address":"5645d99ed0e0"}
+{"kind":"symbol","name":"heap","address":"5645d9f792a0"}
+{"kind":"symbol","name":"stack","address":"7ffe5304629c"}
+{"kind":"sample","phase":"loaded","pid":2138,"address":"5645d99ea180","program_break":"5645d9f9a000","count":0,"action_minor":0,"action_major":0,"total_minor":58,"total_major":0}

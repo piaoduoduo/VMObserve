@@ -12,7 +12,7 @@ from .cow import COW_STRIDES
 from .allocator import parse_allocator, validate_allocator
 from .layout import parse_layout, validate_layout
 from .thp_policy import parse_policy
-from . import group3, group4
+from . import group3, group4, systems
 
 METRICS = {"size_kib": "Size", "rss_kib": "Rss", "pss_kib": "Pss",
            "private_dirty_kib": "Private_Dirty", "shared_dirty_kib": "Shared_Dirty",
@@ -73,6 +73,8 @@ def parse_case(jsonl, smaps, suite, parameters):
         if not isinstance(row, dict) or "kind" not in row:
             raise ValueError("each JSONL record must be an object with kind")
         records.append(row)
+    if suite in systems.SUITES:
+        return systems.parse(records, suite, parameters["lab"])
     if suite in group4.SOURCES:
         return group4.parse(records, Path(smaps).read_text(encoding="utf-8"), suite, parameters)
     if suite in group3.SUITES:
@@ -152,6 +154,8 @@ def parse_case(jsonl, smaps, suite, parameters):
 
 
 def validate_measurements(suite, data):
+    if suite in systems.SUITES:
+        return systems.validate(data)
     if suite in group4.SOURCES:
         return group4.validate(suite, data)
     if suite in group3.SUITES:

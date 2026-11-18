@@ -1,0 +1,1 @@
+/root/proj5-transfers/20261118T013147-141/runs/20261118T013159.221864Z/build/link-dynamic: ELF 64-bit LSB pie executable, x86-64, version 1 (SYSV), dynamically linked, interpreter /lib64/ld-linux-x86-64.so.2, BuildID[sha1]=f01937a58dd6f887c9fb593c7c7d2be4ead35730, for GNU/Linux 3.2.0, not stripped

@@ -10,7 +10,7 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "work"))
-from vmobserve.server import Workbench, handler_for
+from vmobserve.server import experiment_args, Workbench, handler_for
 
 
 class ServerTests(unittest.TestCase):
@@ -62,7 +62,7 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(error.exception.code, 400)
 
     def test_full_recheck_keeps_selected_pattern(self):
-        command = self.app.command(ROOT / "tests/fixtures/legacy-run", "full")
+        command = self.app.command(experiment_args("recheck", pattern="full"), ROOT / "tests/fixtures/legacy-run")
         self.assertEqual(command[-2:], ["--pattern", "full"])
         with self.assertRaises(ValueError):
             self.app.start("recheck", "test--legacy-run", "shell-command")

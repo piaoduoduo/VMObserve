@@ -3,7 +3,7 @@
 from .allocator import allocator_findings
 from .layout import layout_findings
 from .thp_policy import policy_comparisons
-from . import group3, group4
+from . import group3, group4, systems
 
 RULE_VERSION = "2026-11-13.1"
 REFERENCES = ["https://docs.kernel.org/filesystems/proc.html",
@@ -18,7 +18,7 @@ def diagnose(report):
         item = dict(rule=rule, confidence=confidence, title=title, explanation=explanation,
                     evidence=evidence, limitations=limitations)
         if recipe:
-            item["recheck"] = {"recipe": recipe, "description": ("同一环境保持大页建议相同，重新运行进程允许/禁用配对；新建记录并关联本次证据。" if recipe.endswith("_process_pair") else "同一环境重新运行 THP 开/关配对实验；新建记录并关联本次证据。")}
+            item["recheck"] = {"recipe": recipe, "description": ("在当前执行目标保持大页建议相同，重新运行进程允许/禁用配对；比较新旧内核和大页策略后标注复验条件。" if recipe.endswith("_process_pair") else "在当前执行目标重新运行 THP 开/关配对实验；比较新旧内核和大页策略后标注复验条件。")}
         findings.append(item)
     valid = []
     for case in report.get("cases", []):
@@ -37,6 +37,8 @@ def diagnose(report):
                 [{"case_id": case["id"], "status": case.get("status"), "error": case.get("error")}],
                 "失败日志是故障证据，不是成功实验数据。")
             continue
+        if case["suite"] in systems.SUITES:
+            continue  # These observations use the per-step checks in the course replay.
         if case["suite"] == "course":
             findings.extend(allocator_findings(case))
             continue

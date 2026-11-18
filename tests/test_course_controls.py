@@ -7,7 +7,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "work"))
 from vmobserve.thp_policy import parse_policy, policy_comparisons
 from vmobserve.runner import parser, plan_cases
-from vmobserve.server import Workbench
+from vmobserve.server import experiment_args, Workbench
 from vmobserve.diagnosis import diagnose
 import test_allocator
 from vmobserve.allocator import parse_allocator, validate_allocator
@@ -79,9 +79,9 @@ class ControlsTests(unittest.TestCase):
         self.assertTrue(all(c["parameters"]["thp"] == "on" for c in plan))
         self.assertEqual([c["parameters"]["process_thp"] for c in plan[:4]], ["allow", "disable", "disable", "allow"])
         app = Workbench("local")
-        self.assertEqual(app.command(student=True)[-4:], ["--suite", "course", "--course-code", "student"])
-        self.assertIn("--thp-process", app.command(policy=True))
-        self.assertEqual(app.command(Path("parent"), policy=True)[-2:], ["--recheck-kind", "process"])
+        self.assertEqual(experiment_args("student")[-4:], ["--suite", "course", "--course-code", "student"])
+        self.assertIn("--thp-process", experiment_args("policy"))
+        self.assertEqual(app.command(experiment_args("policy-recheck"), Path("parent"))[-2:], ["--recheck-kind", "process"])
 
 
 if __name__ == "__main__":

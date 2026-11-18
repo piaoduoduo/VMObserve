@@ -1,0 +1,8 @@
+{"kind":"condition","mode":"normal","pid":2245,"limit_kib":8192,"frame_bytes":8192,"target_depth":64,"page_bytes":4096}
+{"kind":"sample","phase":"before_stack","pid":2245,"address":"7ffcb9c0759c","program_break":"22cb000","count":0,"action_minor":1,"action_major":0,"total_minor":29,"total_major":0}
+{"kind":"sample","phase":"stack","pid":2245,"address":"7ffcb9be6990","program_break":"22cb000","count":16,"action_minor":32,"action_major":0,"total_minor":63,"total_major":0}
+{"kind":"sample","phase":"stack","pid":2245,"address":"7ffcb9bc5d90","program_break":"22cb000","count":32,"action_minor":32,"action_major":0,"total_minor":96,"total_major":0}
+{"kind":"sample","phase":"stack","pid":2245,"address":"7ffcb9ba5190","program_break":"22cb000","count":48,"action_minor":33,"action_major":0,"total_minor":129,"total_major":0}
+{"kind":"sample","phase":"stack","pid":2245,"address":"7ffcb9b84590","program_break":"22cb000","count":64,"action_minor":32,"action_major":0,"total_minor":161,"total_major":0}
+{"kind":"returned","checksum":3104}
+{"kind":"outcome","child_pid":2245,"signal":0,"exit_code":0,"minor":162,"major":0,"maxrss_kib":1644}

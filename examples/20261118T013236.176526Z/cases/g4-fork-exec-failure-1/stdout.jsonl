@@ -1,0 +1,5 @@
+{"kind":"event","event":"begin","pid":2615,"tid":2615,"time_ns":293033317109,"lab":"4.1","mode":"exec-failure","ppid":2547,"value":7,"address":"0x4040e8"}
+{"kind":"event","event":"before_exec","pid":2616,"tid":2616,"time_ns":293037277899,"role":"child","ppid":2615,"fork_return":0,"value":99,"address":"0x4040e8"}
+{"kind":"event","event":"parent_after_fork","pid":2615,"tid":2615,"time_ns":293037813349,"role":"parent","child_pid":2616,"fork_return":2616,"value":7,"address":"0x4040e8"}
+{"kind":"event","event":"exec_error","pid":2616,"tid":2616,"time_ns":293148415599,"role":"child","errno":2}
+{"kind":"event","event":"summary","pid":2615,"tid":2615,"time_ns":293149456919,"role":"parent","child_pid":2616,"wait_return":2616,"exit_code":127,"signal":0,"value":7}
