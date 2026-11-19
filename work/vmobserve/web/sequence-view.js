@@ -12,7 +12,7 @@ const C_CODE = [
 const SOURCES = {
   new_brk_range: '通过 brk 系统调用扩展了堆区（[heap]）',
   new_mmap_range: '通过 mmap 系统调用新开辟了匿名映射',
-  no_memory_syscall: '未发起新的系统调用（复用了分配器已申请的内存空间）',
+  no_memory_syscall: '未观测到内存管理调用，可能复用已有空间',
   unresolved: '分配来源待核对'
 };
 
@@ -80,7 +80,7 @@ function allocationLesson(phase, action, sample, regions, join) {
   const mechanisms = {
     new_brk_range: '这次分配器用 brk 把堆的末端向后移动，再从扩大的堆里切出一块给程序。',
     new_mmap_range: '这次分配器用 mmap 向 Linux 申请一段虚拟地址，再把其中可供程序使用的地址返回。内核按映射区间记账。',
-    no_memory_syscall: '这一步没有新的内存系统调用，分配器从手头已有的空间中取出一块。',
+    no_memory_syscall: '本次跟踪窗口没有新的内存管理调用，分配器可能使用了已有空间。',
     unresolved: '可以用返回地址定位所在映射。本步跟踪还不足以确定分配器从哪里取得这块空间。'
   };
   const shared = regions.find(r => r.blocks.some(b => b.num === 2) && r.blocks.some(b => b.num === 3));
@@ -145,14 +145,27 @@ function renderObservation(c, phase) {
     ? regions.map(r => kib(r.rss_kib)).join(' + ') + ' = ' + kib(sample.related_rss_kib)
     : kib(sample.related_rss_kib);
 
+  const requested = sample.blocks.filter(block => block.alive)
+    .reduce((total, block) => total + block.requested_bytes / 1024, 0);
+  const metric = (label, value, unit) => `<div class="seq-metric"><dt>${label}</dt>
+    <dd>${esc(value)} <span class="metric-unit">${unit}</span></dd></div>`;
+  const metrics = `<dl class="seq-metrics" aria-label="当前阶段实测结果">
+    ${metric('存活块申请量', requested.toLocaleString('zh-CN'), 'KiB')}
+    ${metric('相关映射', sample.related_vma_count, '段 VMA')}
+    ${metric('整段驻留量', sample.related_rss_kib.toLocaleString('zh-CN'), 'KiB RSS')}</dl>`;
+
   return `<section class="seq-panel" id="sequence-result" aria-labelledby="sequence-heading">
     <div class="phase-heading"><h2 id="sequence-heading">${esc(stepLabel)}</h2><code>${esc(C_CODE[phase])}</code></div>
-    ${allocationLesson(phase, action, sample, regions, join)}
-    ${ranges}
+    ${metrics}
     ${mappingDiagram(regions, sample)}
-    <p class="map-total">存活 <strong>${esc(sample.count)} 块</strong> · 涉及 <strong>${esc(sample.related_vma_count)} 段映射</strong> · 合计驻留 <strong>${esc(rss)}</strong></p>
+    <p class="map-total">${shared ? '相同映射按一次计入 RSS' : '目标块所在映射的 RSS 合计'} · <strong>${esc(rss)}</strong></p>
+    <details class="seq-explanation"${phase === 0 ? ' open' : ''}><summary>程序动作与 Linux 处理</summary>
+      ${allocationLesson(phase, action, sample, regions, join)}
+      ${ranges}
+    </details>
     <div class="seq-navigation"><div class="raw-links">${stepRawButtons}</div>
-      <button class="primary" data-sequence-step="${phase + 1}">${phase === data.samples.length - 1 ? '对照五步结果' : '下一步'} →</button>
+      <div class="seq-step-actions"><button data-sequence-step="${phase - 1}"${phase === 0 ? ' disabled' : ''}>← 上一步</button>
+      <button class="primary" data-sequence-step="${phase + 1}">${phase === data.samples.length - 1 ? '对照五步结果' : '下一步'} →</button></div>
     </div>
   </section>
   ${regions.length ? `<details class="secondary-fold"><summary>本步指针与地址范围</summary>${table(['块', 'malloc 返回地址', '所在映射', '映射大小'], regions.flatMap(r =>
@@ -216,7 +229,7 @@ export function renderSequence() {
     data.actions.map((a, i) => [
       PHASES[i + 1],
       a.returned_address ? '0x' + a.returned_address : '—',
-      a.events.map(e => `L${e.line}  ${e.text}`).join('\n') || '复用了已有堆空间，无新增系统调用',
+      a.events.map(e => `L${e.line}  ${e.text}`).join('\n') || '本次动作未记录到内存管理调用',
       SOURCES[a.allocation_source] || '释放阶段'
     ]),
     comparing ? -1 : state.phase - 1

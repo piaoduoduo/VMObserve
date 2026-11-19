@@ -1492,3 +1492,32 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
   .seq-steps li:nth-child(4):has(~ li:nth-child(7))::before,
   .seq-steps li:nth-child(4):has(~ li:nth-child(7))::after { display: none; }
 }
+
+/* Keep the measured result in view before expanding its explanation. */
+.seq-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
+.seq-metric { padding: 13px 15px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-soft); min-width: 0; }
+.seq-metric dt { color: var(--muted); font-size: 12px; }
+.seq-metric dd { margin: 5px 0 0; font-size: clamp(19px, 2vw, 28px); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; letter-spacing: -.03em; }
+.seq-metric:last-child { background: var(--accent-soft); border-color: var(--accent); }
+.seq-metric:last-child dd { color: var(--accent); }
+.seq-metrics .metric-unit { font-size: 13px; font-weight: 500; letter-spacing: 0; }
+.seq-explanation { border-top: 1px solid var(--line); padding: 12px 0; margin-top: 14px; }
+.seq-explanation summary { color: var(--ink-secondary); font-size: 14px; cursor: pointer; }
+.seq-explanation .mmap-evidence { margin-bottom: 0; }
+.seq-step-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.seq-reading .map-total { margin: 10px 0; font-size: 13px; }
+@media (max-width: 680px) {
+  .seq-metrics { gap: 6px; margin: 14px 0; }
+  .seq-metric { padding: 10px 8px; }
+  .seq-metric dt { font-size: 11px; }
+  .seq-metric dd { font-size: 20px; }
+  .seq-metrics .metric-unit { display: block; font-size: 11px; margin-top: 3px; }
+  .seq-navigation { align-items: stretch; }
+  .seq-step-actions { justify-content: space-between; width: 100%; }
+  .mapping-row { align-items: start; padding: 10px; gap: 7px; }
+  .mapping-rss small { max-width: 5em; font-size: 11px; }
+  .stage-bar { gap: 6px; padding-block: 9px; }
+  .dataset-bar { gap: 5px; }
+  .dataset-label { display: none; }
+  .meta-text { font-size: 11px; }
+}
