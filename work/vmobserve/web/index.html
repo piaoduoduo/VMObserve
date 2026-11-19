@@ -4,42 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>重点任务可视化实验台 · VMObserve</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
 <div class="app-frame">
   <aside class="course-rail" aria-label="课程实验目录">
-    <a class="rail-brand" href="/">
-      <svg aria-hidden="true" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="11" height="11" rx="2"/><rect x="18" y="3" width="11" height="11" rx="2"/><rect x="3" y="18" width="11" height="11" rx="2"/><rect x="18" y="18" width="11" height="11" rx="2"/></g></svg>
-      <div>
-        <strong>VMObserve</strong>
-        <span>重点任务可视化实验台</span>
-      </div>
-    </a>
-
-    <nav class="rail-nav" aria-label="实验章节">
-      <label class="mobile-directory">实验目录<select id="mobile-directory"></select></label>
-      <a class="rail-link rail-home" data-nav="home" href="/">实验台首页</a>
-      <div class="rail-group">
-        <a class="rail-group-title" data-lab="focus" href="/labs/focus">重点任务目录</a>
-        <div id="course-directory"></div>
-      </div>
-      <details class="rail-more rail-isolated">
-        <summary>拓展实验</summary>
-        <a class="rail-link" data-topic="baseline" href="/#topic=baseline"><em>COW</em>写时复制</a>
-        <a class="rail-link" data-topic="thp" href="/#topic=thp"><em>THP</em>透明大页</a>
-      </details>
-      <div class="rail-group">
-        <span class="rail-group-title">原始证据</span>
-        <a class="rail-link" data-topic="evidence" href="/#topic=evidence"><em>RAW</em>原始记录</a>
-      </div>
-      <details class="rail-more full-directory rail-isolated">
-        <summary>完整课程目录</summary>
-        <div id="full-directory"></div>
-      </details>
-    </nav>
-
     <div class="rail-footer">
       <button id="run" class="rail-btn">采集新实验数据</button>
       <button id="export" class="rail-btn">导出实验报告</button>

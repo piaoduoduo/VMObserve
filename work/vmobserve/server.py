@@ -20,7 +20,7 @@ from .systems import LABS
 WEB = Path(__file__).parent / "web"
 
 
-WEB_PAGES = {"/": "index.html", "/lesson": "lesson.html",
+WEB_PAGES = {"/": "index.html", "/lesson": "lesson.html", "/favicon.svg": "favicon.svg",
              **{"/" + name: name for name in ("app.js", "ui.js", "course-views.js", "memory-views.js",
                                                  "sequence-view.js", "evidence-view.js", "curriculum.js", "lesson.js", "style.css")}}
 
@@ -181,7 +181,7 @@ def handler_for(app):
                 page = "index.html" if path.startswith("/labs/") and path.count("/") == 2 else WEB_PAGES.get(path)
                 if page:
                     file = WEB / page
-                    mime = {".html": "text/html", ".js": "text/javascript", ".css": "text/css"}[file.suffix]
+                    mime = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml"}[file.suffix]
                     return self.send(file.read_bytes(), mime + "; charset=utf-8")
                 if path == "/api/course-basics":
                     return self.send(read_json(WORK / "lessons/catalog/basics.json"))

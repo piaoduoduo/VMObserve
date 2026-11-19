@@ -59,6 +59,15 @@ export function stepNavigation(titles, selected, attr = 'data-sequence-step') {
   ).join('')}</ol></nav>`;
 }
 
+export function stepControls(index, count, after = '') {
+  return `<div class="step-controls"><button data-course-step="${index - 1}" ${index === 0 ? 'disabled' : ''}>上一步</button>
+    ${index + 1 < count ? `<button class="primary" data-course-step="${index + 1}">下一步 →</button>` : after}</div>`;
+}
+
+export function sampleReadings(items) {
+  return `<dl class="sample-readings">${items.map(([label, value]) => `<div><dt>${esc(label)}</dt><dd>${esc(value)}</dd></div>`).join('')}</dl>`;
+}
+
 export function stepExplanation(program, kernel, result) {
   return `<dl class="step-explanation"><div><dt>程序做了什么</dt><dd>${esc(program)}</dd></div>
     <div><dt>Linux 怎么处理</dt><dd>${esc(kernel)}</dd></div>

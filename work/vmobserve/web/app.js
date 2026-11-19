@@ -3,7 +3,7 @@ import { renderEvidence } from './evidence-view.js';
 import { renderSequence, parseMmapCall, groupBlocksIntoRegions } from './sequence-view.js';
 import { renderCourse, renderGroup3, renderGroup4, renderLayout } from './course-views.js';
 import { renderBaseline, renderTHP } from './memory-views.js';
-import { directory, currentLab, viewCases, markLab, renderHome, renderSystems, showLab, newestReplay } from './curriculum.js';
+import { directory, currentLab, viewCases, markLab, renderHome, renderTaskDirectory, renderSystems, showLab, newestReplay } from './curriculum.js';
 
 function error(message) {
   $('#error').hidden = !message;
@@ -375,7 +375,7 @@ $('#content').addEventListener('change', ({ target: t }) => {
   if (t.id === 'case-select') {
     stop();
     state.selected = Number(t.value);
-    state.phase = 0;
+    if (state.tab !== 'sequence') state.phase = 0;
     render();
   }
 });
@@ -606,8 +606,9 @@ async function startReplay() {
 try {
   const lab = location.pathname.startsWith('/labs/') ? location.pathname.slice(6) : null;
   directory(lab);
-  if ((lab === null && !location.hash) || lab === 'focus') {
-    renderHome(lab === 'focus');
+  if ((lab === null && !location.hash) || lab === 'focus' || lab === 'extensions') {
+    if (lab) renderTaskDirectory(lab);
+    else renderHome();
     state.config = await api('/api/config');
     if (lab === null && location.hash && !state.id) await startReplay();
   } else if (lab === null) {

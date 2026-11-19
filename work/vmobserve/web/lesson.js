@@ -1,7 +1,9 @@
-import { labels, friendlyTime, loadOriginalPs } from './ui.js';
+import { directory } from './curriculum.js';
+import { labels, friendlyTime, loadOriginalPs, kib } from './ui.js';
 
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+directory('lesson');
 const verification = new URLSearchParams(location.search).get('verification') === '1';
 const key = 'vmobserve-demand-worksheet-v1' + (verification ? '-ui-test' : '');
 const answerOrigin = verification ? 'ui_verification' : 'learner_notes';
@@ -75,10 +77,15 @@ async function select(id) {
       return `<details><summary>${c.parameters.requested_kib} KiB · 第 ${c.parameters.repeat} 次（${c.parameters.course_code === 'student' ? '我的代码' : '参考代码'}）· ${ok ? '检查通过' : '未通过'}</summary><ul>${(c.validation?.checks || []).map(x => `<li>${esc(x.id)}：实测 ${esc(x.observed)}，要求 ${esc(x.expected)} · ${x.status === 'passed' ? '通过' : '未通过'}</li>`).join('')}</ul>${c.error ? `<pre>${esc(JSON.stringify(c.error, null, 2))}</pre>` : ''}</details>`;
     }).join('');
     $('#checks').innerHTML = `<details class="secondary-fold"><summary>动作检查结果：${passedCount} / ${cases.length} 组通过（点击展开逐项明细）</summary>${checksMarkup}</details>`;
-    $('#observations').innerHTML = '<label for="lesson-case">选择要看的内存大小和轮次</label><select id="lesson-case">' + cases.map(c => `<option value="${esc(c.id)}">${c.parameters.requested_kib} KiB · 第 ${c.parameters.repeat} 次</option>`).join('') + '</select><div id="case-observation"></div>';
-    const initial = cases.find(c => c.parameters.requested_kib === 16384 && c.data) || cases[0];
+    const observed = cases.filter(c => c.data?.samples?.length && c.validation?.status !== 'failed');
+    if (!observed.length) {
+      $('#observations').textContent = '本轮没有可逐步回放的样本。上方动作检查保留了各组结果。';
+      return;
+    }
+    $('#observations').innerHTML = '<label for="lesson-case">选择要看的内存大小和轮次</label><select id="lesson-case">' + observed.map(c => `<option value="${esc(c.id)}">${c.parameters.requested_kib} KiB · 第 ${c.parameters.repeat} 次</option>`).join('') + '</select><div id="case-observation"></div>';
+    const initial = observed.find(c => c.parameters.requested_kib === 16384) || observed[0];
     $('#lesson-case').value = initial.id;
-    $('#lesson-case').addEventListener('change', e => showCase(cases.find(c => c.id === e.target.value)));
+    $('#lesson-case').addEventListener('change', e => showCase(observed.find(c => c.id === e.target.value)));
     showCase(initial);
     $('#report-download').href = '/api/export?format=json&id=' + encodeURIComponent(id);
     $('#report-download').download = 'lesson-evidence.json';
@@ -92,7 +99,7 @@ async function select(id) {
 }
 
 async function refresh(preferred) {
-  const runs = (await api('/api/runs')).filter(r => r.data_origin === 'real_execution' && r.suites?.includes('course'));
+  const runs = (await api('/api/runs')).filter(r => r.data_origin === 'real_execution' && !r.environment_issue && ['completed','completed_with_deviations'].includes(r.status) && r.suites?.includes('course'));
   const groupNames = { example: '课内样例', openeuler: 'openEuler 虚拟机', local: '本地 / WSL' };
   $('#lesson-run').innerHTML = runs.map(r => `<option value="${esc(r.id)}">${esc(groupNames[r.group] || r.group)} · ${esc(friendlyTime(r.run_id))} · ${esc(labels[r.status] || r.status)} · ${r.count} 组</option>`).join('');
   const desired = preferred || identifier;
@@ -101,6 +108,11 @@ async function refresh(preferred) {
     $('#lesson-run').value = id;
     await select(id);
   } else {
+    report = null;
+    identifier = null;
+    $('#observations').replaceChildren();
+    $('#checks').replaceChildren();
+    $('#report-download').hidden = true;
     $('#provenance').textContent = '本机还没有“按需分配”实验的运行记录。可以先展开上面的五次 ps 记录，或在实验 3.3 的逐步对照页采集一轮。';
   }
 }
@@ -176,11 +188,17 @@ try {
 
 function showCase(c) {
   if (!c?.data) {
-    $('#case-observation').textContent = '这个案例没有完整数据，展开上方动作检查或运行日志看看原因。';
+    $('#case-observation').textContent = '这个案例没有完整数据，展开上方动作检查看看原因。';
     return;
   }
+  const pageSize = c.data.condition.page_bytes;
+  const peak = Math.max(0, ...c.data.samples.map(s => s.huge_kib || 0));
+  const writeAll = c.data.samples.find(s => s.phase === 'write_all');
+  const hugeNote = peak
+    ? `看这组 smaps 最高记到 ${kib(peak)} 匿名大页（AnonHugePages）。1 张 2 MiB 大页就能一次盖住 512 个写入位置，所以会出现“RSS 涨了几 MiB，本步次缺页却只有几次”。`
+    : '已分配过物理页的地址再次写入不再缺页；如果 RSS 大幅上涨而次缺页很少，可以查看同一步 smaps 的 AnonHugePages（透明大页）是否分配了大页。';
   const names = ['申请前', '申请后', '写到 1/4', '写到 1/2', '写完', '释放后'];
   $('#case-observation').innerHTML = `<h3>${c.parameters.requested_kib} KiB · 第 ${c.parameters.repeat} 次 · 六步数据</h3>
     <label>回答要引用的阶段 <select id="lesson-phase"><option value="">对照整组六步</option>${c.data.samples.map((s, i) => `<option value="${esc(s.phase)}">${names[i]}</option>`).join('')}</select></label>
-    <div class="table-wrap"><table><thead><tr><th>阶段</th><th>累计写入位置</th><th>物理驻留 RSS (KiB)</th><th>本步次缺页</th><th>原映射状态</th></tr></thead><tbody>${c.data.samples.map((s, i) => `<tr><td>${names[i]}</td><td>${s.written_positions}</td><td>${s.rss_kib}</td><td>${s.action_minor}</td><td>${s.mapping_present ? '存在' : '已消失'}</td></tr>`).join('')}</tbody></table></div>`;
+    <div class="table-wrap"><table><thead><tr><th>阶段</th><th>累计写入位置（个）</th><th>物理驻留 RSS (KiB)</th><th>本步次缺页</th><th>原映射状态</th></tr></thead><tbody>${c.data.samples.map((s, i) => `<tr><td>${names[i]}</td><td>${s.written_positions}</td><td>${s.rss_kib}</td><td>${s.action_minor}</td><td>${s.mapping_present ? '存在' : '已消失'}</td></tr>`).join('')}</tbody></table></div><p class="detail-copy">看数提示：程序每隔 ${esc(kib(pageSize / 1024))} 只写 1 个字节。“累计写入位置（个）”数的是写过多少个点（例如全部写完共 ${esc(writeAll?.written_positions ?? '—')} 个点，不是字节也不是 KiB）；“物理驻留 RSS (KiB)”才是整段映射真实占用的 KiB 内存，次缺页则是不读磁盘仅建映射的缺页次数。${esc(hugeNote)}</p>`;
 }

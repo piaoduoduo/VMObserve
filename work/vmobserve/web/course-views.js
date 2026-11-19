@@ -1,4 +1,4 @@
-import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation } from './ui.js';
+import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, stepControls, sampleReadings } from './ui.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -150,12 +150,12 @@ function renderCourse() {
 }
 
 const demandActions = {
-  before_alloc: ['申请前', '程序先记录自己的内存状态，作为后面几步的起点。', 'Linux 已经为进程建立了代码、栈等映射，此时还没有这块缓冲区的地址。'],
-  allocated: ['申请内存', '调用 malloc 申请 512 MiB，记下返回的指针，暂时不往里面写。', '分配器拿到可用的虚拟地址范围。首次访问时，Linux 才需要为相应的地址准备物理页。'],
-  write_quarter: ['写到 ¼', '从开头写到 128 MiB，每隔 4 KiB 写入一个 A。', '写到尚无可写物理页的地址时，CPU 触发缺页异常。Linux 建立可写映射后，程序继续完成这次写入。'],
-  write_half: ['写到 ½', '从四分之一处接着写 B，到 256 MiB 停下。前面写过的 A 保留。', '后续地址也开始被访问，更多物理页驻留在内存里。比较本步与上一步的 RSS，就能看到新增的部分。'],
-  write_all: ['全部写完', '从一半处接着写 C，到 512 MiB 末尾停下，每个访问位置都已写过。', '新触及的地址也获得了可写映射。此时可以把目标映射的驻留量和最初申请的大小放在一起看。'],
-  freed: ['释放后', '程序读回 A、B、C 检查写入结果，再调用 free，最后核对旧地址。', '分配器可以把整段映射还给内核。查看原指针所在的地址，就能判断这次释放后映射是否还在。']
+  before_alloc: ['申请前', '申请内存前先拍一张快照，作为后面各步对照的起点。', '此时代码、栈等基础映射已经建好，程序还没向系统要目标大块。'],
+  allocated: ['申请内存', '调用 malloc 申请 512 MiB，记下返回指针，先一个字节也不写。', 'Linux 只在映射表里把这片虚拟地址圈下来（“先开空头支票”），并不立刻配 512 MiB 物理内存；等首次写到哪一页才现配。'],
+  write_quarter: ['写到 ¼', '从起点写到 128 MiB，每隔 4 KiB 写 1 个字节（值 A）。', '首次往还没配物理页的地址写入时，CPU 触发缺页异常，Linux 现配空闲物理页并建好映射，再继续完成写入。'],
+  write_half: ['写到 ½', '从四分之一处接着写 B，写到 256 MiB 停下；前面写过的 A 保持不变。', '新触及的虚拟地址继续按需获得物理页，映射驻留（RSS）跟着推进而涨；前面写过的页直接写入，不会再缺页。'],
+  write_all: ['全部写完', '从一半处接着写 C，写到 512 MiB 末尾，预定位置全写过一遍。', '整片区域的访问点都配上了物理页。现在可以直接对比映射大小（虚拟）和 RSS（物理）。'],
+  freed: ['释放后', '先把前面写入的 A、B、C 全读回检查一遍，再调用 free 释放并复查旧地址。', '对于大块 mmap 映射，free 会调用 munmap 把整段虚拟地址还给 Linux，物理页也随之回收。']
 };
 
 function demandSteps(c) {
@@ -163,15 +163,20 @@ function demandSteps(c) {
     const [title, program, kernel] = demandActions[sample.phase] || [sample.phase, '程序在这里记录了一次采样。', '可以用本步的原始映射核对驻留量。'];
     let result;
     if (sample.phase === 'before_alloc') {
-      result = '尚未取得目标地址，整进程此时的驻留量为 ' + kib(sample.process_rss_kib) + '。';
+      result = '还没申请目标块，此时整进程占用的物理内存（RSS，即真实分到内存条的部分）共 ' + kib(sample.process_rss_kib) + '。';
     } else if (sample.phase === 'allocated') {
-      result = `包含返回指针的整段映射为 ${kib(sample.size_kib)}，其中 ${kib(sample.rss_kib)} 已经驻留。`;
+      result = `看下方前两个数：虚拟映射大小已经划出 ${kib(sample.size_kib)}，而真正驻留物理内存（RSS）只有 ${kib(sample.rss_kib)}（仅用于分配器少量管理信息）。`;
     } else if (sample.phase === 'freed') {
-      result = sample.mapping_present ? `原地址仍落在一段映射中，整段驻留 ${kib(sample.rss_kib)}。` : '在本轮 smaps 中，原地址已经没有对应映射。';
-      if (c.data.values) result += ` 释放前共核对 ${c.data.values.checked} 个写入位置，发现 ${c.data.values.mismatches} 处不一致。`;
+      result = sample.mapping_present ? `旧地址仍落在一段映射中，整段 RSS 为 ${kib(sample.rss_kib)}。` : '在本轮 smaps 中，旧地址对应的映射已经撤销。';
+      result += ` 看下方指标：映射大小变为 ${kib(sample.size_kib)}、RSS 为 ${kib(sample.rss_kib)}。`;
+      if (c.data.values) result += ` 释放前共核对 ${c.data.values.checked} 个写入位置，不一致 ${c.data.values.mismatches} 处。`;
     } else {
-      result = `累计写过 ${sample.count} 个位置，本步发生 ${sample.action_minor} 次轻微缺页。`;
-      if (sample.huge_kib > 0) result += ` 其中，映射里有 ${kib(sample.huge_kib)} 匿名大页，一张大页覆盖多个写入位置。`;
+      result = `累计写过 ${sample.count} 个位置，这一步发生 ${sample.action_minor} 次缺页（都是“次缺页”——直接在内存里建映射，不读磁盘）。`;
+      if (sample.huge_kib > 0) {
+        result += ` 为什么写了几万个点才缺页这么几次？看原始 smaps 里的 AnonHugePages：这一步用上了 ${kib(sample.huge_kib)} 匿名大页，1 张 2 MiB 大页能一次覆盖几百个 4 KiB 写入位置。`;
+      } else {
+        result += ' 已经配好物理页的地址不再缺页，点“原始映射 smaps”可以查看整段 RSS 与大页读数。';
+      }
     }
     return {title, program, kernel, result, sample};
   });
@@ -182,22 +187,25 @@ function stackSteps(c) {
   if (!data?.samples?.length) return [];
   const [first, ...recursive] = data.samples;
   const steps = [{
-    title: '递归前', program: `子进程把软栈上限设为 ${kib(data.condition.limit_kib)}，在进入递归前采样。`,
-    kernel: 'Linux 记录进程的栈上限，此时只需为已经访问的栈页提供物理内存。',
-    result: `准备进入第 1 层，当前栈映射大小为 ${kib(first.size_kib)}。`, sample: first
+    title: '递归前', program: `子进程先设定软栈上限为 ${kib(data.condition.limit_kib)}，在进入第 1 层递归前先采样。`,
+    kernel: 'Linux 记下这个进程的栈上限，此时只为已经用到的栈页提供物理内存，不提前把上限全配满。',
+    result: `准备进入第 1 层。看下方前两个数：当前栈映射大小为 ${kib(first.size_kib)}，RSS 只有 ${kib(first.rss_kib)}。`, sample: first
   }];
   if (recursive.length) {
     const last = recursive.at(-1);
-    steps.push({title: '递归增长', program: `每进入一层，程序建立 ${kib(data.condition.frame_bytes / 1024)} 的局部数组并写入其中几个位置，前面的栈帧一直保留。`,
-      kernel: '递归让程序逐步触及新的栈页。在允许的地址范围内，Linux 可以扩展栈映射，并在缺页时分配物理页。',
-      result: `最后一次采到第 ${last.count} 层。栈的驻留量从起初的 ${kib(first.rss_kib)} 变为 ${kib(last.rss_kib)}。`, sample: last});
+    steps.push({title: '递归增长', program: `每往下递归一层，程序在栈上开出 ${kib(data.condition.frame_bytes / 1024)} 的局部数组并写入几个字节；前面各层的栈帧一直留着不回收。`,
+      kernel: `递归推进时不断触碰新栈页。只要没超出 ${kib(data.condition.limit_kib)} 栈上限，Linux 就允许扩展栈映射，并在缺页时分配物理页。`,
+      result: `采样器在进程结束前最后一次抓到第 ${last.count} 层（注意这不一定是程序止步的层数）：栈映射已由 ${kib(first.size_kib)} 扩到 ${kib(last.size_kib)}，RSS 由 ${kib(first.rss_kib)} 涨到 ${kib(last.rss_kib)}。`, sample: last});
   }
   if (data.outcome) {
     const {signal, exit_code} = data.outcome;
-    steps.push({title: '进程结束', program: '父进程用 wait4 等待子进程，读取这次递归的退出状态。',
-      kernel: signal === 11 ? '这组递归触及栈上限后，Linux 无法继续扩展栈，向子进程发出 SIGSEGV。' :
-        signal ? 'Linux 把终止子进程的信号报告给等待它的父进程。' : '递归返回后，Linux 回收子进程，并把退出码传给父进程。',
-      result: signal ? `子进程被信号 ${signal}${signal === 11 ? '（SIGSEGV）' : ''} 终止。` : `子进程正常退出，退出码为 ${exit_code}。`});
+    const lastCount = data.samples.at(-1).count;
+    steps.push({title: '进程结束', program: '父进程通过 wait4 等待子进程结束，并读取这次递归最终的退出状态。',
+      kernel: signal === 11 ? `离开最后采样点继续递归时，栈终于撞穿了 ${kib(data.condition.limit_kib)} 上限。Linux 拒绝再扩栈，向子进程发送 11 号信号 SIGSEGV（段错误）强行终止。` :
+        signal ? 'Linux 把终止子进程的信号报告给等待它的父进程。' : '递归顺利触底并层层返回，子进程退出后 Linux 回收其资源，并把退出码交给父进程。',
+      result: signal
+        ? `看清这两个区别：采样日志最后只抓到第 ${lastCount} 层（崩溃前最后一帧快照），真正标明死因的是系统返回的终止信号 ${signal}${signal === 11 ? '（SIGSEGV 段错误）' : ''}。点“内核记录”可核对上限 ${kib(data.condition.limit_kib)} 与退出状态。`
+        : `设定栈上限 ${kib(data.condition.limit_kib)}，本次顺利完成最深 ${lastCount} 层采样并安全返回，子进程正常退出（退出码 ${exit_code}，未触发 SIGSEGV）。`});
   }
   return steps;
 }
@@ -214,10 +222,17 @@ function renderMemorySteps(c, cases) {
     const label = demand ? '' : `${item.parameters.mode === 'normal' ? '正常返回组' : '栈溢出组'} · 栈上限 ${kib(item.parameters.limit_kib)} · `;
     return `<option value="${i}" ${i === state.selected ? 'selected' : ''}>${esc(label)}第 ${esc(item.parameters.repeat)} 次实验</option>`;
   }).join('');
-  const stackIndex = cases.findIndex(x => x.suite === 'stack' && x.parameters.repeat === c.parameters.repeat);
-  const stackLink = stackIndex < 0 ? '/labs/3.3?replay=stack' : '/#' + new URLSearchParams({run:state.id, topic:'group3', case:stackIndex});
-  const next = state.phase + 1 < steps.length ? `<button class="primary" data-course-step="${state.phase + 1}">下一步 →</button>` :
-    demand ? `<a class="btn-link primary" href="${esc(stackLink)}">看栈增长与溢出 →</a>` : '<a class="btn-link primary" href="/lesson">记下实验结果 →</a>';
+  const stackIndex = (() => {
+    const same = cases.findIndex(x => x.suite === 'stack' && x.parameters.repeat === c.parameters.repeat);
+    return same >= 0 ? same : cases.findIndex(x => x.suite === 'stack');
+  })();
+  const demandIndex = (() => {
+    const same = cases.findIndex(x => x.suite === 'demand512' && x.parameters.repeat === c.parameters.repeat);
+    return same >= 0 ? same : cases.findIndex(x => x.suite === 'demand512');
+  })();
+  const stackLink = stackIndex < 0 ? '/labs/3.3?replay=stack' : '/#' + new URLSearchParams({ run: state.id, topic: 'group3', case: stackIndex });
+  const demandLink = demandIndex < 0 ? '/labs/3.3?replay=demand512' : '/#' + new URLSearchParams({ run: state.id, topic: 'group3', case: demandIndex });
+  const after = demand ? `<a class="btn-link primary" href="${esc(stackLink)}">看栈增长与溢出 →</a>` : '<a class="btn-link primary" href="/lesson">记下实验结果 →</a>';
   const samples = c.data?.samples || [];
   const rows = samples.map(s => [demand ? demandActions[s.phase]?.[0] || s.phase : `递归 ${s.count} 层`, s.count, kib(s.size_kib), kib(s.rss_kib), s.action_minor, s.total_minor]);
   const rawOpts = sample ? {phase:sample.phase, stepLabel:step.title, count:sample.count,
@@ -229,20 +244,27 @@ function renderMemorySteps(c, cases) {
     <section class="seq-panel" id="sequence-result" aria-labelledby="memory-heading">
       <div class="demand-heading"><h2 id="memory-heading">${esc(step?.title || '缺少采样')}</h2><label>回放记录 <select id="case-select">${options}</select></label></div>
       ${step ? `${stepExplanation(step.program, step.kernel, step.result)}
-        ${sample ? `<dl class="sample-readings"><div><dt>映射大小</dt><dd>${kib(sample.size_kib)}</dd></div>
-          <div><dt>映射驻留 RSS</dt><dd>${kib(sample.rss_kib)}</dd></div><div><dt>本步次缺页</dt><dd>${esc(sample.action_minor)} 次</dd></div></dl>` : ''}` : '<p>这次没有采到分步记录，可以切换记录或打开原文。</p>'}
+        ${sample ? sampleReadings([['映射大小', kib(sample.size_kib)], ['映射驻留 RSS', kib(sample.rss_kib)], ['本步次缺页', sample.action_minor + ' 次']]) : ''}` : '<p>这次没有采到分步记录，可以切换记录或打开原文。</p>'}
       ${c.validation.status !== 'passed' ? `<p class="phase-note">本次核对结果：${esc(c.error?.message || c.validation.status)}</p>` : ''}
-      <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, rawOpts)}</div>${next}</div>
+      <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, rawOpts)}</div>${step ? stepControls(state.phase, steps.length, after) : ''}</div>
     </section>
     <details class="secondary-fold"><summary>对照完整采样与诊断</summary>
       ${table(['采样时刻', demand ? '已写位置' : '递归深度', '映射大小', '映射驻留 RSS', '本步次缺页', '累计次缺页'], rows, sample ? samples.indexOf(sample) : -1)}
       ${diagnosisHTML(findingFor([c.id], ['group3', 'incomplete_evidence']))}
     </details>
-    ${demand ? `<details class="secondary-fold" id="original-demand"><summary>课内原程序的五次 ps 输出 · 整个进程</summary>
-      <div id="demand-original-ps"></div></details>` : ''}
-    <nav class="lab-neighbours"><a class="nav-link" href="/lesson">记录本节预测与思考题笔记 →</a><a class="nav-link" href="/labs/focus">重点任务目录</a></nav>
+    <section class="secondary-fold focus-route" aria-label="3.3 的另外两项观察">
+      <h2>3.3 的另外两项观察</h2>
+      ${demand
+        ? `<p><a href="${esc(stackLink)}">对照栈增长与溢出</a>，看清不同栈限额下哪组递归正常返回、哪组因栈越界触发 <code>SIGSEGV</code>（段错误）终止。</p>`
+        : `<p><a href="${esc(demandLink)}">对照按需调页（512 MiB 写入）</a>，看清只申请不写与分批写入时，虚拟映射大小与已驻留物理内存（RSS）何时变化。</p>`}
+      <details class="inline-ps-fold" id="original-demand"><summary>看原版 512 MiB 程序的五次 ps 输出（比较整进程 VSZ、RSZ 与累计缺页）</summary>
+        <div id="demand-original-ps"><p class="muted">正在载入五次 ps 原始输出…</p></div>
+      </details>
+      ${demand || state.phase + 1 < steps.length ? '<p class="route-note-link"><a href="/lesson">记录本节预测与思考题笔记 →</a></p>' : ''}
+    </section>
+    <nav class="lab-neighbours"><a class="nav-link" href="/labs/focus">← 返回重点任务目录</a></nav>
   </section>`;
-  if (demand) loadOriginalPs($('#demand-original-ps'));
+  loadOriginalPs($('#demand-original-ps'));
 }
 
 function renderGroup3() {

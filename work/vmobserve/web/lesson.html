@@ -4,30 +4,24 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>按需分配 · 重点任务可视化实验台</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/style.css">
   <script type="module" src="/lesson.js"></script>
 </head>
-<body class="lesson-shell">
-<header class="topbar">
-  <a class="brand" href="/">
-    <svg aria-hidden="true" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="11" height="11" rx="2"/><rect x="18" y="3" width="11" height="11" rx="2"/><rect x="3" y="18" width="11" height="11" rx="2"/><rect x="18" y="18" width="11" height="11" rx="2"/></g></svg>
-    <div><strong>VMObserve</strong><span>重点任务可视化实验台</span></div>
-  </a>
-  <div class="topbar-actions">
-    <a class="nav-pill" href="/">作品首页</a>
-    <a class="nav-pill primary-pill" href="/labs/3.3">← 返回实验 3.3</a>
-  </div>
-</header>
+<body class="lesson-shell course-reading">
+<div class="app-frame">
+<aside class="course-rail" aria-label="课程实验目录"></aside>
 <main class="lesson-page">
+  <a class="nav-link" href="/labs/3.3?replay=demand512">← 返回 3.3 按需调页</a>
   <div class="lesson-hero">
     <small class="question-kicker">实验 3.3 思考与笔记 · 按需调页</small>
     <h1>按需调页实验记录与小结</h1>
-    <p>课内示例申请 512 MiB，用 ps 看整个进程。本页的小实验默认选 16 MiB，用 smaps 看返回指针所在的映射。先猜变化，再选两行数据验证。</p>
-    <p class="notice">先写预测，读两行采样，再把自己的访问实验和解释记下来。</p>
+    <p>课内原版 512 MiB 示例用 <code>ps</code> 看整进程；本页默认选 <code>16 MiB</code> 记录，用 <code>smaps</code> 精准看目标映射。先猜变化，再挑两行数据对照验证。</p>
+    <p class="notice">记录顺序：先写下预测，对照下表六步数据，再写下自己的尝试与小结。</p>
   </div>
   <details class="secondary-fold" id="original-demand">
     <summary>对照指导书 3.3：原版 512 MiB 程序在另一终端看到什么？</summary>
-    <p>指导书第 11–12 页让你在每次按回车前，用 <code>ps</code> 观察整个进程。下面回放原版 <code>demand.c</code> 的五个暂停点供写作核对。</p>
+    <p>指导书第 11–12 页让你在每次按回车前，用 <code>ps</code> 观察整个进程。下面放着原版程序五个暂停点的实测输出，写报告时直接核对即可。</p>
     <div id="original-ps"></div>
   </details>
 
@@ -49,8 +43,8 @@
     <p id="error" role="alert"></p>
     <div id="observations"></div>
     <div id="checks"></div>
-    <p class="detail-copy">看数提示：小块申请所在的页可能本来就已驻留；表格里的 RSS 统计整段映射，缺页列统计的是这一步新发生的次缺页数。</p>
-    <a id="report-download" hidden>下载本次完整原始数据 (JSON)</a>
+
+    <a id="report-download" hidden>下载本轮完整原始数据（JSON 留档）</a>
   </section>
 
   <section class="course-intro">
@@ -77,5 +71,6 @@
     <p class="detail-copy">草稿会自动保存在当前浏览器中；保存回答时会把你选中的实验记录和阶段一并记下。</p>
   </section>
 </main>
+</div>
 </body>
 </html>

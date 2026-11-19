@@ -1,4 +1,4 @@
-import { $, state, phases, esc, kib, table, recheckTarget, diagnosisHTML, findingFor, evidenceButtons, stepNavigation, stepExplanation } from './ui.js';
+import { $, state, phases, esc, kib, table, recheckTarget, diagnosisHTML, findingFor, evidenceButtons, stepNavigation, stepExplanation, stepControls, sampleReadings } from './ui.js';
 
 function policyHTML() {
   const cases = state.report.cases.filter(c => c.suite === 'thp' && ['allow', 'disable'].includes(c.parameters.process_thp));
@@ -67,25 +67,27 @@ function renderTHP() {
   });
   let explanation, headers;
   if (step === 0) {
-    explanation = stepExplanation(policy ? '两组都调用 madvise 请求大页，只改变进程是否允许使用大页。' : '两组各自建立匿名映射，一组调用 madvise 关闭大页，另一组请求大页。写入规则见下表。',
-      'Linux 记下这段映射的大页策略。后面要看 smaps 的 AnonHugePages，才能知道实际有多少内存用上了透明大页。',
-      describe(conditions, ct => policy ? `的进程禁止标志为 ${ct.process_thp_disabled ?? '未记录'}` : `的区域大小为 ${bytesLabel(ct.region_bytes)}，起点${ct.huge_aligned ? '已' : '未记录是否'}按大页对齐`));
+    explanation = stepExplanation(policy ? '两组都调用 madvise 请求透明大页，只改变进程是否允许使用大页的开关。' : '两组各自建立匿名映射，一组调用 madvise 关闭透明大页，另一组请求大页，其余写法完全一致。',
+      'Linux 记下两段映射的大页策略。后面要去 smaps 里看 AnonHugePages（透明大页实际占用的内存），才能判断究竟用上了没有。',
+      describe(conditions, ct => policy ? `的进程禁止标志为 ${ct.process_thp_disabled ?? '未记录'}` : `划出 ${bytesLabel(ct.region_bytes)} 区域，起点${ct.huge_aligned ? '已' : '未记录是否'}按大页边界对齐`));
     headers = ['组别', '区域大小', '写入步长', '计划写入次数'];
   } else if (step === 1) {
-    explanation = stepExplanation('程序停在第一次写入之前，各读一次目标映射的 smaps。',
-      'Size 是虚拟地址范围的大小；RSS 是其中已经驻留在物理内存里的部分。此时可以先比较两者。',
-      describe(samples, s => `的 Size 为 ${kib(s.size_kib)}，RSS 为 ${kib(s.rss_kib)}`));
+    explanation = stepExplanation('程序停在第一次写入之前，先各读一次目标映射的 smaps。',
+      'Size 是只登记的虚拟地址大小，RSS 则是真正住进内存条的物理内存大小。还没写入时，两者应该差很远。',
+      describe(samples, s => `的虚拟 Size 为 ${kib(s.size_kib)}，物理 RSS 只有 ${kib(s.rss_kib)}`));
     headers = ['组别', '驻留 RSS', '其中匿名大页', '映射 Size'];
   } else if (step === 2) {
-    explanation = stepExplanation('从区域起点开始，每走一个步长，就把那个位置的一个字节写成 1。写完马上采样。',
-      '第一次写入需要可写的物理页。若内核为这次访问分配了透明大页，一个字节的写入也可能让整张大页驻留。',
-      describe(samples, s => `驻留 ${kib(s.rss_kib)}，其中匿名大页 ${kib(s.huge_kib)}`) +
-      (samples[0]?.rss_kib > 0 && samples[1]?.rss_kib > samples[0].rss_kib ? `${labels[1]}组的 RSS 是${labels[0]}组的 ${Number((samples[1].rss_kib / samples[0].rss_kib).toFixed(2))} 倍。` : ''));
+    const writePlan = ct => `在 ${bytesLabel(ct.region_bytes)} 里每隔 ${bytesLabel(ct.stride_bytes)} 只写 1 字节（共写 ${ct.writes} 字节）`;
+    const same = conditions.every(ct => ct && ct.region_bytes === conditions[0]?.region_bytes && ct.stride_bytes === conditions[0]?.stride_bytes && ct.writes === conditions[0]?.writes);
+    explanation = stepExplanation(same ? '两组都' + writePlan(conditions[0]) + '，写完立即采样。' : describe(conditions, writePlan),
+      '写 1 字节需要可写物理页：关大页时 Linux 按 4 KiB 分配；开透明大页（THP）后，碰 1 字节就可能整张分配 2 MiB 大页（AnonHugePages）。',
+      `看下方两个 RSS 与前两列：` + describe(samples, s => `组 RSS ${kib(s.rss_kib)}（匿名大页 ${kib(s.huge_kib)}）`) +
+      (samples[0]?.rss_kib > 0 && samples[1]?.rss_kib > samples[0].rss_kib ? `${labels[1]}组是${labels[0]}组的 ${Number((samples[1].rss_kib / samples[0].rss_kib).toFixed(2))} 倍。` : ''));
     headers = ['组别', '驻留 RSS', '其中匿名大页', '写入时次缺页'];
   } else {
-    explanation = stepExplanation('程序沿同样的步长读回刚才写过的字节，求和，再与写入次数核对。',
-      '普通页和透明大页都通过进程的虚拟地址访问。翻回上一步看页的大小和驻留量，这一步看程序读到的值。',
-      describe(values, v => `读回的总和是 ${v.sum}，与预期${v.ok ? '一致' : '有偏差'}`));
+    explanation = stepExplanation('程序沿同样的步长把刚才写过的字节逐个读回来求和，核对内容是否一致。',
+      '不论底层用 4 KiB 小页还是 2 MiB 大页，程序读写虚拟地址看到的逻辑完全一样（透明大页对程序逻辑本身是“透明”的）。',
+      describe(values, v => `读回求和为 ${v.sum}，与预期写入次数${v.ok ? '完全一致' : '有偏差'}`));
     headers = ['组别', '预期总和', '实测总和', '核对'];
   }
   const rules = policy ? ['thp_process_control', 'thp_process_disabled'] : ['thp_sparse_control', 'thp_full_control', 'observed_thp'];
@@ -98,8 +100,9 @@ function renderTHP() {
   $('#content').innerHTML = `<section class="seq-reading"><header class="focus-intro"><small class="question-kicker">拓展实验 · 透明大页</small>
     <h1>同样的写法，为什么用的物理内存会不同？</h1></header>
     ${stepNavigation(titles, step, 'data-course-step')}
-    <section id="sequence-result" class="seq-panel"><h2>${titles[step]}</h2>${explanation}${table(headers, rows)}${evidence}</section>
-    <label class="selector"><span>换一组对照</span><select id="case-select">${groups.map((g, i) => `<option value="${i}" data-pattern="${esc(g.split(':')[0])}" ${i === state.selected ? 'selected' : ''}>${g.startsWith('sparse:') ? '稀疏写' : '逐基础页写'} · 第 ${esc(g.split(':')[1])} 次</option>`).join('')}</select></label>
+    <section id="sequence-result" class="seq-panel"><div class="demand-heading"><h2>${titles[step]}</h2><label>回放记录 <select id="case-select">${groups.map((g, i) => `<option value="${i}" data-pattern="${esc(g.split(':')[0])}" ${i === state.selected ? 'selected' : ''}>${g.startsWith('sparse:') ? '稀疏写' : '逐基础页写'} · 第 ${esc(g.split(':')[1])} 次</option>`).join('')}</select></label></div>
+      ${explanation}${step === 2 ? sampleReadings(labels.map((label, i) => [label + ' · RSS', kib(samples[i]?.rss_kib)])) : ''}${table(headers, rows)}
+      <div class="seq-navigation"><div>${evidence}</div>${stepControls(step, titles.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>')}</div></section>
     <details class="secondary-fold"><summary>查看本组诊断与复验</summary>${diagnosisHTML(findings, !policy)}</details>
     <details class="secondary-fold"><summary>进程开关对照与采集</summary>${policyHTML()}</details></section>`;
 }
@@ -122,26 +125,26 @@ function phaseLabel(sample, c) {
 function cowStep(s, c) {
   const cow = c.data.cow;
   const child = s.role === 'child', who = child ? '子' : '父';
-  const memory = `${who}进程目标映射的 RSS 是 ${kib(s.rss_kib)}，按共享比例分摊后的 PSS 是 ${kib(s.pss_kib)}。`;
-  const faults = `本步记录到 ${s.action_minor} 次次缺页。`;
+  const memory = `${who}进程看目标映射，RSS（页表指着多少算多少）是 ${kib(s.rss_kib)}；按共享比例分摊后的 PSS 是 ${kib(s.pss_kib)}。`;
+  const faults = `这一步发生了 ${s.action_minor} 次缺页（都不需要从磁盘读入页面）。`;
   switch (s.phase) {
-    case 'untouched': return ['建立映射', '父进程用 mmap 建立一段私有匿名映射，先不访问实验区。', 'Linux 划出虚拟地址范围，物理页可以等到实际访问时再分配。', `映射大小为 ${kib(s.size_kib)}。` + memory];
-    case 'read_all': return ['逐页读取', '父进程从每张基础页读一个字节并求和。', '匿名页第一次读取应得到 0。Linux 可以把只读访问指向共享零页，发生缺页时也可能看不到 RSS 增长。', faults + memory];
-    case 'write_quarter': return ['间隔写入', '父进程每隔四页，把页首字节写成 1。', '首次写入的页需要可写的物理内存，这时再看 RSS，就能和逐页只读的结果做对照。', faults + memory];
-    case 'write_all': return ['写遍各页', '父进程把每一页的第一个字节都写成 1。', '已经写过的页可以继续用，其余页首次写入时需要分配可写页。', faults + memory];
-    case 'fork_shared': return ['刚 fork · ' + who, child ? '子进程已经启动，通过管道等待改写指令。现在取子进程的快照。' : '父进程调用 fork，等子进程就绪，先取父进程的快照。',
-      '两个进程各有自己的页表，此时可以共享同一批物理页。RSS 在两边都记入整页，PSS 按共享比例分摊。', memory];
+    case 'untouched': return ['建立映射', '父进程用 mmap 划出一段私有匿名映射，此时还没有任何读写。', 'Linux 只在映射表里登记虚拟地址区间，物理页等到真正访问时再分配。', `映射大小（Size）为 ${kib(s.size_kib)}，` + memory];
+    case 'read_all': return ['逐页读取', '父进程从每一张基础页读 1 个字节并求和，全块还没写过数据。', '没写过的匿名页第一次读取固定得到 0。Linux 让这些只读页统一指向全系统共用的“零页”，不急着分配独立物理页。', faults + memory];
+    case 'write_quarter': return ['间隔写入', '父进程每隔四页，把页首字节改写成 1。', '只要往页里写数据，共享零页就不能用了，Linux 为写到的每一页现配独立可写物理页；对照上一步就能看到 RSS 上涨。', faults + memory];
+    case 'write_all': return ['写遍各页', '父进程把每一页的头一个字节都写成 1。', '已经配好可写页的地址直接写入不缺页，其余还没写过的页都在首次写入时配好了独立物理页。', faults + memory];
+    case 'fork_shared': return ['刚 fork · ' + who, child ? '子进程启动就绪、通过管道等改写信号，先取子进程此时的快照。' : '父进程调用 fork 创建子进程并等其就绪，先取父进程的快照。',
+      'fork 刚结束时，两个进程有各自独立的页表，但先指向同一批物理页（标成只读共享）。注意两个指标：RSS 在两边各把共享页算了一整遍，PSS（按份平摊）则把两人共用的页各算 1/2。',
+      `看下方前三个数：${memory}`];
     case 'child_write_quarter':
     case 'child_write': {
       const zero = cow?.written_pages === 0;
       const check = c.data.value_check;
       const peer = c.data.samples.find(other => other.phase === s.phase && other.role !== s.role);
-      const total = peer && child ? `两边 PSS 合计 ${kib(peer.pss_kib + s.pss_kib)}。` : '';
-      const result = child && check ? `读回页首字节求和，父进程为 ${check.parent_sum}，子进程为 ${check.child_sum}，隔离校验${check.ok ? '通过' : '有偏差'}。` : '';
+      const result = child && check ? `看两点证据：① 读回求和校验：父进程还是 ${check.parent_sum}，子进程变成了 ${check.child_sum}（两边数据已隔离，${check.ok ? '校验通过' : '有偏差'}）；② 看下方指标：子进程这步触发了 ${s.action_minor} 次缺页（全是不读磁盘的次缺页），父子 PSS 合计为 ${kib((peer?.pss_kib ?? 0) + s.pss_kib)}（共享页算 1 份，各改各的页各自独算 1 份）。` : '';
       return [(zero ? '保持共享 · ' : '改写后 · ') + who,
-        (zero ? '这组让子进程跳过改写。' : `子进程按设定比例把选中页的首字节改成 2。`) + (child ? '现在看子进程的记录。' : '父进程一直保留原值，现在看父进程的记录。'),
-        zero ? '两边都没有向共享页写入，可以继续共享原来的物理页。' : '子进程写共享页时触发写时复制，得到自己的可写页。父进程仍然看到原值，其余页可以继续共享。',
-        memory + total + (child ? faults : '') + result];
+        (zero ? '这一组让子进程不改写任何页。' : '子进程按设定比例把选中页的首字节改成 2。') + (child ? '现在切换到子进程视角。' : '父进程没有改写任何内容，现在先看父进程视角。'),
+        zero ? '两边都没有改写共享页，Linux 不必复制物理页，父子继续共用原物理页，PSS 保持每人 1/2。' : '子进程往共享页写“2”的一瞬间触发写时复制（COW）：Linux 只给被改写的页现拷一份新物理页，父进程依然守着写“1”的旧页，其余未动页继续共享。',
+        child && check ? result : `父进程未改写，页里仍是原值；看下方前三个数：${memory}`];
     }
     default: return [s.phase, '程序在这个阶段记录目标映射。', '根据 smaps 对照驻留量与共享份额。', memory];
   }
@@ -165,15 +168,19 @@ function renderBaseline() {
 
   const steps = samples.map(s => cowStep(s, c));
   const selected = steps[state.phase];
+  const peer = sample && samples.find(s => s.phase === sample.phase && s.role !== sample.role);
+  const readings = sample ? [['驻留 RSS', kib(sample.rss_kib)], ['分摊 PSS', kib(sample.pss_kib)]] : [];
+  if (peer) readings.push(['父子 PSS 合计', kib(sample.pss_kib + peer.pss_kib)]);
+  if (sample && (['read_all','write_quarter','write_all'].includes(sample.phase) || (sample.role === 'child' && sample.phase.startsWith('child_write')))) readings.push(['本步次缺页', sample.action_minor + ' 次']);
+  const picker = `<label>回放记录 <select id="case-select">${cases.map((item, i) => `<option value="${i}" ${i === state.selected ? 'selected' : ''}>${item.parameters.mib} MiB · 改写 ${esc(item.data?.cow?.fraction ?? item.parameters.cow_fraction ?? '1/4')} · 第 ${item.parameters.repeat} 次</option>`).join('')}</select></label>`;
   $('#content').innerHTML = `<section class="seq-reading"><header class="focus-intro"><small class="question-kicker">拓展实验 · 写时复制</small>
     <h1>fork 之后，父子进程什么时候才会各有一份物理页？</h1></header>
     ${sample ? `${stepNavigation(steps.map(st => st[0]), state.phase, 'data-course-step')}
-      <section id="sequence-result" class="seq-panel"><h2>${esc(selected[0])}</h2>
-      ${stepExplanation(...selected.slice(1))}
+      <section id="sequence-result" class="seq-panel"><div class="demand-heading"><h2>${esc(selected[0])}</h2>${picker}</div>
+      ${stepExplanation(...selected.slice(1))}${sampleReadings(readings)}
       <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, {phase: sample.phase, role: sample.role, stepLabel: selected[0]})}</div>
-      <button id="play">${state.timer ? '暂停' : '自动播放'}</button></div></section>`
-      : `<p class="empty">本次采集不完整。</p><div class="raw-links">${evidenceButtons(c)}</div>`}
-    <label class="selector"><span>换一组实验</span><select id="case-select">${cases.map((item, i) => `<option value="${i}" ${i === state.selected ? 'selected' : ''}>${item.parameters.mib} MiB · 改写 ${esc(item.data?.cow?.fraction ?? item.parameters.cow_fraction ?? '1/4')} · 第 ${item.parameters.repeat} 次</option>`).join('')}</select></label>
+      <div class="step-controls"><button id="play">${state.timer ? '暂停' : '自动播放'}</button>${stepControls(state.phase, steps.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>')}</div></div></section>`
+      : `${picker}<p class="empty">本次采集不完整。</p><div class="raw-links">${evidenceButtons(c)}</div>`}
     <details class="secondary-fold"><summary>对照各步与父子进程的数据</summary>${table(['阶段', '进程', 'RSS', 'PSS'], samples.map(s => [phaseLabel(s,c), s.role === 'parent' ? '父进程' : '子进程', kib(s.rss_kib), kib(s.pss_kib)]), state.phase)}</details>
     ${summary}
     <details class="secondary-fold"><summary>查看本组诊断与复验</summary>${diagnosisHTML(findings)}${cowControls()}</details></section>`;

@@ -30,6 +30,12 @@ const labs = [
 ];
 
 const byId = Object.fromEntries(labs.map(row => [row[0], row]));
+const extensions = [
+  { topic: 'baseline', code: 'COW', label: '写时复制', href: '/#topic=baseline', actionText: '进入 8 步对照',
+    desc: '同一批物理页在 fork 后由父子进程共享。对照子进程改写前后的快照，看哪些页另拷了一份、为什么 PSS 才反映实际占用。' },
+  { topic: 'thp', code: 'THP', label: '透明大页', href: '/#topic=thp', actionText: '进入 4 步对照',
+    desc: '在相同位置只写 1 个字节，一组关闭透明大页，一组请求使用。对照两组的 RSS 与 AnonHugePages（透明大页占用的内存），看页面大小怎样影响占用。' }
+];
 const replayTasks = {
   '3.1': [['打开 7 类程序地址分布图', 'layout', 'layout'], ['动态链接映射', 'group3', 'link-dynamic'], ['静态链接映射', 'group3', 'link-static']],
   '3.2': [['回放三次申请', 'sequence', 'sequence']],
@@ -41,14 +47,55 @@ const replayTasks = {
 };
 
 export function directory(active) {
+  const rail = $('.course-rail');
+  rail.insertAdjacentHTML('afterbegin', `<a class="rail-brand" href="/">
+      <svg aria-hidden="true" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="11" height="11" rx="2"/><rect x="18" y="3" width="11" height="11" rx="2"/><rect x="3" y="18" width="11" height="11" rx="2"/><rect x="18" y="18" width="11" height="11" rx="2"/></g></svg>
+      <div>
+        <strong>VMObserve</strong>
+        <span>重点任务可视化实验台</span>
+      </div>
+    </a>
+
+    <button class="mobile-menu" id="toggle-directory" aria-controls="rail-navigation" aria-expanded="false">实验台目录</button>
+    <nav class="rail-nav" id="rail-navigation" aria-labelledby="rail-directory-title">
+      <div class="rail-directory-head">
+        <h2 id="rail-directory-title">实验台目录</h2>
+        <select id="mobile-directory" aria-labelledby="rail-directory-title"></select>
+      </div>
+      <a class="rail-link rail-home" data-nav="home" href="/">实验台首页</a>
+      <div class="rail-group">
+        <a class="rail-group-title" data-lab="focus" href="/labs/focus">重点任务目录</a>
+        <div id="course-directory"></div>
+      </div>
+      <div class="rail-group">
+        <a class="rail-group-title" data-lab="extensions" href="/labs/extensions">拓展实验</a>
+        <div id="extension-directory"></div>
+      </div>
+      <a class="rail-link" data-topic="evidence" href="/#topic=evidence">原始证据</a>
+      <details class="rail-more full-directory rail-isolated">
+        <summary>完整课程目录</summary>
+        <div id="full-directory"></div>
+      </details>
+    </nav>`);
+  const menu = $('#toggle-directory');
+  const setMenu = open => {
+    menu.setAttribute('aria-expanded', String(open));
+    rail.classList.toggle('menu-open', open);
+  };
+  menu.onclick = () => setMenu(menu.getAttribute('aria-expanded') === 'false');
+  $('#rail-navigation').addEventListener('click', event => { if (event.target.closest('a')) setMenu(false); });
   const select = $('#mobile-directory');
-  select.innerHTML = '<option value="">实验台首页</option><option value="focus">重点任务目录</option>';
+  select.innerHTML = '<option value="">实验台首页</option>';
   const focusIds = ['3.2', '3.3'];
   const replayPaths = {'3.2': '/labs/3.2?replay=sequence', '3.3': '/labs/3.3?replay=demand512'};
   $('#course-directory').innerHTML = focusIds.map(id =>
     `<a class="rail-link" href="${replayPaths[id]}" data-lab="${id}"><em>${id}</em>${byId[id][1]}</a>`).join('');
-  select.insertAdjacentHTML('beforeend', `<optgroup label="重点任务">${focusIds.map(id =>
+  select.insertAdjacentHTML('beforeend', `<optgroup label="重点任务"><option value="focus">重点任务目录</option>${focusIds.map(id =>
     `<option value="${id}">${id} ${byId[id][1]}</option>`).join('')}</optgroup>`);
+  $('#extension-directory').innerHTML = extensions.map(item =>
+    `<a class="rail-link" href="${esc(item.href)}" data-topic="${item.topic}"><em>${item.code}</em>${item.label}</a>`).join('');
+  select.insertAdjacentHTML('beforeend', `<optgroup label="拓展实验"><option value="extensions">拓展实验目录</option>${extensions.map(item =>
+    `<option value="${item.topic}">${item.code} ${item.label}</option>`).join('')}</optgroup>`);
   $('#full-directory').replaceChildren();
   groups.forEach((name, i) => {
     const chapter = labs.filter(([id]) => Number(id[0]) === i + 1);
@@ -60,8 +107,12 @@ export function directory(active) {
     select.insertAdjacentHTML('beforeend', `<optgroup label="${name}">${items.map(([id, title]) =>
       `<option value="${id}">${id} ${title}</option>`).join('')}</optgroup>`);
   });
+  select.insertAdjacentHTML('beforeend', '<option value="evidence">原始证据</option><option value="lesson">3.3 思考与笔记</option>');
   select.onchange = () => {
-    if (select.value) location.assign(replayPaths[select.value] || '/labs/' + select.value);
+    setMenu(false);
+    if (select.value === 'evidence') { location.assign('/#topic=evidence'); return; }
+    if (select.value === 'lesson') { location.assign('/lesson'); return; }
+    if (select.value) location.assign(replayPaths[select.value] || extensions.find(item => item.topic === select.value)?.href || '/labs/' + select.value);
     else location.assign('/');
   };
   markLab(active);
@@ -85,7 +136,7 @@ export function markLab(id, topic) {
       chapter = chapter.parentElement.closest('details');
     }
   }
-  $('#mobile-directory').value = id && id !== 'home' ? id : '';
+  $('#mobile-directory').value = id && id !== 'home' ? id : topic === 'evidence' ? topic : extensions.find(item => item.topic === topic)?.topic || '';
 }
 
 const group3Keys = ['link-dynamic', 'link-static', 'sequence', 'demand512', 'stack'];
@@ -138,64 +189,67 @@ export function renderSystems() {
     </div>`;
 }
 
-export function renderHome(focusOnly = false) {
+export function renderHome() {
   document.body.classList.add('course-reading');
   document.title = '重点任务可视化实验台 · VMObserve';
-  markLab(focusOnly ? 'focus' : 'home');
+  markLab('home');
 
-  if (!focusOnly) {
-    $('#content').innerHTML = `<article class="workbench-overview">
+  $('#content').innerHTML = `<article class="workbench-overview">
       <header class="focus-intro"><small class="question-kicker">华中科技大学 · 操作系统课程实践</small>
         <h1>重点任务可视化实验台</h1>
         <p>调用 <code>malloc</code> 申请一块内存、再往里写数据时，Linux 在后台到底做了什么？这里把真实运行抓下来的记录按步骤拆开，带你看清每一步的来龙去脉。</p>
       </header>
+      <a class="btn-link primary" href="/labs/3.2?replay=sequence">开始 3.2 · 连续三次 malloc →</a>
       <section class="overview-guide"><h2>怎么看懂一次实验</h2>
-        <dl><div><dt>看程序做了什么</dt><dd>从左侧栏选好实验进去，点顶上的步骤按钮，停在某一次申请、写入或释放后。</dd></div>
+        <dl><div><dt>看程序做了什么</dt><dd>从实验台目录选一个实验，点顶上的步骤按钮，停在某一次申请、写入或释放后。</dd></div>
         <div><dt>看 Linux 做了什么</dt><dd>对照这一步前后的变化：虚拟内存映射有没有新增或合并、真正占用的物理内存（RSS）涨了多少、又触发了几次缺页。</dd></div>
         <div><dt>拿原始记录核对</dt><dd>想找实据写进实验报告，直接点旁边的记录按钮，就能定位到对应的 <code>/proc/self/smaps</code> 快照行，或 <code>strace</code> 抓到的系统调用。</dd></div></dl>
       </section>
-      <p class="overview-foot">这里优先做透最容易混淆的虚拟内存实验；如果想按章节复习进程、同步或文件与设备，直接点左侧「完整课程目录」即可。页面里的数字全来自真实的系统运行记录，随时可以反复回放，也可以在环境就绪后重新采集并导出报告。</p>
+      <p class="overview-foot">这里优先做透最容易混淆的虚拟内存实验；如果想按章节复习进程、同步或文件与设备，打开「完整课程目录」即可。页面里的数字全来自真实的系统运行记录，随时可以反复回放，也可以在环境就绪后重新采集并导出报告。</p>
     </article>`;
-    return;
-  }
-  document.title = '重点任务目录 · VMObserve';
+}
+
+export function renderTaskDirectory(id) {
+  const focus = id === 'focus';
+  const title = focus ? '重点任务目录' : '拓展实验';
+  document.body.classList.add('course-reading');
+  document.title = title + ' · VMObserve';
+  markLab(id);
   const focusTasks = [
     {
       label: '实验 3.2 · 连续三次 malloc',
       desc: '连续调用 <code>malloc</code> 申请 <code>1 KiB</code>、<code>256 KiB</code> 和 <code>1 MiB</code>，对照三个返回指针与内核记录，看清为什么三块只占两段映射。',
-      href: '/labs/3.2?replay=sequence'
+      href: '/labs/3.2?replay=sequence',
+      actionText: '进入 6 步回放'
     },
     {
       label: '实验 3.3 · 按需调页与栈增长',
-      desc: '先申请 <code>512 MiB</code> 暂不写入，再分批触碰内存页——对比虚拟映射大小、已驻留物理内存（RSS）与缺页次数各自何时增长。',
-      href: '/labs/3.3?replay=demand512'
+      desc: '先申请 <code>512 MiB</code> 暂不写入，再分批触碰内存页——对比虚拟映射大小、已驻留物理内存（RSS）与缺页次数各自何时增长，另看栈溢出如何触发 <code>SIGSEGV</code>。',
+      href: '/labs/3.3?replay=demand512',
+      actionText: '进入 6 步回放'
     }
   ];
   $('#content').innerHTML = `
     <header class="focus-intro">
       <small class="question-kicker">华中科技大学 · 操作系统实验</small>
-      <h1>重点任务目录</h1>
-      <p>跟着真实运行的 C 程序，看清内存从调用 <code>malloc</code> 申请到第一次写入时，Linux 到底做了什么。</p>
+      <h1>${title}</h1>
+      <p>${focus ? '跟着真实运行的 C 程序，看清内存从调用 <code>malloc</code> 申请到第一次写入时，Linux 到底做了什么。' : '继续看 Linux 怎样管理物理页：两个进程什么时候共享同一份内存？同样的写法换成大页后占用差多少？'}</p>
     </header>
-    <section class="focus-rows" aria-label="重点实验">
-      ${focusTasks.map(item => `
+    <section class="focus-rows" aria-label="${title}">
+      ${(focus ? focusTasks : extensions).map(item => `
         <article class="focus-row">
-          <div class="focus-row-head">${item.label}</div>
+          <div class="focus-row-head">${item.code ? item.code + ' · ' : ''}${item.label}</div>
           <p class="focus-row-desc">${item.desc}</p>
-          <a class="focus-row-action" href="${esc(item.href)}">查看详情</a>
+          <a class="focus-row-action" aria-label="${esc(item.actionText || '进入回放')} · ${esc(item.label)}" href="${esc(item.href)}">${esc(item.actionText || '进入回放')}</a>
         </article>
       `).join('')}
-    </section>
-    <section class="secondary-fold focus-route"><h2>3.3 的另外两项观察</h2>
-      <p><a href="/labs/3.3#original-demand">看五次 ps 输出</a>，比较整个进程的虚拟大小（VSZ）、驻留量（RSZ）和累计缺页。</p>
-      <p><a href="/labs/3.3?replay=stack">对照栈增长与溢出</a>，看清不同栈限额下哪组递归正常返回、哪组因栈越界触发 <code>SIGSEGV</code>（段错误）终止。</p>
-      <a href="/lesson">记录本节预测与思考题笔记 →</a></section>`;
+    </section>`;
 }
 
 export async function showLab(id, preferredId) {
   document.body.classList.add('course-reading');
   const row = byId[id];
-  if (!row) { $('#content').innerHTML = '<h1>没有这个实验编号</h1><a href="/">回到作品首页</a>'; return; }
+  if (!row) { $('#content').innerHTML = '<h1>没有这个实验编号</h1><a href="/">回到实验台首页</a>'; return; }
   const [, title, pages, task, question] = row;
   document.title = id + ' ' + title + ' · VMObserve';
   const basic = Number(id[0]) < 3;
@@ -212,7 +266,7 @@ export async function showLab(id, preferredId) {
   );
 
   $('#content').innerHTML = `<div class="course-intro">
-    <div class="lab-breadcrumb"><a href="/">作品首页</a><span>/</span><span>实验${'一二三四五六七'[Number(id[0]) - 1]}</span><span>/</span><strong>${id}</strong></div>
+    <div class="lab-breadcrumb"><a href="/">实验台首页</a><span>/</span><span>实验${'一二三四五六七'[Number(id[0]) - 1]}</span><span>/</span><strong>${id}</strong></div>
     <small class="question-kicker">实验 ${id} · 指导书第 ${pages} 页</small>
     <h1>${title}</h1>
     <p>${task}</p>

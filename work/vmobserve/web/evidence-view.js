@@ -54,16 +54,17 @@ function showMatches() {
 export function renderEvidence() {
   const r = state.report;
   const env = r.environment || {};
+  const example = r.cases[0]?.id;
   $('#content').innerHTML = `
     <div class="course-intro">
       <small class="question-kicker">原始数据检索</small>
-      <h2>原始记录与文件</h2>
-      <p>这里保存了本轮每次实验采到的原始系统输出（<code>strace</code> 系统调用日志、<code>/proc/self/smaps</code> 内存映射与分段采样数据）。输入编号如 <code>sequence-2</code> 即可直接定位对应原文。</p>
+      <h1>原始证据</h1>
+      <p>这里收齐了这一轮所有实验的系统原始记录（<code>strace</code> 系统调用日志、<code>/proc/self/smaps</code> 内存快照和分段采样数据）。${example ? `在下面输入本轮编号（比如 <code>${esc(example)}</code>）就能直接找到对应原文。` : '本轮暂无记录可供检索。'}</p>
     </div>
     <div class="evidence-filters">
       <div class="filter-field">
         <label for="evidence-search">搜索编号、实验名或参数</label>
-        <input id="evidence-search" type="search" placeholder="例如：sequence-2、16MiB、sparse">
+        <input id="evidence-search" type="search" placeholder="${example ? esc(example) : '搜索本轮实验'}">
       </div>
       <div class="filter-field filter-field-sm">
         <label for="evidence-status">按状态筛选</label>

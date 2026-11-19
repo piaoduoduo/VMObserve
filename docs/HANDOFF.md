@@ -1,5 +1,9 @@
 # 接手说明
 
+**2026-11-19 · Gemini 审阅后的修复。** 四个实验统一步骤切换；3.2 的四个操作进入桌面首屏，手机目录可折叠，笔记页按实际 smaps 解释大页。Edge 走通桌面与手机回放，64 项测试通过。已整理赛事交付材料与缺项，下一步由 Gemini 润色学生可见的文字，由队伍收一份独立试用。[材料与截图](GEMINI_REVIEW_20261119.md)
+
+**2026-11-19 · 实验台目录。** 侧栏新增 20 px 加粗总标题。拓展实验与重点任务目录共用单行卡片，写时复制、透明大页可直接进入回放。已核对两条详情链接、当前实验高亮，以及 320 和 390 px 宽度下的目录切换。[桌面](../output/verification/focus-tasks/extension-directory.png) · [手机](../output/verification/focus-tasks/extension-directory-mobile.png)
+
 **2026-11-18 · 3.2 与两个拓展实验分步讲解。** 3.2 每个圆显示程序动作、Linux 处理和本步结果。第四个圆并列两次 mmap 区间、两根指针和去重后的整段 RSS。写时复制按八份快照区分父子视角，透明大页按设置、写前、写入、读回四步对照。Edge 已用既有 openEuler 记录逐步核对三项回放、子进程原文定位、两种写法及进程开关，覆盖 320 / 390 / 1123 px；本轮 64 项回归测试通过。下一步请初学者自己用第四步的地址和 RSS 解释为什么只加一次。截图见[三次 malloc](../output/verification/focus-tasks/three-malloc-evidence.png)、[子进程](../output/verification/focus-tasks/cow-child-step.png)、[透明大页](../output/verification/focus-tasks/thp-write-step.png)。赛事定位、官网提交格式与协作约定见 [GEMINI.md](../GEMINI.md)。
 
 **3.3 分步回放与首页。** 首页介绍实验台的用法，重点任务从侧栏直接进入。「原始证据」下方展开全部七组、24 项课程实验。3.3 的按需调页按申请前、申请后、写 A、写 B、写 C、释放后六次采样切换。递归实验另看栈上限、递归增长和退出状态。浏览器用 openEuler 历史记录 `20261118T013159.221864Z` 核对了六步指标、JSONL 和 smaps 原文、分享位置、正常返回及 SIGSEGV 两种结局，也检查了 320、390 和 1123 像素宽度。[首页](../output/verification/focus-tasks/overview.png) · [写到四分之一](../output/verification/focus-tasks/demand-step-quarter.png) · [手机预览](../output/verification/focus-tasks/demand-step-mobile.png)
