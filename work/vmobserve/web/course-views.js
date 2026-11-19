@@ -1,4 +1,4 @@
-import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, stepControls, sampleReadings } from './ui.js';
+import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, stepControls, sampleReadings, lessonPractice, missingReading } from './ui.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -87,75 +87,33 @@ const courseSteps = [
 ];
 
 function renderCourse() {
-  const intro = `<div class="course-intro">
-    <small class="question-kicker">实验 3.2 / 3.3 · 按需分配</small>
-    <h2>申请了内存，就已经用上物理页了吗？</h2>
-    <p>改编自课内 <code>lab3_2/malloc.c</code> 与 <code>lab3_3/demand.c</code>（对应第七章第 57–60 页请求调页）：用 1 KiB、256 KiB、1 MiB 和 16 MiB 单块对比，一步步看清什么时候才分配物理内存。</p>
-    <div class="sequence-controls">
-      <button id="run-course" class="primary">重新采集按需分配</button>
-    </div>
-  </div>`;
-  const cases = state.report.cases.filter(c => c.suite === 'course').sort((a, b) => b.parameters.requested_kib - a.parameters.requested_kib || a.parameters.repeat - b.parameters.repeat);
-  if (!cases.length) {
-    $('#content').innerHTML = intro + '<p class="empty">当前记录里没有按需分配实验，请点顶部“切换记录”选一条“按需分配”记录或点击上方按钮采集。</p>';
-    return;
-  }
+  const cases = state.report.cases.filter(c => c.suite === 'course').sort((a,b) => b.parameters.requested_kib - a.parameters.requested_kib || a.parameters.repeat - b.parameters.repeat);
+  if (!cases.length) { $('#content').innerHTML = missingReading(); return; }
   state.selected = Math.min(state.selected, cases.length - 1);
-  state.phase = Math.min(Math.max(0, state.phase), courseSteps.length - 1);
-  const c = cases[state.selected], step = courseSteps[state.phase];
-  const sample = c.data?.samples[state.phase];
-  const relevantRule = state.phase <= 1 ? 'malloc_mapping' : state.phase === 5 ? 'malloc_free' : 'malloc_demand';
-  const findings = findingFor([c.id], [relevantRule, 'incomplete_evidence', 'course_task_incomplete']);
-  const selector = `<label class="selector"><span>选择内存大小与实验轮次：</span><select id="case-select">${cases.map((item, index) => `<option value="${index}" ${index === state.selected ? 'selected' : ''}>${kib(item.parameters.requested_kib)} · 第 ${item.parameters.repeat} 次实验</option>`).join('')}</select></label>`;
-
-  const reqKib = c.parameters.requested_kib;
-  const fillPct = sample ? Math.min(100, Math.round((sample.rss_kib / Math.max(1, reqKib)) * 100)) : 0;
-  const stepTabs = courseSteps.map((st, i) => `<button data-course-step="${i}" ${i === state.phase ? 'aria-current="step"' : ''}><span>${i + 1}</span>${esc(st.title)}</button>`).join('');
-
-  const metrics = sample ? `<div class="step-metrics-grid">
-    <div><small>申请大小</small><strong>${kib(reqKib)}</strong></div>
-    <div><small>已写位置 / 总位置</small><strong>${sample.written_positions} / ${c.data.condition.positions}</strong></div>
-    <div><small>物理驻留 RSS</small><strong class="kpi-accent">${kib(sample.rss_kib)}</strong></div>
-    <div><small>本步次缺页</small><strong>${sample.action_minor} 次</strong></div>
-    <div><small>原地址映射</small><strong>${sample.mapping_present ? '存在' : '已消失'}</strong></div>
-    <div><small>返回地址</small><strong><code>${sample.address === '0' ? '尚未申请' : `0x${esc(sample.address)}`}</code></strong></div>
-  </div>
-  <div class="residency-meter">
-    <div class="residency-head"><span>当前物理页驻留比例（相对申请大小）</span><strong>${kib(sample.rss_kib)} / ${kib(reqKib)}（${fillPct}%）</strong></div>
-    <div class="vma-meter-bar large"><span style="width:${fillPct}%"></span></div>
-  </div>` : '<p class="empty">本实验数据不完整，请点下方按钮查看原始日志。</p>';
-
-  $('#content').innerHTML = intro + `<div class="experiment"><div class="observation">
-    ${selector}
-    <div class="stepper-bar">
-      <nav class="step-strip">${stepTabs}</nav>
-      <div class="step-arrows">
-        <button data-course-step="${state.phase - 1}" ${state.phase === 0 ? 'disabled' : ''}>← 上一步</button>
-        <button class="primary" data-course-step="${state.phase + 1}" ${state.phase === 5 ? 'disabled' : ''}>下一步 →</button>
-      </div>
-    </div>
-    <div class="step-evidence">
-      <div class="step-evidence-head">
-        <span class="step-badge">第 ${state.phase + 1} / 6 步</span>
-        <h3>${esc(step.title)}</h3>
-      </div>
-      <p><code>${esc(step.code)}</code></p>
-      <p class="course-question">${esc(step.question)}</p>
-      ${metrics}
-      <div class="explanation-box"><span class="explain-tag">原理解释</span><p>${esc(step.theory)}</p></div>
-    </div>
-    <details class="secondary-fold"><summary>展开六个阶段汇总表（当前高亮第 ${state.phase + 1} 步）</summary>${c.data ? table(['阶段', '已写位置', '物理驻留 RSS', '本步次缺页'], c.data.samples.map((s, i) => [courseSteps[i].title, s.written_positions, kib(s.rss_kib), s.action_minor]), state.phase) : ''}</details>
-    ${c.artifacts ? `<div class="raw-links">${evidenceButtons(c, { phase: sample?.phase, stepLabel: step.title })}</div>` : ''}
-  </div>${diagnosisHTML(findings)}</div>`;
+  state.phase = Math.min(Math.max(0,state.phase), courseSteps.length - 1);
+  const c = cases[state.selected], step = courseSteps[state.phase], sample = c.data?.samples[state.phase];
+  const sizes = new Map();
+  for (const [i, item] of cases.entries()) {
+    const size = item.parameters.requested_kib;
+    if (!sizes.has(size) || item === c) sizes.set(size, i);
+  }
+  const notes = '/lesson?' + new URLSearchParams({run:state.id,case:c.id});
+  $('#content').innerHTML = `<section class="seq-reading focused-lesson"><header class="focus-intro"><small class="question-kicker">3.3 · 大小块对照</small><h1>申请多大，会怎样影响首次写入？</h1></header>
+    <div class="lesson-conditions">${[...sizes].map(([size,i]) => `<button data-condition="${i}" aria-pressed="${i === state.selected}">${kib(size)}</button>`).join('')}</div>
+    ${stepNavigation(courseSteps.map(s=>s.title), state.phase, 'data-course-step')}
+    <section class="seq-panel" id="sequence-result"><h2>${esc(step.title)}</h2><p><code>${esc(step.code)}</code></p><p>${esc(step.question)}</p>
+    ${sample ? sampleReadings([['累计写入位置',sample.written_positions],['目标映射 RSS',sample.mapping_present ? kib(sample.rss_kib) : '无目标映射'],['本步次缺页',sample.action_minor]]) : missingReading()}
+    <p>${esc(step.theory)}</p><details class="secondary-fold"><summary>查看这一步的原文</summary><div class="raw-links">${evidenceButtons(c,{phase:sample?.phase,stepLabel:step.title},['jsonl','smaps'])}</div></details>
+    ${stepControls(state.phase, courseSteps.length, `<a class="btn-link primary" href="${esc(notes)}">用这组数据写小结 →</a>`)}</section></section>`;
 }
 
 const demandActions = {
   before_alloc: ['申请前', '申请内存前先拍一张快照，作为后面各步对照的起点。', '此时代码、栈等基础映射已经建好，程序还没向系统要目标大块。'],
-  allocated: ['申请内存', '调用 malloc 申请 512 MiB，记下返回指针，先一个字节也不写。', 'Linux 只在映射表里把这片虚拟地址圈下来（“先开空头支票”），并不立刻配 512 MiB 物理内存；等首次写到哪一页才现配。'],
+  allocated: ['申请内存', '调用 malloc 申请 512 MiB，记下返回指针，先不写入。', '分配器取得一段虚拟地址。等程序第一次往里面写，内核再给触及的地址分配可写的物理页。'],
   write_quarter: ['写到 ¼', '从起点写到 128 MiB，每隔 4 KiB 写 1 个字节（值 A）。', '首次往还没配物理页的地址写入时，CPU 触发缺页异常，Linux 现配空闲物理页并建好映射，再继续完成写入。'],
   write_half: ['写到 ½', '从四分之一处接着写 B，写到 256 MiB 停下；前面写过的 A 保持不变。', '新触及的虚拟地址继续按需获得物理页，映射驻留（RSS）跟着推进而涨；前面写过的页直接写入，不会再缺页。'],
   write_all: ['全部写完', '从一半处接着写 C，写到 512 MiB 末尾，预定位置全写过一遍。', '整片区域的访问点都配上了物理页。现在可以直接对比映射大小（虚拟）和 RSS（物理）。'],
-  freed: ['释放后', '先把前面写入的 A、B、C 全读回检查一遍，再调用 free 释放并复查旧地址。', '对于大块 mmap 映射，free 会调用 munmap 把整段虚拟地址还给 Linux，物理页也随之回收。']
+  freed: ['释放后', '读回 A、B、C 核对内容，再调用 free。用旧地址查映射表。', '分配器可以用 munmap 把大块映射还给 Linux。查看这一步的 smaps，可以判断原地址所在的映射是否还在。']
 };
 
 function demandSteps(c) {
@@ -165,7 +123,7 @@ function demandSteps(c) {
     if (sample.phase === 'before_alloc') {
       result = '还没申请目标块，此时整进程占用的物理内存（RSS，即真实分到内存条的部分）共 ' + kib(sample.process_rss_kib) + '。';
     } else if (sample.phase === 'allocated') {
-      result = `看下方前两个数：虚拟映射大小已经划出 ${kib(sample.size_kib)}，而真正驻留物理内存（RSS）只有 ${kib(sample.rss_kib)}（仅用于分配器少量管理信息）。`;
+      result = `指针所在的整段映射已有 ${kib(sample.size_kib)}，其中只有 ${kib(sample.rss_kib)} 驻留在物理内存里。下一步开始写，再看 RSS 怎么变。`;
     } else if (sample.phase === 'freed') {
       result = sample.mapping_present ? `旧地址仍落在一段映射中，整段 RSS 为 ${kib(sample.rss_kib)}。` : '在本轮 smaps 中，旧地址对应的映射已经撤销。';
       result += ` 看下方指标：映射大小变为 ${kib(sample.size_kib)}、RSS 为 ${kib(sample.rss_kib)}。`;
@@ -187,7 +145,7 @@ function stackSteps(c) {
   if (!data?.samples?.length) return [];
   const [first, ...recursive] = data.samples;
   const steps = [{
-    title: '递归前', program: `子进程先设定软栈上限为 ${kib(data.condition.limit_kib)}，在进入第 1 层递归前先采样。`,
+    title: '递归前', program: `子进程把栈上限设为 ${kib(data.condition.limit_kib)}，目标是递归 ${data.condition.target_depth} 层。先在进入第 1 层前采样。`,
     kernel: 'Linux 记下这个进程的栈上限，此时只为已经用到的栈页提供物理内存，不提前把上限全配满。',
     result: `准备进入第 1 层。看下方前两个数：当前栈映射大小为 ${kib(first.size_kib)}，RSS 只有 ${kib(first.rss_kib)}。`, sample: first
   }];
@@ -214,57 +172,38 @@ function renderMemorySteps(c, cases) {
   const demand = c.suite === 'demand512';
   const steps = demand ? demandSteps(c) : stackSteps(c);
   state.phase = Math.max(0, Math.min(state.phase, steps.length - 1));
-  const step = steps[state.phase];
-  const sample = step?.sample;
+  const step = steps[state.phase], sample = step?.sample;
+  const last = state.phase === steps.length - 1;
   const title = demand ? '申请 512 MiB，什么时候用上物理页？' : '递归到哪一步，栈会撑不住？';
-  const options = cases.map((item, i) => {
-    if (item.suite !== c.suite) return '';
-    const label = demand ? '' : `${item.parameters.mode === 'normal' ? '正常返回组' : '栈溢出组'} · 栈上限 ${kib(item.parameters.limit_kib)} · `;
-    return `<option value="${i}" ${i === state.selected ? 'selected' : ''}>${esc(label)}第 ${esc(item.parameters.repeat)} 次实验</option>`;
-  }).join('');
-  const stackIndex = (() => {
-    const same = cases.findIndex(x => x.suite === 'stack' && x.parameters.repeat === c.parameters.repeat);
-    return same >= 0 ? same : cases.findIndex(x => x.suite === 'stack');
-  })();
-  const demandIndex = (() => {
-    const same = cases.findIndex(x => x.suite === 'demand512' && x.parameters.repeat === c.parameters.repeat);
-    return same >= 0 ? same : cases.findIndex(x => x.suite === 'demand512');
-  })();
-  const stackLink = stackIndex < 0 ? '/labs/3.3?replay=stack' : '/#' + new URLSearchParams({ run: state.id, topic: 'group3', case: stackIndex });
-  const demandLink = demandIndex < 0 ? '/labs/3.3?replay=demand512' : '/#' + new URLSearchParams({ run: state.id, topic: 'group3', case: demandIndex });
-  const after = demand ? `<a class="btn-link primary" href="${esc(stackLink)}">看栈增长与溢出 →</a>` : '<a class="btn-link primary" href="/lesson">记下实验结果 →</a>';
   const samples = c.data?.samples || [];
-  const rows = samples.map(s => [demand ? demandActions[s.phase]?.[0] || s.phase : `递归 ${s.count} 层`, s.count, kib(s.size_kib), kib(s.rss_kib), s.action_minor, s.total_minor]);
-  const rawOpts = sample ? {phase:sample.phase, stepLabel:step.title, count:sample.count,
-    occurrence:samples.filter(s => s.phase === sample.phase).indexOf(sample),
-    vmaStart:sample.mapping_header?.split('-')[0]} : {};
-  $('#content').innerHTML = `<section class="seq-reading">
-    <header class="focus-intro"><small class="question-kicker">实验 3.3 · ${demand ? '按需调页' : '栈增长与溢出'} · 历史实测回放</small><h1>${title}</h1></header>
-    ${stepNavigation(steps.map(s => s.title), state.phase, 'data-course-step')}
-    <section class="seq-panel" id="sequence-result" aria-labelledby="memory-heading">
-      <div class="demand-heading"><h2 id="memory-heading">${esc(step?.title || '缺少采样')}</h2><label>回放记录 <select id="case-select">${options}</select></label></div>
-      ${step ? `${stepExplanation(step.program, step.kernel, step.result)}
-        ${sample ? sampleReadings([['映射大小', kib(sample.size_kib)], ['映射驻留 RSS', kib(sample.rss_kib)], ['本步次缺页', sample.action_minor + ' 次']]) : ''}` : '<p>这次没有采到分步记录，可以切换记录或打开原文。</p>'}
-      ${c.validation.status !== 'passed' ? `<p class="phase-note">本次核对结果：${esc(c.error?.message || c.validation.status)}</p>` : ''}
-      <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, rawOpts)}</div>${step ? stepControls(state.phase, steps.length, after) : ''}</div>
-    </section>
-    <details class="secondary-fold"><summary>对照完整采样与诊断</summary>
-      ${table(['采样时刻', demand ? '已写位置' : '递归深度', '映射大小', '映射驻留 RSS', '本步次缺页', '累计次缺页'], rows, sample ? samples.indexOf(sample) : -1)}
-      ${diagnosisHTML(findingFor([c.id], ['group3', 'incomplete_evidence']))}
-    </details>
-    <section class="secondary-fold focus-route" aria-label="3.3 的另外两项观察">
-      <h2>3.3 的另外两项观察</h2>
-      ${demand
-        ? `<p><a href="${esc(stackLink)}">对照栈增长与溢出</a>，看清不同栈限额下哪组递归正常返回、哪组因栈越界触发 <code>SIGSEGV</code>（段错误）终止。</p>`
-        : `<p><a href="${esc(demandLink)}">对照按需调页（512 MiB 写入）</a>，看清只申请不写与分批写入时，虚拟映射大小与已驻留物理内存（RSS）何时变化。</p>`}
-      <details class="inline-ps-fold" id="original-demand"><summary>看原版 512 MiB 程序的五次 ps 输出（比较整进程 VSZ、RSZ 与累计缺页）</summary>
-        <div id="demand-original-ps"><p class="muted">正在载入五次 ps 原始输出…</p></div>
-      </details>
-      ${demand || state.phase + 1 < steps.length ? '<p class="route-note-link"><a href="/lesson">记录本节预测与思考题笔记 →</a></p>' : ''}
-    </section>
-    <nav class="lab-neighbours"><a class="nav-link" href="/labs/focus">← 返回重点任务目录</a></nav>
-  </section>`;
-  loadOriginalPs($('#demand-original-ps'));
+  const stackCases = new Map();
+  for (const [i, item] of cases.entries()) {
+    if (item.suite !== 'stack') continue;
+    const key = item.parameters.limit_kib;
+    if (!stackCases.has(key) || item === c) stackCases.set(key, i);
+  }
+  const stackConditions = !demand && stackCases.size > 1 ? `<div class="lesson-conditions" aria-label="对照不同递归条件">${[...stackCases].map(([limit, i]) =>
+    `<button data-condition="${i}" aria-pressed="${i === state.selected}">${cases[i].parameters.mode === 'normal' ? '有限递归' : '持续递归'} · ${kib(limit)}</button>`).join('')}</div>` : '';
+  const rawOpts = sample ? {phase: sample.phase, stepLabel: step.title, count: sample.count,
+    occurrence: samples.filter(s => s.phase === sample.phase).indexOf(sample), vmaStart: sample.mapping_header?.split('-')[0]} : {recordKind: 'outcome'};
+  const outcome = c.data?.outcome;
+  const reading = !step ? '' : demand ? ['allocated','write_quarter','write_all'].map((p,i) =>
+    ['申请后','写到 ¼','写完'][i] + ' RSS ' + kib(samples.find(s => s.phase === p)?.rss_kib)).join('，')
+    : `栈上限 ${kib(c.parameters.limit_kib)}，最后采到第 ${samples.at(-1).count} 层，${outcome?.signal ? '终止信号 ' + outcome.signal : '退出码 ' + (outcome?.exit_code ?? '未记录')}`;
+  const next = demand ? '<a class="btn-link primary" href="/labs/3.3?replay=stack">看栈增长与溢出 →</a>' : '<a class="btn-link primary" href="/lesson">记下实验结果 →</a>';
+  const original = demand && last ? '<details class="secondary-fold" id="original-demand"><summary>看课内原程序五次 ps 的整进程读数</summary><div id="demand-original-ps"></div></details>' : '';
+  $('#content').innerHTML = `<section class="seq-reading focused-lesson"><header class="focus-intro"><small class="question-kicker">实验 3.3 · ${demand ? '按需调页' : '栈增长与溢出'}</small><h1>${title}</h1>
+    ${state.phase === 0 ? `<p>${demand ? '先预测只申请时的 RSS，再看每次多写一段后，实际多用了多少物理内存。' : '跟着递归观察栈怎样增长，最后用退出码或信号分清正常返回和栈溢出。'}</p>` : ''}</header>
+    ${stackConditions}${steps.length ? stepNavigation(steps.map(s => s.title), state.phase, 'data-course-step') : ''}
+    <section class="seq-panel" id="sequence-result"><h2 id="memory-heading">${esc(step?.title || '缺少采样')}</h2>
+    ${step ? stepExplanation(step.program, step.kernel, step.result) : missingReading()}
+    ${sample && sample.phase !== 'before_alloc' ? sampleReadings([['目标映射大小', kib(sample.size_kib)], ['目标映射 RSS', kib(sample.rss_kib)]]) : ''}
+    ${step ? `<details class="secondary-fold"><summary>查看这一步的原文</summary><div class="raw-links">${evidenceButtons(c, rawOpts, ['jsonl','smaps','kernel'])}</div></details>` : ''}
+    ${step && c.validation?.status !== 'passed' ? `<p class="integrity-warning">本次实测与预期有差异。<a href="/#${new URLSearchParams({run:state.id,topic:'evidence'})}">查看核对结果</a></p>` : ''}
+    ${original}${demand && last ? `<p><a href="/lesson?${new URLSearchParams({run:state.id,case:c.id})}">用这次实测写小结</a></p>` : ''}
+    ${last || !step ? lessonPractice(c.suite, demand ? '再跑一次，比较驻留量' : '复做不同栈上限的对照', reading) : ''}
+    ${step ? stepControls(state.phase, steps.length, next) : ''}</section></section>`;
+  if (original) loadOriginalPs($('#demand-original-ps'));
 }
 
 function renderGroup3() {

@@ -38,7 +38,8 @@ class SequenceTests(unittest.TestCase):
     def test_isolated_plan_and_web_command(self):
         cases = plan_cases(parser().parse_args(['--suite', 'sequence']))
         self.assertEqual([c['id'] for c in cases], ['sequence-1','sequence-2','sequence-3'])
-        self.assertEqual(experiment_args("sequence")[-2:], ['--suite','sequence'])
+        web_cases = plan_cases(parser().parse_args(experiment_args("sequence")))
+        self.assertEqual([c['id'] for c in web_cases], ['sequence-1'])
 
     def test_observer_calls_excluded_and_empty_action_is_valid(self):
         actions = trace_actions(trace())

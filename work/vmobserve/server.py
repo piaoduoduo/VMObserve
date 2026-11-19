@@ -25,14 +25,22 @@ WEB_PAGES = {"/": "index.html", "/lesson": "lesson.html", "/favicon.svg": "favic
                                                  "sequence-view.js", "evidence-view.js", "curriculum.js", "lesson.js", "style.css")}}
 
 
-def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all"):
+def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all", mib=16):
     if isinstance(mode, str) and mode.startswith("lab-") and mode[4:] in LABS:
         return ["--suite", "systems", "--lab", mode[4:], "--repeats", "1"]
     if pattern not in ("sparse", "full") or cow_fraction not in COW_CHOICES:
         raise ValueError("unknown access pattern or COW fraction")
     if group4_task not in ("all", "4.1", "4.2", "4.3", "4.4"):
         raise ValueError("unknown group4 task")
-    if mode in ("sequence", "layout", "course"):
+    if mode == "sequence":
+        return ["--suite", "sequence", "--repeats", "1"]
+    if mode in ("demand512", "stack"):
+        return ["--suite", mode, "--repeats", "1", "--timeout", "120"]
+    if mode == "lesson-cow":
+        if mib not in (16, 64) or cow_fraction == "all":
+            raise ValueError("请选择一个区域大小和一个改写比例")
+        return ["--suite", "baseline", "--baseline-mib", str(mib), "--cow-fraction", cow_fraction, "--repeats", "1"]
+    if mode in ("layout", "course"):
         return ["--suite", mode]
     options = {
         "complete": [],
@@ -40,9 +48,10 @@ def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all
         "cow": ["--suite", "baseline", "--cow-fraction", cow_fraction],
         "group3": ["--suite", "group3", "--timeout", "120"],
         "group4": ["--suite", "group4", "--group4-task", group4_task, "--timeout", "120"],
-        "policy": ["--suite", "thp", "--thp", "on", "--thp-process", "pair", "--pattern", pattern],
-        "recheck": ["--pattern", pattern],
-        "policy-recheck": ["--pattern", pattern, "--recheck-kind", "process"],
+        "lesson-thp": ["--suite", "thp", "--pattern", pattern, "--repeats", "1"],
+        "policy": ["--suite", "thp", "--thp", "on", "--thp-process", "pair", "--pattern", pattern, "--repeats", "1"],
+        "recheck": ["--repeats", "1", "--pattern", pattern],
+        "policy-recheck": ["--repeats", "1", "--pattern", pattern, "--recheck-kind", "process"],
     }
     if mode not in options:
         raise ValueError("unknown execution mode")
@@ -106,8 +115,8 @@ class Workbench:
             cmd += ["--recheck-from", str(parent)]
         return cmd + options
 
-    def start(self, mode, identifier=None, pattern="sparse", cow_fraction="all", group4_task="all"):
-        options = experiment_args(mode, pattern, cow_fraction, group4_task)
+    def start(self, mode, identifier=None, pattern="sparse", cow_fraction="all", group4_task="all", mib=16):
+        options = experiment_args(mode, pattern, cow_fraction, group4_task, mib)
         parent = self.directory(identifier or "") if mode in ("recheck", "policy-recheck") else None
         if parent:
             report = load_run(parent)
@@ -241,7 +250,7 @@ def handler_for(app):
                     raise ValueError("invalid request length")
                 data = json.loads(self.rfile.read(size))
                 return self.send(app.start(data.get("mode"), data.get("id"), data.get("pattern", "sparse"),
-                                           data.get("cow_fraction", "all"), data.get("group4_task", "all")), code=202)
+                                           data.get("cow_fraction", "all"), data.get("group4_task", "all"), data.get("mib", 16)), code=202)
             except RuntimeError as exc:
                 return self.send({"error": str(exc)}, code=409)
             except (ValueError, OSError, KeyError, TypeError, AttributeError) as exc:

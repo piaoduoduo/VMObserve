@@ -51,6 +51,11 @@ class ReviewRegressions(unittest.TestCase):
         self.assertEqual(len(report["cases"]), 3)
         sample = next(s for s in report["cases"][0]["data"]["samples"] if s["phase"] == "alloc_1MiB")
         self.assertEqual((sample["related_vma_count"], sample["related_rss_kib"]), (2, 16))
+        samples = report["cases"][0]["data"]["samples"]
+        neighbours = [[m for m in s["visual_regions"] if m["pathname"] == ""] for s in samples]
+        self.assertEqual([[m["size_kib"] for m in stage] for stage in neighbours],
+                         [[8], [8], [268], [1296], [8]])
+        self.assertEqual(neighbours[0], neighbours[4])
 
     def test_environment_summary_cannot_override_the_original(self):
         with tempfile.TemporaryDirectory(dir=TEST_TMP) as tmp:

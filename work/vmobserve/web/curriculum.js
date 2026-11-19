@@ -218,7 +218,7 @@ export function renderTaskDirectory(id) {
   const focusTasks = [
     {
       label: '实验 3.2 · 连续三次 malloc',
-      desc: '连续调用 <code>malloc</code> 申请 <code>1 KiB</code>、<code>256 KiB</code> 和 <code>1 MiB</code>，对照三个返回指针与内核记录，看清为什么三块只占两段映射。',
+      desc: '跟着三次 <code>malloc</code> 找到每个指针所在的区间，再看释放后哪些区间还在。回放结束后，用课内程序在自己的 openEuler 上做一遍。',
       href: '/labs/3.2?replay=sequence',
       actionText: '进入 6 步回放'
     },
@@ -258,7 +258,7 @@ export async function showLab(id, preferredId) {
   const replays = options.map(([label, topic, suite]) => ({ label, ...newestReplay(id, topic, suite, preferredId) })).filter(x => x.run);
   const pos = labs.indexOf(row);
   const neighbour = (n, label) => n ? `<a class="nav-link" href="/labs/${n[0]}">${label} · ${n[0]} ${n[1]}</a>` : '';
-  const runMode = systems ? 'lab-' + id : id.startsWith('4.') ? 'group4' : ({ '3.1': 'group3', '3.2': 'sequence', '3.3': 'group3' })[id];
+  const runMode = systems ? 'lab-' + id : id.startsWith('4.') ? 'group4' : ({ '3.1': 'group3', '3.2': 'sequence' })[id];
 
   const focus = id === '3.2' || id === '3.3';
   const replayButtons = replays.map((x, idx) =>

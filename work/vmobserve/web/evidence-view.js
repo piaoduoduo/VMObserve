@@ -1,4 +1,5 @@
-import { $, state, esc, labels, evidenceButtons } from './ui.js';
+import { $, state, esc, labels, evidenceButtons, diagnosisHTML, thpPairs } from './ui.js';
+import { viewCases } from './curriculum.js';
 
 const experimentNames = {
   sync: '线程同步', io: '文件与设备',
@@ -30,6 +31,7 @@ function showMatches() {
   const term = $('#evidence-search').value.trim().toLowerCase();
   const status = $('#evidence-status').value;
   const cases = state.report.cases;
+  const pairs = thpPairs(cases);
   const found = cases.filter(c => {
     const name = experimentNames[c.suite] || (c.suite.startsWith('g4-') ? '进程与线程' : '');
     const text = [c.id, c.suite, name, ...Object.entries(c.parameters || {}).map(([k, v]) => k + '=' + v)].join(' ');
@@ -40,12 +42,22 @@ function showMatches() {
     const name = experimentNames[c.suite] || (c.suite.startsWith('g4-') ? '进程与线程' : c.suite);
     const repeat = c.parameters?.repeat ? ` · 第 ${c.parameters.repeat} 次` : '';
     const vText = validationLabels[c.validation?.status] || c.validation?.status || '待核对';
+    const topic = ['stack','demand512'].includes(c.suite) ? 'group3' : c.suite;
+    let replay = '';
+    if (topic === 'course') {
+      const href = '/lesson?' + new URLSearchParams({run:state.id, case:c.id});
+      replay = `<a class="nav-link" href="${esc(href)}">用这份实测写小结 →</a>`;
+    } else if (['sequence','group3','baseline','thp'].includes(topic)) {
+      const index = topic === 'thp' ? pairs.findIndex(pair => pair.cases.includes(c)) : viewCases(cases, topic, x => x.suite).indexOf(c);
+      const href = '/#' + new URLSearchParams({run:state.id, topic, case:index, step:topic === 'sequence' ? 3 : 0});
+      replay = `<a class="nav-link" href="${esc(href)}">${topic === 'sequence' ? '在第④步查看这次实测' : '按步骤查看这份记录'} →</a>`;
+    }
     return `<article class="evidence-row">
       <div>
         <strong>${esc(c.id)}</strong>
         <small>${esc(name)}${esc(repeat)} · ${esc(labels[c.status] || c.status)} · ${esc(vText)}</small>
       </div>
-      <div class="raw-links">${evidenceButtons(c)}</div>
+      <div class="raw-links">${replay}${evidenceButtons(c)}</div>
       ${c.error ? `<details><summary>查看异常原因</summary><pre>${esc(JSON.stringify(c.error, null, 2))}</pre></details>` : ''}
     </article>`;
   }).join('') || '<p class="empty">没有匹配的实验记录，试试清空关键词或改选“全部”。</p>';
@@ -78,6 +90,7 @@ export function renderEvidence() {
       <output id="evidence-count"></output>
     </div>
     <div id="evidence-cases"></div>
+    ${r.diagnosis?.findings?.length ? `<details class="secondary-fold"><summary>查看本轮诊断与依据</summary>${diagnosisHTML(r.diagnosis.findings)}</details>` : ''}
     <details class="secondary-fold">
       <summary>展开本次运行的系统与环境设置</summary>
       <dl class="info">

@@ -1,54 +1,12 @@
-import { $, state, phases, esc, kib, table, recheckTarget, diagnosisHTML, findingFor, evidenceButtons, stepNavigation, stepExplanation, stepControls, sampleReadings } from './ui.js';
-
-function policyHTML() {
-  const cases = state.report.cases.filter(c => c.suite === 'thp' && ['allow', 'disable'].includes(c.parameters.process_thp));
-  const findings = findingFor(cases.map(c => c.id), ['thp_process_disabled', 'thp_process_control', 'thp_not_observed', 'incomplete_evidence']);
-  const paired = state.report.diagnosis.policy_comparisons || [];
-  const canRecheck = state.report.integrity.status === 'verified' && state.report.cases.some(c => c.suite === 'thp') && !state.report.original_schema;
-  return `<section class="course-intro">
-    <small class="question-kicker">实验进阶 · 进程开关对照</small>
-    <h2>为什么代码请求了大页，实际还是没分配？</h2>
-    <p>做一个受控对比：两组代码都调用 <code>madvise</code> 请求大页，系统全局设置保持不变，只把其中一个进程的“允许大页”开关关掉，看看大页驻留（AnonHugePages）怎么变。</p>
-    <div class="sequence-controls">
-      <button id="run-policy">运行进程开关对照</button>
-      ${canRecheck ? `<button id="policy-recheck">按当前记录条件再跑一次</button><span class="picker-hint">${recheckTarget()}</span>` : ''}
-    </div>
-    <p class="detail-copy">下表显示的是当前选中的历史数据；点上方按钮运行后会自动生成一份独立的新记录。</p>
-    ${cases.length
-      ? table(['写入方式 / 轮次', '进程开关', '内核 THP_enabled', '大页驻留', 'madvise 调用', '检查结果'],
-          cases.map(c => {
-            const d = c.data, ct = d?.condition;
-            return [
-              (c.parameters.pattern === 'sparse' ? '稀疏写' : '逐页写') + ' · 第 ' + c.parameters.repeat + ' 次',
-              c.parameters.process_thp === 'allow' ? '允许大页' : '禁止大页',
-              ct?.status_thp_enabled ?? '未采集',
-              kib(d?.samples.at(-1)?.huge_kib),
-              ct?.madvise_result === 0 ? '返回成功 (0)' : '未成功',
-              c.validation?.status === 'passed' ? '通过' : (c.validation?.status || '未完成')
-            ];
-          }))
-      : '<p class="empty-note">当前这份记录里还没有“进程开关对照”实验，可以点上方按钮跑一轮。</p>'}
-    ${paired.map(c => `<div class="explanation-box"><span class="explain-tag">${c.pattern === 'sparse' ? '稀疏写' : '逐页写'} · 第 ${c.repeat} 次结论</span><p>${c.control_valid ? '条件一致：禁止组大页驻留为 0，允许组成功分到了大页，说明确实是进程级开关拦住了透明大页。' : '这两组还不足以归因为进程开关。对照上表的开关状态、大页驻留和检查结果。'}</p></div>`).join('')}
-    <div class="raw-links">${cases.filter(c => c.artifacts).map(c => `<button data-raw="${esc(c.id)}" data-kind="smaps">${esc(c.id)} · 原始状态</button>`).join('')}</div>
-    ${findings.length ? `<details class="secondary-fold"><summary>展开本组详细判断与依据</summary>${diagnosisHTML(findings)}</details>` : ''}
-  </section>`;
-}
+import { $, state, esc, kib, table, evidenceButtons, stepNavigation, stepExplanation, stepControls, sampleReadings, lessonPractice, missingReading, thpPairs } from './ui.js';
 
 function renderTHP() {
-  const all = state.report.cases.filter(c => c.suite === 'thp');
-  if (!all.length) {
-    $('#content').innerHTML = '<p class="empty">这份记录里没有透明大页实验，可以切换记录或运行进程开关对照。</p>' + policyHTML();
-    return;
-  }
-  const ordinary = all.filter(c => !['allow', 'disable'].includes(c.parameters.process_thp));
-  const policy = !ordinary.length;
-  const cases = policy ? all : ordinary;
-  const groups = [...new Set(cases.map(c => `${c.parameters.pattern}:${c.parameters.repeat}`))];
+  const groups = thpPairs(state.report.cases);
+  if (!groups.length) { $('#content').innerHTML = missingReading(); return; }
   state.selected = Math.min(state.selected, groups.length - 1);
-  const group = groups[state.selected];
-  const pair = cases.filter(c => `${c.parameters.pattern}:${c.parameters.repeat}` === group);
-  const sides = (policy ? ['disable', 'allow'] : ['off', 'on']).map(v =>
-    pair.find(c => (policy ? c.parameters.process_thp : c.parameters.thp) === v));
+  const { policy, pattern, cases: pair } = groups[state.selected];
+  const sides = (policy ? ['disable','allow'] : ['off','on']).map(value => pair.find(c =>
+    (policy ? c.parameters.process_thp : c.parameters.thp) === value));
   const labels = policy ? ['进程禁止', '进程允许'] : ['关闭大页', '请求大页'];
   const titles = ['设置对照', '写入前', '按步长写入', '读回核对'];
   state.phase = Math.min(Math.max(0, state.phase), titles.length - 1);
@@ -90,38 +48,29 @@ function renderTHP() {
       describe(values, v => `读回求和为 ${v.sum}，与预期写入次数${v.ok ? '完全一致' : '有偏差'}`));
     headers = ['组别', '预期总和', '实测总和', '核对'];
   }
-  const rules = policy ? ['thp_process_control', 'thp_process_disabled'] : ['thp_sparse_control', 'thp_full_control', 'observed_thp'];
-  const findings = findingFor(pair.map(c => c.id), [...rules, 'thp_not_observed', 'incomplete_evidence', 'expectation_deviation']);
   const evidence = sides.map((c, i) => {
     if (!c?.artifacts) return '';
     const opts = step === 0 || step === 3 ? { recordKind: step === 0 ? 'condition' : 'values' } : {phase};
     return `<div class="raw-links"><strong>${labels[i]}</strong>${evidenceButtons(c, {...opts, stepLabel: titles[step]}, opts.recordKind ? ['jsonl'] : ['jsonl', 'smaps'])}</div>`;
   }).join('');
-  $('#content').innerHTML = `<section class="seq-reading"><header class="focus-intro"><small class="question-kicker">拓展实验 · 透明大页</small>
+  const samePolicy = groups.map((g,i) => ({...g,i})).filter(g => g.policy === policy);
+  const patterns = new Map(samePolicy.map(g => [g.pattern, samePolicy.find(x => x.pattern === g.pattern).i]));
+  patterns.set(pattern, state.selected);
+  const writeName = p => p === 'sparse' ? '稀疏写' : '逐基础页写';
+  const selector = patterns.size > 1 ? `<div class="lesson-conditions">${[...patterns].map(([p,i]) => `<button data-condition="${i}" aria-pressed="${i === state.selected}">${writeName(p)}</button>`).join('')}</div>` : '';
+  const settings = `<label>复做条件 <select id="thp-recipe">${['advice','process'].flatMap(kind => ['sparse','full'].map(p => `<option value="${kind}-${p}" ${kind === (policy ? 'process' : 'advice') && p === pattern ? 'selected' : ''}>${kind === 'process' ? '进程开关' : '映射开关'} · ${writeName(p)}</option>`)).join('')}</select></label>`;
+  const complete = sides.every(c => c?.data?.samples?.length);
+  const observation = complete ? writeName(pattern) + '，' + sides.map((c,i) =>
+    labels[i] + '：RSS ' + kib(c.data.samples.at(-1).rss_kib) + '，匿名大页 ' + kib(c.data.samples.at(-1).huge_kib)).join('；') : '';
+  $('#content').innerHTML = `<section class="seq-reading focused-lesson"><header class="focus-intro"><small class="question-kicker">拓展实验 · 透明大页 · ${writeName(pattern)}</small>
     <h1>同样的写法，为什么用的物理内存会不同？</h1></header>
-    ${stepNavigation(titles, step, 'data-course-step')}
-    <section id="sequence-result" class="seq-panel"><div class="demand-heading"><h2>${titles[step]}</h2><label>回放记录 <select id="case-select">${groups.map((g, i) => `<option value="${i}" data-pattern="${esc(g.split(':')[0])}" ${i === state.selected ? 'selected' : ''}>${g.startsWith('sparse:') ? '稀疏写' : '逐基础页写'} · 第 ${esc(g.split(':')[1])} 次</option>`).join('')}</select></label></div>
-      ${explanation}${step === 2 ? sampleReadings(labels.map((label, i) => [label + ' · RSS', kib(samples[i]?.rss_kib)])) : ''}${table(headers, rows)}
-      <div class="seq-navigation"><div>${evidence}</div>${stepControls(step, titles.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>')}</div></section>
-    <details class="secondary-fold"><summary>查看本组诊断与复验</summary>${diagnosisHTML(findings, !policy)}</details>
-    <details class="secondary-fold"><summary>进程开关对照与采集</summary>${policyHTML()}</details></section>`;
+    ${selector}${stepNavigation(titles, step, 'data-course-step')}
+    <section id="sequence-result" class="seq-panel"><h2>${titles[step]}</h2>
+    ${complete ? explanation : missingReading()}${table(headers, rows)}
+    <details class="secondary-fold"><summary>查看两组原文</summary>${evidence}</details>
+    ${step === titles.length - 1 ? lessonPractice('thp', '再跑一组，比较大页占用', observation, settings) : ''}
+    ${stepControls(step, titles.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>')}</section></section>`;
 }
-
-function cowControls() {
-  const options = [['all', '五组全跑：0、1/8、1/4、1/2、全部改写'], ['0', '子进程不改写 (0)'], ['1/8', '改写 1/8'], ['1/4', '改写 1/4'], ['1/2', '改写 1/2'], ['1', '全部改写 (1)']];
-  return `<div class="cow-controls">
-    <label for="cow-fraction">重新采集设置：子进程改写比例</label>
-    <select id="cow-fraction">${options.map(([v, t]) => `<option value="${v}" ${v === state.cowFraction ? 'selected' : ''}>${t}</option>`).join('')}</select>
-    <button id="run-cow">运行 COW 对照</button>
-    <p class="detail-copy">会依次测试 16 MiB 和 64 MiB 各 3 次；完成前下方继续显示当前历史记录。</p>
-  </div>`;
-}
-
-function phaseLabel(sample, c) {
-  if (sample.phase === 'child_write') return c.data.cow?.written_pages === 0 ? '子进程保持未改写' : `子进程改写 ${c.data.cow?.fraction ?? c.parameters.cow_fraction ?? '指定比例'}`;
-  return phases[sample.phase] || sample.phase;
-}
-
 function cowStep(s, c) {
   const cow = c.data.cow;
   const child = s.role === 'child', who = child ? '子' : '父';
@@ -139,12 +88,11 @@ function cowStep(s, c) {
     case 'child_write': {
       const zero = cow?.written_pages === 0;
       const check = c.data.value_check;
-      const peer = c.data.samples.find(other => other.phase === s.phase && other.role !== s.role);
-      const result = child && check ? `看两点证据：① 读回求和校验：父进程还是 ${check.parent_sum}，子进程变成了 ${check.child_sum}（两边数据已隔离，${check.ok ? '校验通过' : '有偏差'}）；② 看下方指标：子进程这步触发了 ${s.action_minor} 次缺页（全是不读磁盘的次缺页），父子 PSS 合计为 ${kib((peer?.pss_kib ?? 0) + s.pss_kib)}（共享页算 1 份，各改各的页各自独算 1 份）。` : '';
+      const result = child && check ? `读回各页首字节求和，父进程为 ${check.parent_sum}，子进程为 ${check.child_sum}。${zero ? '两边都保留了原值。' : '比较两个和，可以检查子进程改写后父进程的内容是否保持原样。'}这一步子进程发生了 ${s.action_minor} 次次缺页。` : '';
       return [(zero ? '保持共享 · ' : '改写后 · ') + who,
         (zero ? '这一组让子进程不改写任何页。' : '子进程按设定比例把选中页的首字节改成 2。') + (child ? '现在切换到子进程视角。' : '父进程没有改写任何内容，现在先看父进程视角。'),
         zero ? '两边都没有改写共享页，Linux 不必复制物理页，父子继续共用原物理页，PSS 保持每人 1/2。' : '子进程往共享页写“2”的一瞬间触发写时复制（COW）：Linux 只给被改写的页现拷一份新物理页，父进程依然守着写“1”的旧页，其余未动页继续共享。',
-        child && check ? result : `父进程未改写，页里仍是原值；看下方前三个数：${memory}`];
+        child && check ? result : memory];
     }
     default: return [s.phase, '程序在这个阶段记录目标映射。', '根据 smaps 对照驻留量与共享份额。', memory];
   }
@@ -152,19 +100,11 @@ function cowStep(s, c) {
 
 function renderBaseline() {
   const cases = state.report.cases.filter(c => c.suite === 'baseline');
-  if (!cases.length) {
-    $('#content').innerHTML = cowControls() + '<p class="empty">当前记录里没有写时复制（COW）实验，请点顶部“切换记录”选一条“写时复制”记录或点上方运行。</p>';
-    return;
-  }
+  if (!cases.length) { $('#content').innerHTML = missingReading(); return; }
   state.selected = Math.min(state.selected, cases.length - 1);
   const c = cases[state.selected], samples = c.data?.samples || [];
   state.phase = Math.min(Math.max(0, state.phase), Math.max(0, samples.length - 1));
   const sample = samples[state.phase];
-  const findings = findingFor([c.id], ['anonymous_zero_page', 'cow_accounting', 'incomplete_evidence', 'expectation_deviation']);
-  const comparisons = (state.report.diagnosis.cow_observations || []).filter(x => x.mib === c.parameters.mib && x.repeat === c.parameters.repeat);
-  const summary = comparisons.length
-    ? `<details class="secondary-fold"><summary>对比五种改写比例的父子 PSS 合计（同轮 ${c.parameters.mib} MiB · 第 ${c.parameters.repeat} 次）</summary><p class="detail-copy">理论预期按“共享页只算一份，被改写的页各自独享一份”计算：</p>${table(['改写比例', '改写页数', '理论 PSS 合计', '实测 PSS 合计', '核对'], comparisons.map(x => [x.fraction, `${x.written_pages} / ${x.total_pages}`, kib(x.expected_pss_kib), kib(x.observed_pss_kib), x.confirmed ? '与预期一致' : '存在偏差']))}</details>`
-    : '';
 
   const steps = samples.map(s => cowStep(s, c));
   const selected = steps[state.phase];
@@ -172,19 +112,19 @@ function renderBaseline() {
   const readings = sample ? [['驻留 RSS', kib(sample.rss_kib)], ['分摊 PSS', kib(sample.pss_kib)]] : [];
   if (peer) readings.push(['父子 PSS 合计', kib(sample.pss_kib + peer.pss_kib)]);
   if (sample && (['read_all','write_quarter','write_all'].includes(sample.phase) || (sample.role === 'child' && sample.phase.startsWith('child_write')))) readings.push(['本步次缺页', sample.action_minor + ' 次']);
-  const picker = `<label>回放记录 <select id="case-select">${cases.map((item, i) => `<option value="${i}" ${i === state.selected ? 'selected' : ''}>${item.parameters.mib} MiB · 改写 ${esc(item.data?.cow?.fraction ?? item.parameters.cow_fraction ?? '1/4')} · 第 ${item.parameters.repeat} 次</option>`).join('')}</select></label>`;
-  $('#content').innerHTML = `<section class="seq-reading"><header class="focus-intro"><small class="question-kicker">拓展实验 · 写时复制</small>
-    <h1>fork 之后，父子进程什么时候才会各有一份物理页？</h1></header>
-    ${sample ? `${stepNavigation(steps.map(st => st[0]), state.phase, 'data-course-step')}
-      <section id="sequence-result" class="seq-panel"><div class="demand-heading"><h2>${esc(selected[0])}</h2>${picker}</div>
-      ${stepExplanation(...selected.slice(1))}${sampleReadings(readings)}
-      <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, {phase: sample.phase, role: sample.role, stepLabel: selected[0]})}</div>
-      <div class="step-controls"><button id="play">${state.timer ? '暂停' : '自动播放'}</button>${stepControls(state.phase, steps.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>')}</div></div></section>`
-      : `${picker}<p class="empty">本次采集不完整。</p><div class="raw-links">${evidenceButtons(c)}</div>`}
-    <details class="secondary-fold"><summary>对照各步与父子进程的数据</summary>${table(['阶段', '进程', 'RSS', 'PSS'], samples.map(s => [phaseLabel(s,c), s.role === 'parent' ? '父进程' : '子进程', kib(s.rss_kib), kib(s.pss_kib)]), state.phase)}</details>
-    ${summary}
-    <details class="secondary-fold"><summary>查看本组诊断与复验</summary>${diagnosisHTML(findings)}${cowControls()}</details></section>`;
-
+  const fraction = c.data?.cow?.fraction ?? c.parameters.cow_fraction ?? '1/4';
+  const settings = `<label>子进程改写比例 <select id="trial-fraction" data-mib="${esc(c.parameters.mib)}">${['0','1/8','1/4','1/2','1'].map(f => `<option value="${f}" ${f === (fraction === '0' ? '1/4' : '0') ? 'selected' : ''}>${f === '0' ? '不改写' : f === '1' ? '全部改写' : f}</option>`).join('')}</select></label>`;
+  const final = samples.filter(s => s.phase.startsWith('child_write'));
+  const observation = final.length === 2 ? `${c.parameters.mib} MiB，改写 ${fraction}，父子 PSS 合计 ${kib(final[0].pss_kib + final[1].pss_kib)}` : '';
+  $('#content').innerHTML = `<section class="seq-reading focused-lesson"><header class="focus-intro"><small class="question-kicker">拓展实验 · 写时复制</small>
+    <h1>fork 之后，哪些物理页会复制？</h1>
+    <p>父进程先写满 ${esc(c.parameters.mib)} MiB，fork 后观察子进程${fraction === '0' ? '保持原样' : '改写 ' + esc(fraction) + ' 的页'}。用父子进程各自的 PSS 看它们总共占了多少物理内存。</p></header>
+    ${sample ? stepNavigation(steps.map(st => st[0]), state.phase, 'data-course-step') : ''}
+    <section class="seq-panel" id="sequence-result"><h2>${esc(selected?.[0] || '缺少采样')}</h2>
+    ${sample ? stepExplanation(...selected.slice(1)) + sampleReadings(readings) : missingReading()}
+    ${sample ? `<details class="secondary-fold"><summary>查看这一步的原文</summary><div class="raw-links">${evidenceButtons(c, {phase: sample.phase, role: sample.role, stepLabel: selected[0]}, ['jsonl','smaps','stderr'])}</div></details>` : ''}
+    ${state.phase === steps.length - 1 || !sample ? lessonPractice('lesson-cow', '再跑一次，比较父子 PSS', observation, settings) : ''}
+    ${sample ? stepControls(state.phase, steps.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>') : ''}</section></section>`;
 }
 
 export { renderTHP, renderBaseline };

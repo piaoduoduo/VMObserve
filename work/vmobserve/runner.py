@@ -67,8 +67,8 @@ def plan_cases(args):
     if args.suite == "systems":
         return systems.plan(args.repeats, args.lab)
     cases = group3.plan(args.repeats) if args.suite == "group3" else group4.plan(args.repeats, args.group4_task) if args.suite == "group4" else []
-    if args.suite == "sequence":
-        cases = [c for c in group3.plan(args.repeats) if c["suite"] == "sequence"]
+    if args.suite in ("sequence", "demand512", "stack"):
+        cases = [c for c in group3.plan(args.repeats) if c["suite"] == args.suite]
     if args.suite in ("all", "layout", "group3"):
         for repeat in range(1, args.repeats + 1):
             cases.append({"id": f"layout-{repeat}", "suite": "layout",
@@ -81,7 +81,8 @@ def plan_cases(args):
                               "parameters": {"requested_kib": kib, "repeat": repeat, "course_code": implementation},
                               "arguments": [str(kib)]})
     if args.suite in ("all", "baseline"):
-        for mib in (16, 64):
+        sizes = (args.baseline_mib,) if args.baseline_mib else (16, 64)
+        for mib in sizes:
             for repeat in range(1, args.repeats + 1):
                 for fraction in cow_fractions(args.cow_fraction):
                     suffix = "" if fraction == "1/4" else "-cow-" + fraction.replace("/", "_")
@@ -257,7 +258,8 @@ def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--require-openeuler", action="store_true")
     p.add_argument("--output", type=Path, default=WORK / "runs")
-    p.add_argument("--suite", choices=("all", "baseline", "thp", "course", "layout", "group3", "group4", "sequence", "systems"), default="all")
+    p.add_argument("--suite", choices=("all", "baseline", "thp", "course", "layout", "group3", "group4", "sequence", "demand512", "stack", "systems"), default="all")
+    p.add_argument("--baseline-mib", type=int, choices=(16, 64))
     p.add_argument("--lab", choices=("all", *systems.LABS), default="all")
     p.add_argument("--group4-task", choices=("all", "4.1", "4.2", "4.3", "4.4"), default="all")
     p.add_argument("--repeats", type=int, choices=range(1, 6), default=3)

@@ -21,6 +21,7 @@
     <header class="stage-bar">
       <div class="dataset-bar">
         <span class="dataset-label">当前回放记录</span>
+        <span id="sequence-source"></span>
         <button id="toggle-runs" class="dataset-pill" aria-expanded="false" aria-controls="runs-drawer">
           <span id="mode">正在读取记录</span>
           <span class="pill-caret">换一份数据 ▾</span>
@@ -38,7 +39,7 @@
       <div id="job" role="status" aria-live="polite" hidden></div>
       <div id="error" role="alert" hidden></div>
       <section id="content" aria-live="polite"></section>
-      <details class="manifest">
+      <details class="manifest" hidden>
         <summary>实验记录完整性校验</summary>
         <p id="integrity"></p>
         <details class="manifest-sub"><summary>查看实验文件校验指纹（SHA-256）</summary><pre id="manifest"></pre></details>

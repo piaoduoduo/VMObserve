@@ -1,5 +1,19 @@
 # 接手说明
 
+**2026-11-20 · 3.3 与拓展实验。** 教学页从一份实测开始，末步才提供复做。3.3 保留六步分批写入和原版五次 ps，栈实验可切换三种递归条件。笔记直接引用所看案例。COW 固定区域大小，每次只跑选定的改写比例；透明大页保留两种写法，以及映射、进程两种开关，一次复做只跑一对。历史轮次、详细诊断和校验可在「原始证据」查看。拓展实验各附一份通过校验的 openEuler 样例。
+
+从本机网页发起并取回五份 openEuler 新记录：[512 MiB 分批写入](../work/openeuler-vm/guest-runs/20261119T162555.370119Z/report.json)、[三种栈条件](../work/openeuler-vm/guest-runs/20261119T162642.331592Z/report.json)、[COW 改写四分之一](../examples/20261119T162730.157977Z/report.json)、[透明大页稀疏写](../examples/20261119T162831.720565Z/report.json)、[逐页写与进程开关](../work/openeuler-vm/guest-runs/20261119T162925.849635Z/report.json)。各条件各执行一次。浏览器核对了两次运行的并排读数、当前步骤原文、桌面及 390 px 布局，64 项自动测试通过。下一步仍是请同学独立做一遍，记录他卡在哪一步。
+
+**2026-11-20 · 3.2 单次复做。** 教学页默认读一份实测，六步内保留指针定位与逐步原文。轮次、重复实验和校验明细归入「原始证据」，旧的步骤链接仍能打开指定的一次。第⑥步「再跑一次，比较地址」只运行一个进程，把本页和新进程的三个地址并排列出，再点链接可查新进程第④步的映射。Edge 从旧记录第 2 次实验实际触发 openEuler 新运行，逐个核对前后三对地址；新记录只有一个案例，两个大块共段。临时故障副本验证了局部提示、恢复与明细入口，64 项测试通过。[新实测](../work/openeuler-vm/guest-runs/20261119T161102.528408Z/report.json) · [地址对照截图](../output/verification/focus-tasks/single-run-addresses.png)。接下来用首次试用单观察同学能否独立复做。
+
+**2026-11-19 · 3.2 查看实验数据。** 展开后可选采集记录、本轮实验次数和重新采集，校验明细按需展开。系统调用与映射原文在各步就地查看。Edge 用历史实测及临时故障副本走通正常、局部失败与恢复，并检查 320 px 界面。64 项测试通过。[展开效果](../output/verification/focus-tasks/sequence-data-compact.png) · [第 5 题与现有成果的对照](PROJ5_COMPETITION_ANALYSIS.md) · [独立复做试用单](V071_CLASSROOM.md)
+
+**3.2 校验提示。** 独立的页底校验栏已移入「查看实验数据」。后台仍用原文件重算，当前重复实验可用时照常回放。缺少已校验数据时只在需要该结果的位置提示，可以切到另一份通过校验的实测并保留步骤。第⑥步的双终端指南可独立阅读。用内置 openEuler 记录的临时副本改动第 2 次实验的 smaps，另在一份副本中移除共享环境文件，经实际 HTTP 回放和 Edge 验证了局部失败、共享失败和恢复切换。64 项回归测试通过。[正常页面](../output/verification/focus-tasks/integrity-normal.png) · [故障测试画面](../output/verification/focus-tasks/integrity-failed-case.png)
+
+**3.2 指针联动。** 默认进入一份 openEuler 实测，六个圆保留。点返回地址或图中的 p2、p3，会同时标出块、映射外框和原始 smaps 区间首行。释放后可以用旧地址查询。切换记录、实验次数、重跑都收在「查看实验数据」里。Edge 已逐行对照同一轮原文，并核对换记录、键盘操作及 320、390、1123 px 布局。64 项测试通过。[桌面效果](../output/verification/focus-tasks/pointer-maps-1123.png) · [手机效果](../output/verification/focus-tasks/pointer-maps-390.png)
+
+**2026-11-19 · 3.2 教学试版。** 首屏列三问，①到⑤用同一张低地址到高地址的图回放，⑥用五步对照表收尾，再按原版 `malloc.c` 的四次暂停给出双终端复做方法。相邻匿名区间从每一步的原始 smaps 重建。用 openEuler 历史记录 `20261118T131308.877586Z` 在 Edge 走通六步、原文、切换记录和跳转 3.3。③到④时 p2 在 1123、390、320 px 三种屏宽的水平位置均未移动。64 项回归测试通过。[桌面](../output/verification/focus-tasks/3-2-learn-1123.png) · [手机](../output/verification/focus-tasks/3-2-learn-390.png)。下一步请一位初学者独立复做，用自己的三个指针解释哪些共段以及释放后地址的去向。
+
 **2026-11-19 · Gemini 审阅后的修复。** 四个实验统一步骤切换；3.2 的四个操作进入桌面首屏，手机目录可折叠，笔记页按实际 smaps 解释大页。Edge 走通桌面与手机回放，64 项测试通过。已整理赛事交付材料与缺项，下一步由 Gemini 润色学生可见的文字，由队伍收一份独立试用。[材料与截图](GEMINI_REVIEW_20261119.md)
 
 **2026-11-19 · 实验台目录。** 侧栏新增 20 px 加粗总标题。拓展实验与重点任务目录共用单行卡片，写时复制、透明大页可直接进入回放。已核对两条详情链接、当前实验高亮，以及 320 和 390 px 宽度下的目录切换。[桌面](../output/verification/focus-tasks/extension-directory.png) · [手机](../output/verification/focus-tasks/extension-directory-mobile.png)

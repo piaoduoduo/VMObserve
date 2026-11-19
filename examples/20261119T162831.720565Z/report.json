@@ -1,0 +1,598 @@
+{
+  "schema_version": "vmobserve.run/v1",
+  "tool_version": "0.8.2",
+  "run_id": "20261119T162831.720565Z",
+  "data_origin": "real_execution",
+  "view_mode": "execution_record",
+  "status": "completed",
+  "started_at": "2026-11-19T16:28:31.735200+00:00",
+  "environment": {
+    "system": "Linux",
+    "kernel": "6.6.0-28.0.0.34.oe2403.x86_64",
+    "machine": "x86_64",
+    "os_release": "NAME=\"openEuler\"\nVERSION=\"24.03 (LTS)\"\nID=\"openEuler\"\nVERSION_ID=\"24.03\"\nPRETTY_NAME=\"openEuler 24.03 (LTS)\"\nANSI_COLOR=\"0;31\"",
+    "distribution": {
+      "NAME": "openEuler",
+      "VERSION": "24.03 (LTS)",
+      "ID": "openEuler",
+      "VERSION_ID": "24.03",
+      "PRETTY_NAME": "openEuler 24.03 (LTS)",
+      "ANSI_COLOR": "0;31"
+    },
+    "python": "3.11.6",
+    "libc": [
+      "glibc",
+      "2.38"
+    ],
+    "allocator_environment": {
+      "GLIBC_TUNABLES": null,
+      "MALLOC_MMAP_THRESHOLD_": null,
+      "MALLOC_TRIM_THRESHOLD_": null,
+      "MALLOC_PERTURB_": null,
+      "LD_PRELOAD": null
+    },
+    "page_bytes": 4096,
+    "thp_enabled": "[always] madvise never",
+    "thp_defrag": "always defer defer+madvise [madvise] never",
+    "pmd_size": "2097152",
+    "thp_sizes": {
+      "hugepages-32kB": "always inherit madvise [never]",
+      "hugepages-512kB": "always inherit madvise [never]",
+      "hugepages-2048kB": "always [inherit] madvise never",
+      "hugepages-1024kB": "always inherit madvise [never]",
+      "hugepages-64kB": "always inherit madvise [never]",
+      "hugepages-16kB": "always inherit madvise [never]",
+      "hugepages-256kB": "always inherit madvise [never]",
+      "hugepages-128kB": "always inherit madvise [never]"
+    },
+    "meminfo": "MemTotal:        1753684 kB\nMemFree:         1402640 kB\nMemAvailable:    1518484 kB\nBuffers:           16156 kB\nCached:           232156 kB\nSwapCached:            0 kB\nActive:           133564 kB\nInactive:         155824 kB\nActive(anon):        648 kB\nInactive(anon):    49676 kB\nActive(file):     132916 kB\nInactive(file):   106148 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:               908 kB\nWriteback:             0 kB\nAnonPages:         41096 kB\nMapped:            71912 kB\nShmem:              9232 kB\nKReclaimable:      14848 kB\nSlab:              35112 kB\nSReclaimable:      14848 kB\nSUnreclaim:        20264 kB\nKernelStack:        1872 kB\nPageTables:         1516 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:      876840 kB\nCommitted_AS:     364792 kB\nVmallocTotal:   13743895347199 kB\nVmallocUsed:       14800 kB\nVmallocChunk:          0 kB\nPercpu:              904 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:      6144 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       98152 kB\nDirectMap2M:     1998848 kB\nDirectMap1G:           0 kB",
+    "captured_at": "2026-11-19T16:28:31.826232+00:00",
+    "execution_context": "qemu-tcg"
+  },
+  "sources": {
+    "run_all.py": "f94b36c625afdd3fe8fa1828cee3bc05840c82be0f3fb947a1993d77d602d473",
+    "launch.py": "ffc137660f6edb4d5786b44a247f3a71b43362fa8c88aa8e6a71b6621e4f3657",
+    "proj5-memory-pilot/memory_probe.c": "a518fd2b5265189230bc68dee42103e4c274af6644174d5737b67f734a3eed20",
+    "proj5-round2/thp_probe.c": "7a95878ef66c01114ae00f4550844c51b9c1c1958245f2b14ca06f450a849e1b",
+    "proj5-course/allocator_probe.c": "c3f4612c8cb68a7d1faafb5a0f52096182cde30e673daf5114c738c7f74703b6",
+    "proj5-course/layout_probe.c": "60795ef2090bed0e6531be424bc2e3ee09e46bfd298ac609db70a6da779c3b1a",
+    "proj5-course/group3_link.c": "459db3c54c0fa09368bbb187899955f3d3886099ef08a600bc8c9fd191351f35",
+    "proj5-course/group3_sequence.c": "14c31a0ba276cf5ed45bfe942b0ea31523f2f96c12c446fc4f5009ebd45e09c3",
+    "proj5-course/group3_demand.c": "c72e9e61279c515aa8c5614f5e5eecb416772ced94d39cc0ecc456d786832223",
+    "proj5-course/group3_stack.c": "125197bc6a6aae8ab0d69eb2c7ae66ed69acc8faf6f710f4c3230fc822a86bd4",
+    "course-labs/group4/lab4_1/fork_exec_wait.c": "363e8a1309fc3dda566de47a5610cb90620341695042f308d4bf9d22dcdf2d29",
+    "course-labs/group4/lab4_2/pthread_test.c": "575e85f16ffc4e4920c96d9687b52d66de9cba29b476a2f5637351e9eeb56073",
+    "course-labs/group4/lab4_3/user_thread_test.c": "1249083bfc46c799f83ad62a83b4ab97454abea650258088bf8b7c696187904e",
+    "course-labs/group4/lab4_4/pipe_communication.c": "77d8b3a1a1b4869ff9b28e2a6105e7844dda667250bf7e56deef616ad76c5e1c",
+    "course-labs/group4/lab4_4/thread_communication.c": "4dcfb86e4649cb503c6168d493e2eab0a182bc74adbf3069499817592b30bad8",
+    "course-labs/systems/sync.c": "425e714e8903db75ebf9232bc171c7c9ad9709a2447126da84e69fa032942a02",
+    "course-labs/systems/io_observe.py": "b000e00bbdf79d125aa7d016d0c6cf928426ce3de20b1eef978b101b7a0b5584",
+    "common/probe.h": "5508d4521f4a530882a8e1f36ceb5e65cab91ece03026f54572116b0cc745a6c",
+    "proj5-course/access_pattern.h": "191b2771546e8365a8ede1f85db5373de3b91b291fecace74a865e3759031c45",
+    "proj5-course/group3_snapshot.h": "d18ba0edf15c13b9184161dc6a39ca1b87233c18b649539cd0494231df01c3c9",
+    "lessons/catalog/basics.json": "3097b854fb58322b3e5d944def2afab88daa03999c9633e1b5797b1bbdf82d12",
+    "lessons/demand/WORKSHEET.md": "c6b36ce44b23127d0996be9e62b4f4b0deb135c5259796dd1913e1f5be0d81e9",
+    "lessons/demand/original-ps.json": "bf5e9f9a32b816ea6246291a0593f7cc1b3755897d3f7f7bd415c2854f99e2e9",
+    "lessons/demand/student.h": "a4e4ca53cfb082999f08285b4ba24e1e38c98903ee25b2f311c16afbb4c1f10d",
+    "lessons/layout/WORKSHEET.md": "9db686a910cbb33c5b7495b2516176fde802a663587e0fc8bd9c7350d3ffe317",
+    "lessons/sequence/WORKSHEET.md": "00257712cb0e82b41305668f8a5a417ad41689f50a994a38e356ed86bd49fca6",
+    "vmobserve/__init__.py": "45e8fafae1cc23d5bbe083d85fdf541a7e3f4c93192fc8c60c875e88f5ed8970",
+    "vmobserve/__main__.py": "3b93eb45fdc020f830329ad25e605b9f50db2c27c918a0b14e71a7c212fe71df",
+    "vmobserve/allocator.py": "308dbe04ba2c6886822ed0e671a8603cd1a67a34044946f97819e5780d0cceae",
+    "vmobserve/common.py": "eb07f230fbf3c8a0b94fe761d88c0177baba7c9dfb72348e4fdf7062cf7c1ee3",
+    "vmobserve/cow.py": "12f369f252a12c3bb31f8e22844885dd57a624b75ccf93227caafac79dbf08ca",
+    "vmobserve/diagnosis.py": "6f709a0cb237a8bf1f6639d7b0983d8e7786ca835c5df2defdb5db2c33e1f4a8",
+    "vmobserve/evidence.py": "48eb3ae39ad9ef392ec9573a4c0197cbaeb2be47aad3e52d532cb93658338f69",
+    "vmobserve/export.py": "a704e889ecbd4a99ce7eb4c21004207ecfe595e2c3578e9948acf8972cf56cda",
+    "vmobserve/group3.py": "bde1b5780d0b2baa72f3e786f5a852801819e4174c11cf248a54225b03cf5f6e",
+    "vmobserve/group4.py": "9bb0759ecb522711f087d91ce9fcdf066ca9034fae9061521f6dd912a0974acf",
+    "vmobserve/layout.py": "9b50d90f32e72deee742c1fbfbe5a096d6e7e07845f3baa3c6325a080021497a",
+    "vmobserve/replay.py": "c805f8c56499f3cb4f68a66c6525b228209517cca6498b15195ef3510f9d7b15",
+    "vmobserve/runner.py": "3248a2fe3dd819b430b34d610543124d05ed13ee082d050487e846654a11c95a",
+    "vmobserve/sequence.py": "c50b831b0ddfa09387c84428586cfd233d57d61d7ff8a953a7e2048d16a7add7",
+    "vmobserve/server.py": "2f69ec9e767dffd8796e781e90f1f040de7418f5a902f3c5044b61b6579a817b",
+    "vmobserve/smaps.py": "1be9e84650a63cb4acc57296ffd92a2fa158aaa422d1064d02604a2c5a54f0ad",
+    "vmobserve/systems.py": "98a651a8b1a444a17838ea211c92c08565520f7bdbf255722446043e1880c1f9",
+    "vmobserve/thp_policy.py": "1d599914b89a2a532f1e53fdc382256933eec1d1149799d70ec2e34d90a1d2f6",
+    "vmobserve/web/app.js": "e9545b6edab7982af738f838d8ffe77b5a398cc62772ac55768714520720a33a",
+    "vmobserve/web/course-views.js": "f64b75d0cd6741d21afa2a979b2f67eab0ea361fbbba8e9271c47cfd873315c7",
+    "vmobserve/web/curriculum.js": "9c78cea2267a25d3caf2dc632cf4c43d8e9448f404d883175e15116cbeebdbed",
+    "vmobserve/web/evidence-view.js": "5f4ea54dac6e5ab61faba3ed2ee82be1d70254c7adb11979cb16021e5b1b27aa",
+    "vmobserve/web/favicon.svg": "5169559ecc1840b0d537e0433255dea6d375f6da42bb451864687b7a29a3ff24",
+    "vmobserve/web/index.html": "807275f59f39abeb303bf9674ebdd9c83daed0562b5549fc854d68ea464ec300",
+    "vmobserve/web/lesson.html": "c1fce7cc5000a0b6cb796239017ca4b61fccec129ac76f5cf66766d8cab67ee2",
+    "vmobserve/web/lesson.js": "657efe530ecfc56fb5260e38911e355e30b2963f1cf56070aa21739f4dd4f3ee",
+    "vmobserve/web/memory-views.js": "cc217b48f051b041679749a98b33449e713b87975c2e9a8091f03b62d623a6d9",
+    "vmobserve/web/sequence-view.js": "7a0220e4c2e949d1eed92938eb9f0728dbbd7c97682cf7fc3e958efae5938d2e",
+    "vmobserve/web/style.css": "3f748b49b1c821dc8f46ceb30a66d4bccb6e27528e08ad2dafae38648f68cef9",
+    "vmobserve/web/ui.js": "63cdf63a70085dba97bb90099a2019f062b02e3beeac7812f7b980435430de2f",
+    "package_sources.py": "4d3091fac8b344bef656810645805d3bae1cec53eccdb50d8fcc119abebbfba6",
+    "vm.ps1": "d3bc9cf58783f808b72e9953703a8a3a4af409a31e8fa7acaa4c8dd2594f961e",
+    "openeuler-vm/config.sh": "9824af1e0910a8857dc78a69284b3f791b5176357c8dce0b288c82072148b7ac",
+    "openeuler-vm/retest.sh": "2c9bbfde9a81e37eeda22143c0cd5985c573deece64b9ff3c652f01e31077fd6",
+    "openeuler-vm/start.sh": "d9381156afce699ff92a930e34ac0e2e1e9ff3f62e64d4e84894fd99b8d09cc5",
+    "openeuler-vm/status.sh": "048b5f63b9e0fc16e073bf8fa1b19745a4bb3158098f8a6ffbaebc621a2d2841",
+    "openeuler-vm/wait.sh": "4cef1b3e8d43528c48e0da80929530038f9220294e662ac5fb55bae408de5a71",
+    "course-labs/group4/build.sh": "dc7cc5aa2b8bd57d28db328dbc91c57e616eb07d03805030c7dc79b76c0feadf",
+    "course-labs/group4/view_events.py": "15c82a3e982bbc9e41c921e1b63068396d9aff62f690421405e1227fff93214a",
+    "course-labs/group4/demo.sh": "d964458d5b31be075bd22c38502cd72ec52334bd6dc4d50207b63883f4afd5c2",
+    "course-labs/group4/README.md": "1ce6518b154239ad7b2676e763ed6c229f3e704060014c96647cc2af5e3dbc35",
+    "course-labs/group4/lab_common.h": "2522147bccdff0e5bb5dea54763e3c01b854c63b148b9140514740cf30564598",
+    "course-labs/group4/lab4_1/child_prog.c": "0f59e7dd417df641d09663516b6d7c22dbb92f5e069207f66378a68dac6dc0ed"
+  },
+  "artifacts": {
+    "cases/thp-sparse-off-1/stdout.jsonl": "abbd73a5e6818f367d27a8656a100f04de237699aecad0b3a5f7cea72baa8494",
+    "cases/thp-sparse-off-1/smaps.stderr.txt": "a87b98dd4712934e55bc53a1cb1ff2f87e1a7b01134aaf74640442410cc02020",
+    "cases/thp-sparse-on-1/stdout.jsonl": "5f755958751d6dbf26e6f9f0fc8018a1c8b3ccd73b0e8f3539de20d44af9dbd4",
+    "cases/thp-sparse-on-1/smaps.stderr.txt": "8184c228d9453b5d67908df2ba6f7dd30d77ca290bc35b8bf607a898e5fe787a",
+    "environment.json": "723a4ef8beb0bada793af977c98b2bb1a1778d67ea7e61429262442af619902e",
+    "build/thp.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stdout.log": "47214cb7a32d8be03220eb0f5ef9186fbd03556cf0fd580e1553d863d131d8dc",
+    "build/thp.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "builds": {
+    "thp": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261119T162801-346/runs/20261119T162831.720565Z/source/proj5-round2/thp_probe.c",
+        "-o",
+        "/root/proj5-transfers/20261119T162801-346/runs/20261119T162831.720565Z/build/thp"
+      ],
+      "started_at": "2026-11-19T16:28:33.290588+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-19T16:28:39.474201+00:00",
+      "duration_seconds": 6.184
+    }
+  },
+  "cases": [
+    {
+      "id": "thp-sparse-off-1",
+      "suite": "thp",
+      "parameters": {
+        "pattern": "sparse",
+        "thp": "off",
+        "repeat": 1,
+        "process_thp": "inherit"
+      },
+      "arguments": [
+        "off",
+        "sparse",
+        "inherit"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "written_values",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "correctness"
+          },
+          {
+            "id": "no_observed_swap",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "no_major_faults",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "untouched_rss",
+            "status": "passed",
+            "observed": 0,
+            "expected": 0,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "write_checksum",
+            "status": "passed",
+            "observed": 16,
+            "expected": 16,
+            "tolerance": 0,
+            "category": "correctness"
+          },
+          {
+            "id": "thp_off_no_huge",
+            "status": "passed",
+            "observed": 0,
+            "expected": 0,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "thp_off_rss",
+            "status": "passed",
+            "observed": 64,
+            "expected": 64,
+            "tolerance": 0,
+            "category": "expectation"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "thp_requested": "off",
+          "pattern": "sparse",
+          "page_bytes": 4096,
+          "huge_bytes": 2097152,
+          "region_bytes": 33554432,
+          "stride_bytes": 2097152,
+          "writes": 16,
+          "huge_aligned": true,
+          "process_thp": "inherit",
+          "process_thp_disabled": 0,
+          "madvise_result": 0,
+          "status_thp_enabled": 1
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "untouched",
+            "role": "parent",
+            "pid": 2605,
+            "size_kib": 32768,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 0,
+            "action_major": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "after_write",
+            "role": "parent",
+            "pid": 2605,
+            "size_kib": 32768,
+            "rss_kib": 64,
+            "pss_kib": 64,
+            "private_dirty_kib": 64,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 16,
+            "action_major": 0
+          }
+        ],
+        "value_check": {
+          "kind": "values",
+          "sum": 16,
+          "ok": true
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/thp-sparse-off-1/stdout.jsonl",
+        "smaps": "cases/thp-sparse-off-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261119T162801-346/runs/20261119T162831.720565Z/build/thp",
+          "off",
+          "sparse",
+          "inherit"
+        ],
+        "started_at": "2026-11-19T16:28:39.513185+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-19T16:28:39.595327+00:00",
+        "duration_seconds": 0.082
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "thp-sparse-on-1",
+      "suite": "thp",
+      "parameters": {
+        "pattern": "sparse",
+        "thp": "on",
+        "repeat": 1,
+        "process_thp": "inherit"
+      },
+      "arguments": [
+        "on",
+        "sparse",
+        "inherit"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "written_values",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "correctness"
+          },
+          {
+            "id": "no_observed_swap",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "no_major_faults",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "untouched_rss",
+            "status": "passed",
+            "observed": 0,
+            "expected": 0,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "write_checksum",
+            "status": "passed",
+            "observed": 16,
+            "expected": 16,
+            "tolerance": 0,
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "thp_requested": "on",
+          "pattern": "sparse",
+          "page_bytes": 4096,
+          "huge_bytes": 2097152,
+          "region_bytes": 33554432,
+          "stride_bytes": 2097152,
+          "writes": 16,
+          "huge_aligned": true,
+          "process_thp": "inherit",
+          "process_thp_disabled": 0,
+          "madvise_result": 0,
+          "status_thp_enabled": 1
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "untouched",
+            "role": "parent",
+            "pid": 2606,
+            "size_kib": 32768,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 0,
+            "action_major": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "after_write",
+            "role": "parent",
+            "pid": 2606,
+            "size_kib": 32768,
+            "rss_kib": 32768,
+            "pss_kib": 32768,
+            "private_dirty_kib": 32768,
+            "shared_dirty_kib": 0,
+            "huge_kib": 32768,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 16,
+            "action_major": 0
+          }
+        ],
+        "value_check": {
+          "kind": "values",
+          "sum": 16,
+          "ok": true
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/thp-sparse-on-1/stdout.jsonl",
+        "smaps": "cases/thp-sparse-on-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261119T162801-346/runs/20261119T162831.720565Z/build/thp",
+          "on",
+          "sparse",
+          "inherit"
+        ],
+        "started_at": "2026-11-19T16:28:39.704257+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-19T16:28:39.894474+00:00",
+        "duration_seconds": 0.19
+      },
+      "error": null,
+      "integrity": "verified"
+    }
+  ],
+  "error": null,
+  "related_run": {
+    "run_id": "20261118T022211.301964Z",
+    "report_sha256": "f44051e459c640d7eba6a9690d4f517f7416add6ecbdd06798c8104d30123773",
+    "environment_comparison": {
+      "status": "matched_conditions",
+      "checked": [
+        "kernel",
+        "machine",
+        "os_release",
+        "execution_context",
+        "page_bytes",
+        "pmd_size",
+        "thp_enabled",
+        "thp_defrag",
+        "thp_sizes"
+      ],
+      "differences": {},
+      "missing": []
+    },
+    "recipe": "thp_sparse_pair",
+    "relation": "new_controlled_recheck"
+  },
+  "scope": "Mechanism/function verification; no hardware performance inference, especially under QEMU TCG.",
+  "plan": [
+    {
+      "id": "thp-sparse-off-1",
+      "suite": "thp",
+      "parameters": {
+        "pattern": "sparse",
+        "thp": "off",
+        "repeat": 1,
+        "process_thp": "inherit"
+      },
+      "arguments": [
+        "off",
+        "sparse",
+        "inherit"
+      ]
+    },
+    {
+      "id": "thp-sparse-on-1",
+      "suite": "thp",
+      "parameters": {
+        "pattern": "sparse",
+        "thp": "on",
+        "repeat": 1,
+        "process_thp": "inherit"
+      },
+      "arguments": [
+        "on",
+        "sparse",
+        "inherit"
+      ]
+    }
+  ],
+  "compiler_check": {
+    "command": [
+      "gcc",
+      "--version"
+    ],
+    "started_at": "2026-11-19T16:28:33.134475+00:00",
+    "status": "completed",
+    "exit_code": 0,
+    "error": null,
+    "finished_at": "2026-11-19T16:28:33.283220+00:00",
+    "duration_seconds": 0.149
+  },
+  "finished_at": "2026-11-19T16:28:39.951995+00:00",
+  "completed": true,
+  "diagnosis": {
+    "rule_version": "2026-11-13.1",
+    "findings": [
+      {
+        "rule": "observed_thp",
+        "confidence": "confirmed",
+        "title": "smaps 已记录透明大页驻留",
+        "explanation": "AnonHugePages=32768 KiB。KernelPageSize=4 KiB，不能单独用后者判断是否使用透明大页。",
+        "evidence": [
+          {
+            "case_id": "thp-sparse-on-1",
+            "phase": "after_write",
+            "role": "parent",
+            "jsonl": "cases/thp-sparse-on-1/stdout.jsonl",
+            "smaps": "cases/thp-sparse-on-1/smaps.stderr.txt",
+            "metrics": {
+              "rss_kib": 32768,
+              "huge_kib": 32768,
+              "kernel_page_kib": 4,
+              "action_minor": 16
+            }
+          }
+        ],
+        "limitations": "这是采样时的观测；MADV_HUGEPAGE 本身不保证大页分配。"
+      },
+      {
+        "rule": "thp_sparse_control",
+        "confidence": "confirmed",
+        "title": "对照已确认稀疏写的驻留放大",
+        "explanation": "相同动作、步长、区域尺寸和重复编号，仅改变区域的大页建议。关闭/请求大页的 RSS 为 64/32768 KiB，次缺页为 16/16；两组实际大页驻留也不同。",
+        "evidence": [
+          {
+            "case_id": "thp-sparse-off-1",
+            "jsonl": "cases/thp-sparse-off-1/stdout.jsonl",
+            "smaps": "cases/thp-sparse-off-1/smaps.stderr.txt"
+          },
+          {
+            "case_id": "thp-sparse-on-1",
+            "jsonl": "cases/thp-sparse-on-1/stdout.jsonl",
+            "smaps": "cases/thp-sparse-on-1/smaps.stderr.txt"
+          }
+        ],
+        "limitations": "这是同轮受控功能观测；未测量延迟或吞吐，不能据此声称性能提高相同倍数。",
+        "recheck": {
+          "recipe": "thp_sparse_pair",
+          "description": "在当前执行目标重新运行 THP 开/关配对实验；比较新旧内核和大页策略后标注复验条件。"
+        }
+      }
+    ],
+    "comparisons": [
+      {
+        "pattern": "sparse",
+        "repeat": 1,
+        "off": "thp-sparse-off-1",
+        "on": "thp-sparse-on-1",
+        "control_valid": true,
+        "rss_kib": {
+          "off": 64,
+          "on": 32768
+        },
+        "minor_faults": {
+          "off": 16,
+          "on": 16
+        },
+        "rss_ratio": 512.0
+      }
+    ],
+    "cow_observations": [],
+    "policy_comparisons": [],
+    "references": [
+      "https://docs.kernel.org/filesystems/proc.html",
+      "https://docs.kernel.org/admin-guide/mm/transhuge.html",
+      "https://man7.org/linux/man-pages/man2/getrusage.2.html",
+      "https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html"
+    ],
+    "confidence_labels": {
+      "confirmed": "已确认（限列出的观测与对照）",
+      "probable": "可能原因",
+      "insufficient_evidence": "证据不足"
+    }
+  }
+}

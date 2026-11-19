@@ -1,0 +1,117 @@
+BEGIN_PROCESS pid=2606
+Name:	thp
+Umask:	0022
+State:	R (running)
+Tgid:	2606
+Ngid:	0
+Pid:	2606
+PPid:	2546
+TracerPid:	0
+Uid:	0	0	0	0
+Gid:	0	0	0	0
+FDSize:	64
+Groups:	0 
+NStgid:	2606
+NSpid:	2606
+NSpgid:	2606
+NSsid:	2606
+Kthread:	0
+VmPeak:	    2404 kB
+VmSize:	    2404 kB
+VmLck:	       0 kB
+VmPin:	       0 kB
+VmHWM:	    1484 kB
+VmRSS:	    1484 kB
+RssAnon:	      96 kB
+RssFile:	    1388 kB
+RssShmem:	       0 kB
+VmData:	     220 kB
+VmStk:	     132 kB
+VmExe:	       4 kB
+VmLib:	    1996 kB
+VmPTE:	      44 kB
+VmSwap:	       0 kB
+HugetlbPages:	       0 kB
+CoreDumping:	0
+THP_enabled:	1
+untag_mask:	0xffffffffffffffff
+Threads:	1
+SigQ:	1/6695
+SigPnd:	0000000000000000
+ShdPnd:	0000000000000000
+SigBlk:	0000000000000000
+SigIgn:	0000000000000000
+SigCgt:	0000000000000000
+CapInh:	0000000000000000
+CapPrm:	000001ffffffffff
+CapEff:	000001ffffffffff
+CapBnd:	000001ffffffffff
+CapAmb:	0000000000000000
+NoNewPrivs:	0
+Seccomp:	0
+Seccomp_filters:	0
+Speculation_Store_Bypass:	not vulnerable
+SpeculationIndirectBranch:	always enabled
+Cpus_allowed:	3
+Cpus_allowed_list:	0-1
+Mems_allowed:	00000000,00000000,00000000,00000000,00000000,00000000,00000000,00000001
+Mems_allowed_list:	0
+voluntary_ctxt_switches:	0
+nonvoluntary_ctxt_switches:	9
+END_PROCESS
+BEGIN phase=untouched role=parent pid=2606
+7f2647200000-7f2649200000 rw-p 00000000 00:00 0 
+Size:              32768 kB
+KernelPageSize:        4 kB
+MMUPageSize:           4 kB
+Rss:                   0 kB
+Pss:                   0 kB
+Pss_Dirty:             0 kB
+Shared_Clean:          0 kB
+Shared_Dirty:          0 kB
+Private_Clean:         0 kB
+Private_Dirty:         0 kB
+Referenced:            0 kB
+Anonymous:             0 kB
+KSM:                   0 kB
+LazyFree:              0 kB
+AnonHugePages:         0 kB
+ShmemPmdMapped:        0 kB
+FilePmdMapped:         0 kB
+Shared_Hugetlb:        0 kB
+Private_Hugetlb:       0 kB
+Swap:                  0 kB
+SwapPss:               0 kB
+Locked:                0 kB
+THPeligible:           1
+ProtectionKey:         0
+VmFlags: rd wr mr mw me ac sd hg 
+END
+BEGIN phase=after_write role=parent pid=2606
+7f2647200000-7f2649200000 rw-p 00000000 00:00 0 
+Size:              32768 kB
+KernelPageSize:        4 kB
+MMUPageSize:           4 kB
+Rss:               32768 kB
+Pss:               32768 kB
+Pss_Dirty:         32768 kB
+Shared_Clean:          0 kB
+Shared_Dirty:          0 kB
+Private_Clean:         0 kB
+Private_Dirty:     32768 kB
+Referenced:        32768 kB
+Anonymous:         32768 kB
+KSM:                   0 kB
+LazyFree:              0 kB
+AnonHugePages:     32768 kB
+ShmemPmdMapped:        0 kB
+FilePmdMapped:         0 kB
+Shared_Hugetlb:        0 kB
+Private_Hugetlb:       0 kB
+Swap:                  0 kB
+SwapPss:               0 kB
+Locked:                0 kB
+THPeligible:           1
+ProtectionKey:         0
+VmFlags: rd wr mr mw me ac sd hg 
+END

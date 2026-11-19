@@ -114,6 +114,16 @@ def parse(records, raw, suite, parameters, folder):
             raise ValueError("allocation addresses disagree")
         result["allocations"] = addresses
         attach_mappings(samples, mappings, addresses, condition["sizes"])
+        # Follow the same address ranges before allocation and after free, including
+        # neighbours that shared a VMA with a block during the experiment.
+        focus = {(int(m["start"], 16), int(m["end"], 16))
+                 for sample in samples for block in sample["blocks"] for m in block["mappings"]}
+        for sample, snapshot in zip(samples, mappings):
+            sample["visual_regions"] = [
+                {k: m[k] for k in ("start", "end", "pathname", "size_kib", "rss_kib")}
+                for m in snapshot if m["pathname"] == "[heap]" or any(
+                    lo < int(m["end"], 16) and int(m["start"], 16) < hi for lo, hi in focus)
+            ]
         result["overview"] = allocation_overview(samples[3])
         trace = (folder / "syscalls.txt").read_text()
         result["actions"] = trace_actions(trace)

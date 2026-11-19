@@ -6,10 +6,10 @@ const state = {
   tab: 'sequence',
   selected: 0,
   phase: 0,
-  timer: null,
   job: null,
+  sequenceTrial: null,
   config: null,
-  cowFraction: 'all',
+  lessonTrial: null,
   group4Task: 'all'
 };
 
@@ -74,6 +74,33 @@ export function stepExplanation(program, kernel, result) {
     <div class="observed"><dt>实际结果</dt><dd>${esc(result)}</dd></div></dl>`;
 }
 
+export function thpPairs(cases) {
+  const groups = new Map();
+  for (const c of cases.filter(c => c.suite === 'thp')) {
+    const p = c.parameters;
+    const policy = ['allow', 'disable'].includes(p.process_thp);
+    const key = [policy, p.pattern, p.repeat].join('/');
+    if (!groups.has(key)) groups.set(key, { policy, pattern: p.pattern, cases: [] });
+    groups.get(key).cases.push(c);
+  }
+  return [...groups.values()].sort((a, b) => Number(a.policy) - Number(b.policy));
+}
+
+export function missingReading() {
+  return `<p class="integrity-warning">这一步缺少可核对的实测结果。<a href="/#${new URLSearchParams({run: state.id, topic: 'evidence'})}">查看原始证据和原因</a></p>`;
+}
+
+export function lessonPractice(mode, caption, reading, settings = '') {
+  const trial = state.lessonTrial;
+  const before = trial?.from === state.id && trial.index === state.selected;
+  const after = trial?.to === state.id && trial.toIndex === state.selected;
+  const result = after && reading && trial.reading
+    ? table(['哪次运行', '观测结果'], [['之前看的实测', trial.reading], ['刚跑的一次', reading]])
+    : '';
+  return `<div class="lesson-practice">${settings}<button data-lesson-run="${mode}" data-reading="${esc(reading || '')}">${caption}</button>
+    ${result}<p class="detail-copy" role="status">${before ? esc(trial.message || '') : ''}${before && trial.failedRun ? ` <a href="/#${new URLSearchParams({run:trial.failedRun,topic:'evidence'})}">查看这次的原始证据</a>` : ''}${before && trial.to ? `<a href="/#${new URLSearchParams({run:trial.to,topic:trial.tab,case:trial.toIndex,step:trial.phase})}">查看刚跑的对照 →</a>` : ''}</p></div>`;
+}
+
 function table(headers, rows, highlightIndex = -1) {
   return `<div class="table-wrap"><table><thead><tr>${headers.map(h => `<th scope="col">${esc(h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, idx) => `<tr${idx === highlightIndex ? ' class="row-active"' : ''}>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
@@ -84,19 +111,13 @@ function friendlyDistro(name) {
   return String(name).replace(/\s*\(LTS\)/i, '').trim();
 }
 
-function friendlyTime(runId) {
+function friendlyTime(runId, withSeconds = false) {
   const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})/.exec(String(runId || ''));
   if (!m) return String(runId || '未知时间');
   const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]));
   if (Number.isNaN(d.getTime())) return `${m[1]}-${m[2]}-${m[3]} ${m[4]}:${m[5]}`;
   const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function recheckTarget() {
-  const kernel = (state.report?.environment?.kernel || '未知').split('-')[0];
-  const target = state.config?.executor === 'openeuler-vm' ? 'openEuler 虚拟机' : (state.config?.executor || '本地环境');
-  return `当前数据跑在内核 ${esc(kernel)} 上；点按钮会在 ${esc(target)} 重新跑一轮“开/关大页”对照。`;
+  return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}${withSeconds ? ':' + pad(d.getSeconds()) : ''}`;
 }
 
 function humanizeFinding(f) {
@@ -202,7 +223,7 @@ function humanizeFinding(f) {
   return { ...f, title, explanation, limitations, nextSteps };
 }
 
-function diagnosisHTML(findings, recheck = false) {
+function diagnosisHTML(findings) {
   const items = findings.map(raw => {
     const f = humanizeFinding(raw);
     return `<article class="finding-card">
@@ -216,7 +237,6 @@ function diagnosisHTML(findings, recheck = false) {
   return `<aside class="diagnostic">
     <h2>助教划重点</h2>
     ${items.join('') || '<p class="empty-note">当前记录缺少可判断的数据，去“原始记录”翻翻日志看看。</p>'}
-    ${recheck ? `<div class="recheck-box"><p>${recheckTarget()}</p><button id="recheck">重新跑一轮开/关对照</button></div>` : ''}
   </aside>`;
 }
 
@@ -282,5 +302,5 @@ async function loadOriginalPs(container) {
 
 export {
   $, state, labels, phases, esc, kib, url, api, table,
-  friendlyDistro, friendlyTime, recheckTarget, diagnosisHTML, chart, findingFor, evidenceButtons, highlightSyscallLine, loadOriginalPs
+  friendlyDistro, friendlyTime, diagnosisHTML, chart, findingFor, evidenceButtons, highlightSyscallLine, loadOriginalPs
 };

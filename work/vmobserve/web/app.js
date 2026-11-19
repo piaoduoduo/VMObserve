@@ -1,18 +1,15 @@
 import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine } from './ui.js';
 import { renderEvidence } from './evidence-view.js';
-import { renderSequence, parseMmapCall, groupBlocksIntoRegions } from './sequence-view.js';
+import { renderSequence, locateSequencePointer, parseMmapCall, groupBlocksIntoRegions } from './sequence-view.js';
 import { renderCourse, renderGroup3, renderGroup4, renderLayout } from './course-views.js';
 import { renderBaseline, renderTHP } from './memory-views.js';
 import { directory, currentLab, viewCases, markLab, renderHome, renderTaskDirectory, renderSystems, showLab, newestReplay } from './curriculum.js';
 
+const integrityPanel = $('.manifest');
+
 function error(message) {
   $('#error').hidden = !message;
   $('#error').textContent = message || '';
-}
-
-function stop() {
-  clearInterval(state.timer);
-  state.timer = null;
 }
 
 const topics = {
@@ -58,10 +55,13 @@ function setDrawer(open) {
 
 function chooseTopic(tab) {
   ensureReplayChrome();
-  stop();
   state.tab = tab;
   state.selected = 0;
   state.phase = 0;
+  if (tab === 'baseline' || tab === 'thp') {
+    const example = state.runs.find(r => r.group === 'example' && supports(r, tab) && r.data_origin === 'real_execution' && r.status === 'completed' && !r.environment_issue);
+    if (example) return select(example.id, false, {tab});
+  }
   const filter = $('#environment').value;
   const current = state.runs.find(r => r.id === state.id);
   const match = state.runs.find(r => supports(r, tab) && r.status === 'completed' && !r.environment_issue && (filter === 'all' || r.group === filter))
@@ -88,7 +88,7 @@ function history() {
   $('#runs').innerHTML = list.map(r => {
     const tag = r.group === 'example' ? '课内推荐样例 · ' : '';
     const distro = friendlyDistro(r.distribution);
-    const time = friendlyTime(r.run_id);
+    const time = friendlyTime(r.run_id, true);
     const statusText = labels[r.status] || r.status;
     const compatible = supports(r, state.tab);
     return `<button class="run-row${compatible ? '' : ' run-other'}" data-run="${esc(r.id)}" aria-current="${r.id === state.id}">
@@ -116,14 +116,13 @@ function linkedPosition() {
 function savePosition() {
   if (!state.id) return;
   const hash = new URLSearchParams({ run: state.id, topic: state.tab });
-  if ($('#case-select, [data-select-case]') && state.selected) hash.set('case', state.selected);
+  if (state.selected) hash.set('case', state.selected);
   if ($('#phase, [data-course-step], [data-sequence-step]')) hash.set('step', state.phase);
   const next = '#' + hash;
   if (location.hash !== next) window.history.replaceState(null, '', next);
 }
 
 async function copyPosition() {
-  if (state.timer) { stop(); render(); }
   savePosition();
   const link = location.href;
   try {
@@ -155,7 +154,6 @@ let selectionRequest = 0, evidenceRequest = 0;
 async function select(id, follow = false, pos = {}) {
   const request = ++selectionRequest;
   evidenceRequest++;
-  stop();
   const record = state.runs.find(r => r.id === id);
   if (Object.hasOwn(topics, pos.tab)) state.tab = pos.tab;
   else if (follow && !supports(record, state.tab)) state.tab = topicFor(record);
@@ -171,8 +169,8 @@ async function select(id, follow = false, pos = {}) {
   $('#copy-replay').textContent = '复制当前步骤链接';
   $('#mode').textContent = '正在读取记录';
   $('#metadata').textContent = '';
-  $('#manifest').textContent = '';
-  $('#integrity').textContent = '';
+  integrityPanel.hidden = true;
+  integrityPanel.open = false;
   $('#content').innerHTML = '<p class="empty">正在读取实验数据与映射记录…</p>';
   try {
     const report = await api(url('/api/report', { id }));
@@ -203,10 +201,19 @@ function ensureReplayChrome() {
     setInterval(async () => {
       if (document.body.classList.contains('course-reading')) return;
       try {
-        const previous = state.job;
         state.job = await api('/api/job');
         jobUI();
-        if (previous?.id === activeJobId && previous?.status === 'running' && state.job?.id === activeJobId && state.job.status !== 'running') {
+        if (activeJobId && state.job?.id === activeJobId && state.job.status !== 'running' && handledJobId !== activeJobId) {
+          handledJobId = activeJobId;
+          const finished = state.job;
+          if (finished.mode === 'sequence' && state.sequenceTrial?.jobId === finished.id) {
+            await finishAddressTrial(state.sequenceTrial, finished);
+            return;
+          }
+          if (state.lessonTrial?.jobId === finished.id) {
+            await finishLessonTrial(state.lessonTrial, finished);
+            return;
+          }
           await refresh();
           const id = state.job.new_run_ids?.[0];
           if (id) {
@@ -231,7 +238,6 @@ window.addEventListener('hashchange', () => {
   const pos = linkedPosition();
   if (!location.hash && state.config) {
     state.id = null;
-    stop();
     renderHome();
     return;
   }
@@ -271,29 +277,34 @@ function render() {
     ? (currentRun?.group === 'example' ? '内置实测回放 · ' : '实测回放 · ')
     : r.data_origin === 'synthetic' ? '模拟记录 · ' : '保存的记录 · ';
   $('#mode').textContent = `${prefix}${distro}`;
+  $('#sequence-source').textContent = $('#mode').textContent;
   $('#metadata').textContent = `内核 ${kernel} · ${friendlyTime(r.run_id)} · ${labels[r.status] || r.status}`;
   const rel = r.related_run;
   if (rel) $('#metadata').textContent += ' · ' + (envLabels[rel.environment_comparison?.status] || '早期复验');
 
+  $('#page-title').hidden = true;
+  views[state.tab]();
+  const focused = state.tab === 'sequence' || !!$('.focused-lesson');
+  integrityPanel.hidden = focused;
   if (r.integrity.status === 'verified') {
-    $('#integrity').textContent = '本轮实验采样日志与程序文件的校验指纹（SHA-256）核对一致，数据真实完整。';
+    $('#integrity').textContent = '采样文件和源码的 SHA-256 与保存时一致。';
   } else if (r.integrity.status === 'legacy_partial') {
     $('#integrity').textContent = '这是早期版本保存的记录，采样日志格式检查通过。';
   } else {
-    $('#integrity').textContent = `部分文件核对没通过（${r.integrity.errors[0] || '展开下方看明细'}），对应实验不会显示诊断结论。`;
+    $('#integrity').textContent = '本轮有文件未通过校验，具体文件和原因见下方明细。';
   }
 
-  $('#manifest').textContent = JSON.stringify({
-    source_sha256: r.sources,
-    integrity_errors: r.integrity.errors,
-    related_run: r.related_run
-  }, null, 2);
-
-  if (r.integrity.status === 'failed') {
-    error('部分原始文件核对未通过：' + r.integrity.errors[0] + '。去“原始记录”可查看各实验状态。');
+  if (!focused) {
+    $('#manifest').textContent = JSON.stringify({ source_sha256: r.sources, artifact_sha256: state.tab === 'evidence' ? r.artifacts : undefined, integrity_errors: r.integrity.errors, related_run: r.related_run }, null, 2);
   }
-  $('#page-title').hidden = true;
-  views[state.tab]();
+
+  if (!focused && r.integrity.status === 'failed') {
+    const notice = document.createElement('p');
+    notice.className = 'integrity-warning';
+    notice.setAttribute('role', 'alert');
+    notice.textContent = '部分原始文件核对未通过：' + r.integrity.errors[0] + '。去“原始记录”可查看各实验状态。';
+    $('#content').prepend(notice);
+  }
   const lab = currentLab(state.tab, r, state.selected);
   markLab(lab, state.tab);
   document.title = (lab ? '实验 ' + lab : topics[state.tab]) + ' · 重点任务可视化实验台';
@@ -309,20 +320,23 @@ function render() {
 }
 
 const runModes = {
-  'run-cow': 'cow',
   'run-layout': 'layout',
-  'run-course': 'course',
   'run-sequence': 'sequence',
   'run-group3': 'group3',
   'run-group4': 'group4',
-  'run-policy': 'policy',
-  recheck: 'recheck',
-  'policy-recheck': 'policy-recheck'
 };
 
 $('#content').addEventListener('click', e => {
   const b = e.target.closest('button');
   if (!b) return;
+  if (b.dataset.lessonRun) return runLessonTrial(b);
+  if (b.dataset.condition !== undefined) {
+    state.selected = Number(b.dataset.condition);
+    render();
+    $('[data-condition][aria-pressed="true"]')?.focus({preventScroll: true});
+    return;
+  }
+  if (b.dataset.pointer && b.closest('.sequence-tutorial')) return locateSequencePointer(b);
   if (runModes[b.id]) return run(runModes[b.id]);
   if (b.dataset.compareMerge) return compareMerge(b.dataset.compareMerge);
   if (b.dataset.raw) {
@@ -339,7 +353,6 @@ $('#content').addEventListener('click', e => {
     });
   }
   if (b.dataset.selectCase !== undefined) {
-    stop();
     state.selected = Number(b.dataset.selectCase);
     if (state.tab !== 'sequence') state.phase = 0;
     render();
@@ -351,37 +364,26 @@ $('#content').addEventListener('click', e => {
   }
   const step = b.dataset.courseStep ?? b.dataset.sequenceStep;
   if (step !== undefined) {
-    stop();
     state.phase = Number(step);
     render();
     document.querySelector('.seq-steps [aria-current="step"]')?.focus({ preventScroll: true });
     return;
   }
   if (b.id === 'view-raw') $('#raw-links').hidden = !$('#raw-links').hidden;
-  if (b.id === 'play') {
-    if (state.timer) { stop(); render(); return; }
-    state.timer = setInterval(() => {
-      const c = state.report.cases.filter(c => c.suite === 'baseline')[state.selected];
-      state.phase = (state.phase + 1) % c.data.samples.length;
-      render();
-    }, 1400);
-    render();
-  }
+
 });
 
 $('#content').addEventListener('change', ({ target: t }) => {
   if (t.id === 'group4-task') state.group4Task = t.value;
-  if (t.id === 'cow-fraction') state.cowFraction = t.value;
   if (t.id === 'case-select') {
-    stop();
     state.selected = Number(t.value);
-    if (state.tab !== 'sequence') state.phase = 0;
+    state.phase = 0;
     render();
   }
 });
 
 $('#content').addEventListener('input', ({ target: t }) => {
-  if (t.id === 'phase') { stop(); state.phase = Number(t.value); render(); }
+  if (t.id === 'phase') { state.phase = Number(t.value); render(); }
 });
 
 function dialog(title, html) {
@@ -496,7 +498,6 @@ function formatHighlightedRaw(text, kind, opts = {}) {
 }
 
 async function compareMerge(caseId) {
-  stop();
   const request = ++evidenceRequest;
   const c = state.report?.cases.find(item => item.id === caseId);
   if (!c?.data) return;
@@ -513,8 +514,10 @@ async function compareMerge(caseId) {
     const mmap3 = parseMmapCall(c.data.actions[2]);
     const sec2 = r2 ? extractSmapsSection(lines, s2.phase, r2.start) : null;
     const sec3 = r3 ? extractSmapsSection(lines, s3.phase, r3.start) : null;
+    const thirdBelow = mmap3.endHex === mmap2.startHex;
+    const boundary = thirdBelow ? mmap2.startHex : mmap3.startHex;
     const html = `
-      <div class="raw-locate-banner">第三次申请时，新的 mmap 区间终点 <code>0x${esc(mmap3?.endHex)}</code> 等于上次 mmap 的起点 <code>0x${esc(mmap2?.startHex)}</code>。右侧是申请后覆盖两个块的映射。</div>
+      <div class="raw-locate-banner">第 ${thirdBelow ? 3 : 2} 次 mmap 的终点接上第 ${thirdBelow ? 2 : 3} 次的起点 <code>0x${esc(boundary)}</code>。对照两份 smaps，看哪一侧的边界变了。</div>
       <div class="compare-grid">
         <article class="compare-col">
           <div class="compare-col-head"><span class="step-badge">第 3 步 · 申请 256 KiB 后</span><strong>虚拟 ${kib(r2?.size_kib)} · 已驻留物理内存 ${kib(r2?.rss_kib)}</strong></div>
@@ -523,7 +526,7 @@ async function compareMerge(caseId) {
         </article>
         <article class="compare-col">
           <div class="compare-col-head"><span class="step-badge">第 4 步 · 申请 1 MiB 后（合并）</span><strong>虚拟 ${kib(r3?.size_kib)} · 已驻留物理内存 ${kib(r3?.rss_kib)}</strong></div>
-          <p class="detail-copy">系统调用（L${esc(mmap3?.line)}）：<code>mmap(..., ${esc(mmap3?.bytes)}, ...) = 0x${esc(mmap3?.startHex)}</code>（终点 <code>0x${esc(mmap3?.endHex)}</code> 紧贴第二次申请对应的 mmap 起点）</p>
+          <p class="detail-copy">系统调用（L${esc(mmap3?.line)}）：<code>mmap(..., ${esc(mmap3?.bytes)}, ...) = 0x${esc(mmap3?.startHex)}</code>，区间终点 <code>0x${esc(mmap3?.endHex)}</code>。</p>
           <pre class="raw-pre raw-code-smaps">${sec3 ? sec3.text.split('\n').map(formatSmapsLine).join('\n') : '未找到对应 smaps 段落'}</pre>
         </article>
       </div>`;
@@ -534,7 +537,6 @@ async function compareMerge(caseId) {
 }
 
 async function raw(caseId, kind, opts = {}) {
-  stop();
   const request = ++evidenceRequest;
   const kindNames = { syscalls: '系统调用原文 (strace)', smaps: '原始内存映射 (smaps)', jsonl: '采样事件 (JSONL)', kernel: '内核状态记录', stderr: '程序错误输出' };
   try {
@@ -553,32 +555,112 @@ async function raw(caseId, kind, opts = {}) {
 }
 
 // 仅记录本浏览器会话主动触发或正在后台执行的任务编号，避免遗留历史任务横幅干扰回放阅读
-let activeJobId = null;
+let activeJobId = null, handledJobId = null;
+
+async function runLessonTrial(button) {
+  const lesson = button.dataset.lessonRun;
+  const trial = {from: state.id, index: state.selected, phase: state.phase, tab: state.tab, lesson, reading: state.report.data_origin === 'real_execution' ? button.dataset.reading : '', message: '正在运行…'};
+  if (lesson === 'stack') trial.limit = viewCases(state.report.cases, 'group3', c => c.suite)[state.selected].parameters.limit_kib;
+  let mode = lesson, pattern = 'sparse';
+  if (lesson === 'thp') {
+    const [kind, access] = $('#thp-recipe').value.split('-');
+    pattern = access;
+    const parent = state.report.data_origin === 'real_execution' && state.report.integrity.status === 'verified';
+    mode = kind === 'process' ? (parent ? 'policy-recheck' : 'policy') : (parent ? 'recheck' : 'lesson-thp');
+  }
+  const fraction = $('#trial-fraction');
+  state.lessonTrial = trial;
+  button.disabled = true;
+  button.parentElement.querySelector('[role=status]').textContent = trial.message;
+  try {
+    state.job = await api('/api/run', {method: 'POST', headers: {'Content-Type':'application/json','X-VMObserve-Token':state.config.token},
+      body: JSON.stringify({mode, id: trial.from, pattern, cow_fraction: fraction?.value || '1/4', mib: Number(fraction?.dataset.mib || 16)})});
+    activeJobId = trial.jobId = state.job.id;
+    jobUI();
+  } catch (e) {
+    trial.message = e.message;
+    if (state.report && state.id === trial.from && state.tab === trial.tab) render();
+  }
+}
+
+async function finishLessonTrial(trial, job) {
+  const id = job.new_run_ids?.[0];
+  await refresh();
+  const onSource = () => state.id === trial.from && state.tab === trial.tab && state.selected === trial.index && state.phase === trial.phase && !document.body.classList.contains('course-reading');
+  if (!id || !['completed','completed_with_deviations'].includes(job.status)) {
+    trial.message = id ? '这次实验没有完成，原因见原始证据。' : '没有取回新记录。请确认实验环境已启动后再试。';
+    trial.failedRun = id;
+    if (onSource()) render();
+    return;
+  }
+  trial.to = id;
+  trial.toIndex = 0;
+  if (trial.lesson === 'stack') {
+    const report = await api(url('/api/report', {id}));
+    trial.toIndex = Math.max(0, report.cases.findIndex(c => c.parameters.limit_kib === trial.limit));
+  }
+  trial.message = '';
+  if (onSource()) await select(id, false, {tab: trial.tab, selected: trial.toIndex, phase: trial.phase});
+}
+
+async function finishAddressTrial(trial, job) {
+  try {
+    await refresh();
+    const newId = job.new_run_ids?.[0];
+    if (!newId) throw new Error('没有取回新记录。请确认实验环境已启动，再试一次。');
+    trial.newId = newId;
+    if (job.status !== 'completed') throw new Error('这次运行未完成。');
+    const report = await api(url('/api/report', { id: newId }));
+    const sample = report.cases.find(c => c.suite === 'sequence');
+    if (report.data_origin !== 'real_execution' || sample?.integrity !== 'verified' || !sample.data?.allocations?.length)
+      throw new Error('这次采集缺少可核对的指针地址。');
+    trial.addresses = sample.data.allocations;
+  } catch (e) {
+    trial.error = e.message;
+  }
+  trial.running = false;
+  if (state.tab === 'sequence' && state.id === trial.run && state.phase === 5 && state.report) render();
+}
 
 async function run(mode) {
-  stop();
   error('');
+  const trial = mode === 'sequence' && $('#run-sequence')
+    ? { run: state.id, caseId: state.report.cases.filter(c => c.suite === 'sequence')[state.selected]?.id, running: true } : null;
+  if (trial) {
+    state.sequenceTrial = trial;
+    $('#run-sequence').disabled = true;
+  }
   try {
-    const pattern = state.tab === 'thp' ? ($('#case-select option:checked')?.dataset.pattern || 'sparse') : 'sparse';
     state.job = await api('/api/run', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-VMObserve-Token': state.config.token },
-      body: JSON.stringify({ mode, id: state.id, group4_task: state.group4Task, cow_fraction: state.cowFraction, pattern })
+      body: JSON.stringify({ mode, id: state.id, group4_task: state.group4Task })
     });
     activeJobId = state.job?.id || null;
+    if (trial) trial.jobId = activeJobId;
     jobUI();
   } catch (e) {
-    error(e.message);
+    if (trial) {
+      trial.running = false;
+      trial.error = e.message;
+      if (state.id === trial.run && state.tab === 'sequence' && state.report) render();
+    } else error(e.message);
   }
 }
 
 function jobUI() {
   const job = state.job;
+  if ($('[data-lesson-run]')) $('[data-lesson-run]').disabled = job?.status === 'running';
   $('#run').disabled = job?.status === 'running';
-  for (const id of [...Object.keys(runModes), 'cow-fraction', 'group4-task']) {
+  for (const id of [...Object.keys(runModes), 'group4-task']) {
     if ($('#' + id)) $('#' + id).disabled = job?.status === 'running';
   }
-  const showBanner = job && job.id === activeJobId;
+  const button = $('#run-sequence');
+  if (button && state.sequenceTrial?.running) {
+    button.disabled = true;
+    button.textContent = '正在运行…';
+  }
+  const showBanner = job && job.id === activeJobId && state.lessonTrial?.jobId !== job.id && !(state.tab === 'sequence' && job.mode === 'sequence');
   $('#job').hidden = !showBanner;
   if (!showBanner) return;
   $('#job').innerHTML = job.status === 'running'
@@ -618,13 +700,18 @@ try {
     document.body.classList.add('course-reading');
     $('#content').textContent = '正在读取实验记录…';
     [state.config, state.runs] = await Promise.all([api('/api/config'), api('/api/runs')]);
-    const suite = new URLSearchParams(location.search).get('replay');
+    const originalPs = lab === '3.3' && location.hash === '#original-demand';
+    const suite = new URLSearchParams(location.search).get('replay') ?? (lab === '3.2' ? 'sequence' : lab === '3.3' ? (location.hash === '#stack' ? 'stack' : 'demand512') : null);
     const topic = ({ sequence: 'sequence', demand512: 'group3', stack: 'group3' })[suite];
     const entry = topic && newestReplay(lab, topic, suite);
     if (entry) {
       window.history.replaceState(null, '', entry.href);
       ensureReplayChrome();
-      await select(entry.run.id, true, linkedPosition());
+      await select(entry.run.id, true, {...linkedPosition(), ...(originalPs ? {phase: 5} : {})});
+      if (originalPs && $('#original-demand')) {
+        $('#original-demand').open = true;
+        $('#original-demand').scrollIntoView({block: 'center'});
+      }
     } else await showLab(lab);
   }
 } catch (e) {

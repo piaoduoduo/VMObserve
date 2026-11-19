@@ -16,8 +16,7 @@
   <div class="lesson-hero">
     <small class="question-kicker">实验 3.3 思考与笔记 · 按需调页</small>
     <h1>按需调页实验记录与小结</h1>
-    <p>课内原版 512 MiB 示例用 <code>ps</code> 看整进程；本页默认选 <code>16 MiB</code> 记录，用 <code>smaps</code> 精准看目标映射。先猜变化，再挑两行数据对照验证。</p>
-    <p class="notice">记录顺序：先写下预测，对照下表六步数据，再写下自己的尝试与小结。</p>
+    <p>用刚看过的实测写小结。先猜申请和写入时 RSS 会怎样变，再挑两个阶段，用真正读到的数值解释。</p>
   </div>
   <details class="secondary-fold" id="original-demand">
     <summary>对照指导书 3.3：原版 512 MiB 程序在另一终端看到什么？</summary>
@@ -34,17 +33,10 @@
 
   <section class="course-intro">
     <h2>2. 查看真实采样数据，验证预测</h2>
-    <div class="sequence-controls">
-      <label for="lesson-run">选择一次运行记录</label>
-      <select id="lesson-run"></select>
-      <button id="refresh">刷新列表</button>
-    </div>
     <p id="provenance" class="muted"></p>
     <p id="error" role="alert"></p>
-    <div id="observations"></div>
-    <div id="checks"></div>
-
-    <a id="report-download" hidden>下载本轮完整原始数据（JSON 留档）</a>
+    <div id="case-observation"></div>
+    <a id="worksheet-evidence" href="/#topic=evidence">查看原始证据</a>
   </section>
 
   <section class="course-intro">

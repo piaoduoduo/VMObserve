@@ -73,6 +73,13 @@ class ControlsTests(unittest.TestCase):
             parse_allocator(records, raw, {"requested_kib": 1, "course_code": "reference"})
 
     def test_public_plans_and_commands(self):
+        for mode, count in (("demand512", 1), ("stack", 3), ("lesson-cow", 1), ("lesson-thp", 2), ("policy", 2)):
+            with self.subTest(lesson=mode):
+                lesson = plan_cases(parser().parse_args(experiment_args(mode, cow_fraction="1/2", mib=64)))
+                self.assertEqual(len(lesson), count)
+                self.assertTrue(all(c["parameters"]["repeat"] == 1 for c in lesson))
+                if mode == "lesson-cow":
+                    self.assertEqual(lesson[0]["arguments"], ["64", "1/2"])
         plan = plan_cases(parser().parse_args(["--suite", "thp", "--thp", "on", "--thp-process", "pair"]))
         self.assertEqual(len(plan), 12)
         self.assertEqual(len({c["id"] for c in plan}), 12)

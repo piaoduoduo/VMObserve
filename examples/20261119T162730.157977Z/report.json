@@ -1,0 +1,698 @@
+{
+  "schema_version": "vmobserve.run/v1",
+  "tool_version": "0.8.2",
+  "run_id": "20261119T162730.157977Z",
+  "data_origin": "real_execution",
+  "view_mode": "execution_record",
+  "status": "completed",
+  "started_at": "2026-11-19T16:27:30.168078+00:00",
+  "environment": {
+    "system": "Linux",
+    "kernel": "6.6.0-28.0.0.34.oe2403.x86_64",
+    "machine": "x86_64",
+    "os_release": "NAME=\"openEuler\"\nVERSION=\"24.03 (LTS)\"\nID=\"openEuler\"\nVERSION_ID=\"24.03\"\nPRETTY_NAME=\"openEuler 24.03 (LTS)\"\nANSI_COLOR=\"0;31\"",
+    "distribution": {
+      "NAME": "openEuler",
+      "VERSION": "24.03 (LTS)",
+      "ID": "openEuler",
+      "VERSION_ID": "24.03",
+      "PRETTY_NAME": "openEuler 24.03 (LTS)",
+      "ANSI_COLOR": "0;31"
+    },
+    "python": "3.11.6",
+    "libc": [
+      "glibc",
+      "2.38"
+    ],
+    "allocator_environment": {
+      "GLIBC_TUNABLES": null,
+      "MALLOC_MMAP_THRESHOLD_": null,
+      "MALLOC_TRIM_THRESHOLD_": null,
+      "MALLOC_PERTURB_": null,
+      "LD_PRELOAD": null
+    },
+    "page_bytes": 4096,
+    "thp_enabled": "[always] madvise never",
+    "thp_defrag": "always defer defer+madvise [madvise] never",
+    "pmd_size": "2097152",
+    "thp_sizes": {
+      "hugepages-32kB": "always inherit madvise [never]",
+      "hugepages-512kB": "always inherit madvise [never]",
+      "hugepages-2048kB": "always [inherit] madvise never",
+      "hugepages-1024kB": "always inherit madvise [never]",
+      "hugepages-64kB": "always inherit madvise [never]",
+      "hugepages-16kB": "always inherit madvise [never]",
+      "hugepages-256kB": "always inherit madvise [never]",
+      "hugepages-128kB": "always inherit madvise [never]"
+    },
+    "meminfo": "MemTotal:        1753684 kB\nMemFree:         1399976 kB\nMemAvailable:    1513316 kB\nBuffers:           15840 kB\nCached:           230164 kB\nSwapCached:            0 kB\nActive:           131540 kB\nInactive:         155560 kB\nActive(anon):        648 kB\nInactive(anon):    49688 kB\nActive(file):     130892 kB\nInactive(file):   105872 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:              1116 kB\nWriteback:             0 kB\nAnonPages:         41104 kB\nMapped:            71860 kB\nShmem:              9232 kB\nKReclaimable:      14436 kB\nSlab:              34608 kB\nSReclaimable:      14436 kB\nSUnreclaim:        20172 kB\nKernelStack:        1872 kB\nPageTables:         1520 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:      876840 kB\nCommitted_AS:     364744 kB\nVmallocTotal:   13743895347199 kB\nVmallocUsed:       14800 kB\nVmallocChunk:          0 kB\nPercpu:              904 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:      8192 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       98152 kB\nDirectMap2M:     1998848 kB\nDirectMap1G:           0 kB",
+    "captured_at": "2026-11-19T16:27:30.215463+00:00",
+    "execution_context": "qemu-tcg"
+  },
+  "sources": {
+    "run_all.py": "f94b36c625afdd3fe8fa1828cee3bc05840c82be0f3fb947a1993d77d602d473",
+    "launch.py": "ffc137660f6edb4d5786b44a247f3a71b43362fa8c88aa8e6a71b6621e4f3657",
+    "proj5-memory-pilot/memory_probe.c": "a518fd2b5265189230bc68dee42103e4c274af6644174d5737b67f734a3eed20",
+    "proj5-round2/thp_probe.c": "7a95878ef66c01114ae00f4550844c51b9c1c1958245f2b14ca06f450a849e1b",
+    "proj5-course/allocator_probe.c": "c3f4612c8cb68a7d1faafb5a0f52096182cde30e673daf5114c738c7f74703b6",
+    "proj5-course/layout_probe.c": "60795ef2090bed0e6531be424bc2e3ee09e46bfd298ac609db70a6da779c3b1a",
+    "proj5-course/group3_link.c": "459db3c54c0fa09368bbb187899955f3d3886099ef08a600bc8c9fd191351f35",
+    "proj5-course/group3_sequence.c": "14c31a0ba276cf5ed45bfe942b0ea31523f2f96c12c446fc4f5009ebd45e09c3",
+    "proj5-course/group3_demand.c": "c72e9e61279c515aa8c5614f5e5eecb416772ced94d39cc0ecc456d786832223",
+    "proj5-course/group3_stack.c": "125197bc6a6aae8ab0d69eb2c7ae66ed69acc8faf6f710f4c3230fc822a86bd4",
+    "course-labs/group4/lab4_1/fork_exec_wait.c": "363e8a1309fc3dda566de47a5610cb90620341695042f308d4bf9d22dcdf2d29",
+    "course-labs/group4/lab4_2/pthread_test.c": "575e85f16ffc4e4920c96d9687b52d66de9cba29b476a2f5637351e9eeb56073",
+    "course-labs/group4/lab4_3/user_thread_test.c": "1249083bfc46c799f83ad62a83b4ab97454abea650258088bf8b7c696187904e",
+    "course-labs/group4/lab4_4/pipe_communication.c": "77d8b3a1a1b4869ff9b28e2a6105e7844dda667250bf7e56deef616ad76c5e1c",
+    "course-labs/group4/lab4_4/thread_communication.c": "4dcfb86e4649cb503c6168d493e2eab0a182bc74adbf3069499817592b30bad8",
+    "course-labs/systems/sync.c": "425e714e8903db75ebf9232bc171c7c9ad9709a2447126da84e69fa032942a02",
+    "course-labs/systems/io_observe.py": "b000e00bbdf79d125aa7d016d0c6cf928426ce3de20b1eef978b101b7a0b5584",
+    "common/probe.h": "5508d4521f4a530882a8e1f36ceb5e65cab91ece03026f54572116b0cc745a6c",
+    "proj5-course/access_pattern.h": "191b2771546e8365a8ede1f85db5373de3b91b291fecace74a865e3759031c45",
+    "proj5-course/group3_snapshot.h": "d18ba0edf15c13b9184161dc6a39ca1b87233c18b649539cd0494231df01c3c9",
+    "lessons/catalog/basics.json": "3097b854fb58322b3e5d944def2afab88daa03999c9633e1b5797b1bbdf82d12",
+    "lessons/demand/WORKSHEET.md": "c6b36ce44b23127d0996be9e62b4f4b0deb135c5259796dd1913e1f5be0d81e9",
+    "lessons/demand/original-ps.json": "bf5e9f9a32b816ea6246291a0593f7cc1b3755897d3f7f7bd415c2854f99e2e9",
+    "lessons/demand/student.h": "a4e4ca53cfb082999f08285b4ba24e1e38c98903ee25b2f311c16afbb4c1f10d",
+    "lessons/layout/WORKSHEET.md": "9db686a910cbb33c5b7495b2516176fde802a663587e0fc8bd9c7350d3ffe317",
+    "lessons/sequence/WORKSHEET.md": "00257712cb0e82b41305668f8a5a417ad41689f50a994a38e356ed86bd49fca6",
+    "vmobserve/__init__.py": "45e8fafae1cc23d5bbe083d85fdf541a7e3f4c93192fc8c60c875e88f5ed8970",
+    "vmobserve/__main__.py": "3b93eb45fdc020f830329ad25e605b9f50db2c27c918a0b14e71a7c212fe71df",
+    "vmobserve/allocator.py": "308dbe04ba2c6886822ed0e671a8603cd1a67a34044946f97819e5780d0cceae",
+    "vmobserve/common.py": "eb07f230fbf3c8a0b94fe761d88c0177baba7c9dfb72348e4fdf7062cf7c1ee3",
+    "vmobserve/cow.py": "12f369f252a12c3bb31f8e22844885dd57a624b75ccf93227caafac79dbf08ca",
+    "vmobserve/diagnosis.py": "6f709a0cb237a8bf1f6639d7b0983d8e7786ca835c5df2defdb5db2c33e1f4a8",
+    "vmobserve/evidence.py": "48eb3ae39ad9ef392ec9573a4c0197cbaeb2be47aad3e52d532cb93658338f69",
+    "vmobserve/export.py": "a704e889ecbd4a99ce7eb4c21004207ecfe595e2c3578e9948acf8972cf56cda",
+    "vmobserve/group3.py": "bde1b5780d0b2baa72f3e786f5a852801819e4174c11cf248a54225b03cf5f6e",
+    "vmobserve/group4.py": "9bb0759ecb522711f087d91ce9fcdf066ca9034fae9061521f6dd912a0974acf",
+    "vmobserve/layout.py": "9b50d90f32e72deee742c1fbfbe5a096d6e7e07845f3baa3c6325a080021497a",
+    "vmobserve/replay.py": "c805f8c56499f3cb4f68a66c6525b228209517cca6498b15195ef3510f9d7b15",
+    "vmobserve/runner.py": "3248a2fe3dd819b430b34d610543124d05ed13ee082d050487e846654a11c95a",
+    "vmobserve/sequence.py": "c50b831b0ddfa09387c84428586cfd233d57d61d7ff8a953a7e2048d16a7add7",
+    "vmobserve/server.py": "2f69ec9e767dffd8796e781e90f1f040de7418f5a902f3c5044b61b6579a817b",
+    "vmobserve/smaps.py": "1be9e84650a63cb4acc57296ffd92a2fa158aaa422d1064d02604a2c5a54f0ad",
+    "vmobserve/systems.py": "98a651a8b1a444a17838ea211c92c08565520f7bdbf255722446043e1880c1f9",
+    "vmobserve/thp_policy.py": "1d599914b89a2a532f1e53fdc382256933eec1d1149799d70ec2e34d90a1d2f6",
+    "vmobserve/web/app.js": "e9545b6edab7982af738f838d8ffe77b5a398cc62772ac55768714520720a33a",
+    "vmobserve/web/course-views.js": "371185c13cc2ee9b895d003f4ceab567cdfd8078373c56f2fecbc1479713f5a6",
+    "vmobserve/web/curriculum.js": "9c78cea2267a25d3caf2dc632cf4c43d8e9448f404d883175e15116cbeebdbed",
+    "vmobserve/web/evidence-view.js": "5f4ea54dac6e5ab61faba3ed2ee82be1d70254c7adb11979cb16021e5b1b27aa",
+    "vmobserve/web/favicon.svg": "5169559ecc1840b0d537e0433255dea6d375f6da42bb451864687b7a29a3ff24",
+    "vmobserve/web/index.html": "807275f59f39abeb303bf9674ebdd9c83daed0562b5549fc854d68ea464ec300",
+    "vmobserve/web/lesson.html": "33eb1d00a49b924eb6f16b2ca53c66d1157671d95507b98a4d0df7224fc33938",
+    "vmobserve/web/lesson.js": "c1cff5c370c1ebf1f1165a5a94bfaacd8c9c1661a0496ef52d9cbbc87b5253e5",
+    "vmobserve/web/memory-views.js": "cc217b48f051b041679749a98b33449e713b87975c2e9a8091f03b62d623a6d9",
+    "vmobserve/web/sequence-view.js": "7a0220e4c2e949d1eed92938eb9f0728dbbd7c97682cf7fc3e958efae5938d2e",
+    "vmobserve/web/style.css": "3f748b49b1c821dc8f46ceb30a66d4bccb6e27528e08ad2dafae38648f68cef9",
+    "vmobserve/web/ui.js": "63cdf63a70085dba97bb90099a2019f062b02e3beeac7812f7b980435430de2f",
+    "package_sources.py": "4d3091fac8b344bef656810645805d3bae1cec53eccdb50d8fcc119abebbfba6",
+    "vm.ps1": "d3bc9cf58783f808b72e9953703a8a3a4af409a31e8fa7acaa4c8dd2594f961e",
+    "openeuler-vm/config.sh": "9824af1e0910a8857dc78a69284b3f791b5176357c8dce0b288c82072148b7ac",
+    "openeuler-vm/retest.sh": "2c9bbfde9a81e37eeda22143c0cd5985c573deece64b9ff3c652f01e31077fd6",
+    "openeuler-vm/start.sh": "d9381156afce699ff92a930e34ac0e2e1e9ff3f62e64d4e84894fd99b8d09cc5",
+    "openeuler-vm/status.sh": "048b5f63b9e0fc16e073bf8fa1b19745a4bb3158098f8a6ffbaebc621a2d2841",
+    "openeuler-vm/wait.sh": "4cef1b3e8d43528c48e0da80929530038f9220294e662ac5fb55bae408de5a71",
+    "course-labs/group4/build.sh": "dc7cc5aa2b8bd57d28db328dbc91c57e616eb07d03805030c7dc79b76c0feadf",
+    "course-labs/group4/view_events.py": "15c82a3e982bbc9e41c921e1b63068396d9aff62f690421405e1227fff93214a",
+    "course-labs/group4/demo.sh": "d964458d5b31be075bd22c38502cd72ec52334bd6dc4d50207b63883f4afd5c2",
+    "course-labs/group4/README.md": "1ce6518b154239ad7b2676e763ed6c229f3e704060014c96647cc2af5e3dbc35",
+    "course-labs/group4/lab_common.h": "2522147bccdff0e5bb5dea54763e3c01b854c63b148b9140514740cf30564598",
+    "course-labs/group4/lab4_1/child_prog.c": "0f59e7dd417df641d09663516b6d7c22dbb92f5e069207f66378a68dac6dc0ed"
+  },
+  "artifacts": {
+    "cases/baseline-16MiB-1/stdout.jsonl": "2f43d462784946cf6b5ebd866b1b570b7d6767ecddc632e5e36ec1b9322e173e",
+    "cases/baseline-16MiB-1/smaps.stderr.txt": "2139e918505d66d75d7d530b173459715ac12e2f9f72915346eae63f5e854352",
+    "environment.json": "a2e79992fa9635401c7e1c72791327443698296bc2490bf08aee67ec51cb5912",
+    "build/baseline.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stdout.log": "47214cb7a32d8be03220eb0f5ef9186fbd03556cf0fd580e1553d863d131d8dc",
+    "build/baseline.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "builds": {
+    "baseline": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261119T162713-313/runs/20261119T162730.157977Z/source/proj5-memory-pilot/memory_probe.c",
+        "-o",
+        "/root/proj5-transfers/20261119T162713-313/runs/20261119T162730.157977Z/build/baseline"
+      ],
+      "started_at": "2026-11-19T16:27:31.318144+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-19T16:27:37.586283+00:00",
+      "duration_seconds": 6.269
+    }
+  },
+  "cases": [
+    {
+      "id": "baseline-16MiB-1",
+      "suite": "baseline",
+      "parameters": {
+        "mib": 16,
+        "repeat": 1,
+        "cow_fraction": "1/4"
+      },
+      "arguments": [
+        "16",
+        "1/4"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "values_isolated",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "correctness"
+          },
+          {
+            "id": "no_observed_swap",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "no_major_faults",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "untouched_rss",
+            "status": "passed",
+            "observed": 0,
+            "expected": 0,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "parent_checksum",
+            "status": "passed",
+            "observed": 4096,
+            "expected": 4096,
+            "tolerance": 0,
+            "category": "correctness"
+          },
+          {
+            "id": "child_checksum",
+            "status": "passed",
+            "observed": 5120,
+            "expected": 5120,
+            "tolerance": 0,
+            "category": "correctness"
+          },
+          {
+            "id": "parent_page_values",
+            "status": "passed",
+            "observed": 0,
+            "expected": 0,
+            "tolerance": 0,
+            "category": "correctness"
+          },
+          {
+            "id": "child_page_values",
+            "status": "passed",
+            "observed": 0,
+            "expected": 0,
+            "tolerance": 0,
+            "category": "correctness"
+          },
+          {
+            "id": "no_hugepages",
+            "status": "passed",
+            "observed": true,
+            "expected": true,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "read_zero_rss",
+            "status": "passed",
+            "observed": 0,
+            "expected": 0,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "quarter_write_rss",
+            "status": "passed",
+            "observed": 4096,
+            "expected": 4096,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "full_write_rss",
+            "status": "passed",
+            "observed": 16384,
+            "expected": 16384,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "fork_rss_sum",
+            "status": "passed",
+            "observed": 32768,
+            "expected": 32768,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "fork_pss_sum",
+            "status": "passed",
+            "observed": 16384,
+            "expected": 16384,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "cow_pss_sum",
+            "status": "passed",
+            "observed": 20480,
+            "expected": 20480,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "cow_private_dirty_parent",
+            "status": "passed",
+            "observed": 4096,
+            "expected": 4096,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "cow_shared_dirty_parent",
+            "status": "passed",
+            "observed": 12288,
+            "expected": 12288,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "cow_private_dirty_child",
+            "status": "passed",
+            "observed": 4096,
+            "expected": 4096,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "cow_shared_dirty_child",
+            "status": "passed",
+            "observed": 12288,
+            "expected": 12288,
+            "tolerance": 0,
+            "category": "expectation"
+          },
+          {
+            "id": "faults_read_all",
+            "status": "passed",
+            "observed": 4096,
+            "expected": 4096,
+            "tolerance": 8,
+            "category": "expectation"
+          },
+          {
+            "id": "faults_write_quarter",
+            "status": "passed",
+            "observed": 1024,
+            "expected": 1024,
+            "tolerance": 8,
+            "category": "expectation"
+          },
+          {
+            "id": "faults_write_all",
+            "status": "passed",
+            "observed": 3072,
+            "expected": 3072,
+            "tolerance": 8,
+            "category": "expectation"
+          },
+          {
+            "id": "faults_child_write",
+            "status": "passed",
+            "observed": 1024,
+            "expected": 1024,
+            "tolerance": 8,
+            "category": "expectation"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "environment",
+          "kernel": "6.6.0-28.0.0.34.oe2403.x86_64",
+          "arch": "x86_64",
+          "page_bytes": 4096,
+          "mib": 16,
+          "thp_policy": "MADV_NOHUGEPAGE",
+          "probe_version": 2,
+          "cow_fraction": "1/4",
+          "cow_stride_pages": 4,
+          "total_pages": 4096,
+          "cow_pages": 1024
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "untouched",
+            "role": "parent",
+            "pid": 2269,
+            "size_kib": 16384,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 0,
+            "action_major": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "read_all",
+            "role": "parent",
+            "pid": 2269,
+            "size_kib": 16384,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 4096,
+            "action_major": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "write_quarter",
+            "role": "parent",
+            "pid": 2269,
+            "size_kib": 16384,
+            "rss_kib": 4096,
+            "pss_kib": 4096,
+            "private_dirty_kib": 4096,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 1024,
+            "action_major": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "write_all",
+            "role": "parent",
+            "pid": 2269,
+            "size_kib": 16384,
+            "rss_kib": 16384,
+            "pss_kib": 16384,
+            "private_dirty_kib": 16384,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 3072,
+            "action_major": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "fork_shared",
+            "role": "parent",
+            "pid": 2269,
+            "size_kib": 16384,
+            "rss_kib": 16384,
+            "pss_kib": 8192,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 16384,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 0,
+            "action_major": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "fork_shared",
+            "role": "child",
+            "pid": 2270,
+            "size_kib": 16384,
+            "rss_kib": 16384,
+            "pss_kib": 8192,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 16384,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 0,
+            "action_major": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "child_write",
+            "role": "parent",
+            "pid": 2269,
+            "size_kib": 16384,
+            "rss_kib": 16384,
+            "pss_kib": 10240,
+            "private_dirty_kib": 4096,
+            "shared_dirty_kib": 12288,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 0,
+            "action_major": 0
+          },
+          {
+            "kind": "sample",
+            "phase": "child_write",
+            "role": "child",
+            "pid": 2270,
+            "size_kib": 16384,
+            "rss_kib": 16384,
+            "pss_kib": 10240,
+            "private_dirty_kib": 4096,
+            "shared_dirty_kib": 12288,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "kernel_page_kib": 4,
+            "action_minor": 1024,
+            "action_major": 0
+          }
+        ],
+        "value_check": {
+          "kind": "isolation",
+          "parent_sum": 4096,
+          "child_sum": 5120,
+          "cow_written_pages": 1024,
+          "parent_mismatches": 0,
+          "child_mismatches": 0,
+          "ok": true
+        },
+        "cow": {
+          "fraction": "1/4",
+          "written_pages": 1024,
+          "total_pages": 4096,
+          "written_kib": 4096,
+          "phase": "child_write",
+          "condition_origin": "recorded"
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/baseline-16MiB-1/stdout.jsonl",
+        "smaps": "cases/baseline-16MiB-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261119T162713-313/runs/20261119T162730.157977Z/build/baseline",
+          "16",
+          "1/4"
+        ],
+        "started_at": "2026-11-19T16:27:37.617620+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-19T16:27:37.957613+00:00",
+        "duration_seconds": 0.34
+      },
+      "error": null,
+      "integrity": "verified"
+    }
+  ],
+  "error": null,
+  "related_run": null,
+  "scope": "Mechanism/function verification; no hardware performance inference, especially under QEMU TCG.",
+  "plan": [
+    {
+      "id": "baseline-16MiB-1",
+      "suite": "baseline",
+      "parameters": {
+        "mib": 16,
+        "repeat": 1,
+        "cow_fraction": "1/4"
+      },
+      "arguments": [
+        "16",
+        "1/4"
+      ]
+    }
+  ],
+  "compiler_check": {
+    "command": [
+      "gcc",
+      "--version"
+    ],
+    "started_at": "2026-11-19T16:27:31.158165+00:00",
+    "status": "completed",
+    "exit_code": 0,
+    "error": null,
+    "finished_at": "2026-11-19T16:27:31.311326+00:00",
+    "duration_seconds": 0.153
+  },
+  "finished_at": "2026-11-19T16:27:38.051376+00:00",
+  "completed": true,
+  "diagnosis": {
+    "rule_version": "2026-11-13.1",
+    "findings": [
+      {
+        "rule": "anonymous_zero_page",
+        "confidence": "probable",
+        "title": "只读缺页与共享零页机制相符",
+        "explanation": "只读阶段发生次缺页，目标区域 RSS 和私有脏页仍为 0；这支持匿名内存使用共享零页的解释。",
+        "evidence": [
+          {
+            "case_id": "baseline-16MiB-1",
+            "phase": "untouched",
+            "role": "parent",
+            "jsonl": "cases/baseline-16MiB-1/stdout.jsonl",
+            "smaps": "cases/baseline-16MiB-1/smaps.stderr.txt",
+            "metrics": {
+              "rss_kib": 0,
+              "pss_kib": 0,
+              "huge_kib": 0,
+              "action_minor": 0
+            }
+          },
+          {
+            "case_id": "baseline-16MiB-1",
+            "phase": "read_all",
+            "role": "parent",
+            "jsonl": "cases/baseline-16MiB-1/stdout.jsonl",
+            "smaps": "cases/baseline-16MiB-1/smaps.stderr.txt",
+            "metrics": {
+              "rss_kib": 0,
+              "pss_kib": 0,
+              "huge_kib": 0,
+              "action_minor": 4096
+            }
+          }
+        ],
+        "limitations": "没有采集物理页帧号或页错误路径；不能宣称直接观测了零页共享。RSS 不包括页表开销。"
+      },
+      {
+        "rule": "cow_accounting",
+        "confidence": "confirmed",
+        "title": "已确认共享计账与改写后的隔离",
+        "explanation": "fork 后 RSS 合计 32768 KiB，但 PSS 合计 16384 KiB；子进程改写 1024/4096 个基础页（比例 1/4）后，PSS 合计为 20480 KiB，预期为 20480 KiB，父子值校验通过。受控现象符合写时复制。",
+        "evidence": [
+          {
+            "case_id": "baseline-16MiB-1",
+            "phase": "fork_shared",
+            "role": "parent",
+            "jsonl": "cases/baseline-16MiB-1/stdout.jsonl",
+            "smaps": "cases/baseline-16MiB-1/smaps.stderr.txt",
+            "metrics": {
+              "rss_kib": 16384,
+              "pss_kib": 8192,
+              "huge_kib": 0,
+              "action_minor": 0
+            }
+          },
+          {
+            "case_id": "baseline-16MiB-1",
+            "phase": "fork_shared",
+            "role": "child",
+            "jsonl": "cases/baseline-16MiB-1/stdout.jsonl",
+            "smaps": "cases/baseline-16MiB-1/smaps.stderr.txt",
+            "metrics": {
+              "rss_kib": 16384,
+              "pss_kib": 8192,
+              "huge_kib": 0,
+              "action_minor": 0
+            }
+          },
+          {
+            "case_id": "baseline-16MiB-1",
+            "phase": "child_write",
+            "role": "parent",
+            "jsonl": "cases/baseline-16MiB-1/stdout.jsonl",
+            "smaps": "cases/baseline-16MiB-1/smaps.stderr.txt",
+            "metrics": {
+              "rss_kib": 16384,
+              "pss_kib": 10240,
+              "huge_kib": 0,
+              "action_minor": 0
+            }
+          },
+          {
+            "case_id": "baseline-16MiB-1",
+            "phase": "child_write",
+            "role": "child",
+            "jsonl": "cases/baseline-16MiB-1/stdout.jsonl",
+            "smaps": "cases/baseline-16MiB-1/smaps.stderr.txt",
+            "metrics": {
+              "rss_kib": 16384,
+              "pss_kib": 10240,
+              "huge_kib": 0,
+              "action_minor": 1024
+            }
+          }
+        ],
+        "limitations": "确认的是区域计账和程序值隔离，不是逐物理页的复制事件。父进程 Private_Dirty 增长也可来自共享页变为独占计账。"
+      }
+    ],
+    "comparisons": [],
+    "cow_observations": [
+      {
+        "case_id": "baseline-16MiB-1",
+        "mib": 16,
+        "repeat": 1,
+        "fraction": "1/4",
+        "written_pages": 1024,
+        "total_pages": 4096,
+        "expected_pss_kib": 20480,
+        "observed_pss_kib": 20480,
+        "confirmed": true
+      }
+    ],
+    "policy_comparisons": [],
+    "references": [
+      "https://docs.kernel.org/filesystems/proc.html",
+      "https://docs.kernel.org/admin-guide/mm/transhuge.html",
+      "https://man7.org/linux/man-pages/man2/getrusage.2.html",
+      "https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html"
+    ],
+    "confidence_labels": {
+      "confirmed": "已确认（限列出的观测与对照）",
+      "probable": "可能原因",
+      "insufficient_evidence": "证据不足"
+    }
+  }
+}
