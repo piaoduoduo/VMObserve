@@ -51,6 +51,13 @@ async function api(route, options) {
   return value;
 }
 
+export function stepActions(selected, length, attr = 'data-course-step') {
+  return `<div class="seq-step-actions">
+    <button ${attr}="${selected - 1}" ${selected === 0 ? 'disabled' : ''}>← 上一步</button>
+    <button class="primary" ${attr}="${selected + 1}" ${selected >= length - 1 ? 'disabled' : ''}>下一步 →</button>
+  </div>`;
+}
+
 export function stepNavigation(titles, selected, attr = 'data-sequence-step') {
   return `<nav class="seq-steps" aria-label="实验步骤"><ol>${titles.map((title, i) =>
     `<li><button type="button" ${attr}="${i}" aria-controls="sequence-result" ${i === selected ? 'aria-current="step"' : ''}>
@@ -132,11 +139,11 @@ function humanizeFinding(f) {
     case 'thp_not_observed':
       title = '想要大页，但 AnonHugePages 还是 0';
       explanation = '缺一组成功分到大页的正例对照，也没看到进程开关日志，所以眼下分不清是被策略挡了还是内核没来得及合并。';
-      limitations = '缺正例对照或进程开关记录；跑一次下面的“允许/禁止开关对照”就能分清。';
+      limitations = '缺正例对照或进程开关记录；可先用“允许/禁止开关对照”补充证据。';
       nextSteps = [
         '先去“原始记录”看一眼当前系统的全局 THP 设置。',
         '跑一下“进程开关对照”，保持写法不变，只切换允许/禁止大页开关。',
-        '如果允许组依然是 0，说明当时内存条件或采样时机没触发大页合并。'
+        '如果允许组依然是 0，继续核对实际策略、内核配置与采样时机，并保留原因尚未确认的结论。'
       ];
       break;
     case 'expectation_deviation':

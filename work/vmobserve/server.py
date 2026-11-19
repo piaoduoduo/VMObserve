@@ -22,7 +22,7 @@ WEB = Path(__file__).parent / "web"
 
 WEB_PAGES = {"/": "index.html", "/lesson": "lesson.html",
              **{"/" + name: name for name in ("app.js", "ui.js", "course-views.js", "memory-views.js",
-                                                 "sequence-view.js", "evidence-view.js", "curriculum.js", "lesson.js", "style.css")}}
+                                                 "sequence-view.js", "evidence-view.js", "curriculum.js", "experiment-flow.js", "lesson.js", "style.css")}}
 
 
 def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all"):

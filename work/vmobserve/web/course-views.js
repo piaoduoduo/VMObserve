@@ -109,7 +109,8 @@ function renderCourse() {
   const selector = `<label class="selector"><span>选择内存大小与实验轮次：</span><select id="case-select">${cases.map((item, index) => `<option value="${index}" ${index === state.selected ? 'selected' : ''}>${kib(item.parameters.requested_kib)} · 第 ${item.parameters.repeat} 次实验</option>`).join('')}</select></label>`;
 
   const reqKib = c.parameters.requested_kib;
-  const fillPct = sample ? Math.min(100, Math.round((sample.rss_kib / Math.max(1, reqKib)) * 100)) : 0;
+  const rssRatio = sample ? Math.round((sample.rss_kib / Math.max(1, reqKib)) * 100) : 0;
+  const fillPct = Math.min(100, rssRatio);
   const stepTabs = courseSteps.map((st, i) => `<button data-course-step="${i}" ${i === state.phase ? 'aria-current="step"' : ''}><span>${i + 1}</span>${esc(st.title)}</button>`).join('');
 
   const metrics = sample ? `<div class="step-metrics-grid">
@@ -117,12 +118,13 @@ function renderCourse() {
     <div><small>已写位置 / 总位置</small><strong>${sample.written_positions} / ${c.data.condition.positions}</strong></div>
     <div><small>物理驻留 RSS</small><strong class="kpi-accent">${kib(sample.rss_kib)}</strong></div>
     <div><small>本步次缺页</small><strong>${sample.action_minor} 次</strong></div>
-    <div><small>原地址映射</small><strong>${sample.mapping_present ? '存在' : '已消失'}</strong></div>
+    <div><small>原地址映射</small><strong>${sample.address === '0' ? '尚未取得地址' : sample.mapping_present ? '存在' : '未发现'}</strong></div>
     <div><small>返回地址</small><strong><code>${sample.address === '0' ? '尚未申请' : `0x${esc(sample.address)}`}</code></strong></div>
   </div>
   <div class="residency-meter">
-    <div class="residency-head"><span>当前物理页驻留比例（相对申请大小）</span><strong>${kib(sample.rss_kib)} / ${kib(reqKib)}（${fillPct}%）</strong></div>
+    <div class="residency-head"><span>相关整段映射 RSS / 申请大小</span><strong>${kib(sample.rss_kib)} / ${kib(reqKib)}（${rssRatio}%）</strong></div>
     <div class="vma-meter-bar large"><span style="width:${fillPct}%"></span></div>
+    <p class="detail-copy">RSS 包含相交映射的其他内容，比例可以超过 100%。进度条最高显示 100%，上方保留实际比例。</p>
   </div>` : '<p class="empty">本实验数据不完整，请点下方按钮查看原始日志。</p>';
 
   $('#content').innerHTML = intro + `<div class="experiment"><div class="observation">
@@ -232,7 +234,7 @@ function renderMemorySteps(c, cases) {
         ${sample ? `<dl class="sample-readings"><div><dt>映射大小</dt><dd>${kib(sample.size_kib)}</dd></div>
           <div><dt>映射驻留 RSS</dt><dd>${kib(sample.rss_kib)}</dd></div><div><dt>本步次缺页</dt><dd>${esc(sample.action_minor)} 次</dd></div></dl>` : ''}` : '<p>这次没有采到分步记录，可以切换记录或打开原文。</p>'}
       ${c.validation.status !== 'passed' ? `<p class="phase-note">本次核对结果：${esc(c.error?.message || c.validation.status)}</p>` : ''}
-      <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, rawOpts)}</div>${next}</div>
+      <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, rawOpts)}</div><div class="seq-step-actions"><button data-course-step="${state.phase - 1}" ${state.phase === 0 ? 'disabled' : ''}>← 上一步</button>${next}</div></div>
     </section>
     <details class="secondary-fold"><summary>对照完整采样与诊断</summary>
       ${table(['采样时刻', demand ? '已写位置' : '递归深度', '映射大小', '映射驻留 RSS', '本步次缺页', '累计次缺页'], rows, sample ? samples.indexOf(sample) : -1)}

@@ -1521,3 +1521,20 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
   .dataset-label { display: none; }
   .meta-text { font-size: 11px; }
 }
+
+.experiment-flow { margin: 16px 0; padding: 14px 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.experiment-flow > summary { font-weight: 650; cursor: pointer; color: var(--ink-secondary); }
+.experiment-flow[open] > summary { margin-bottom: 12px; }
+.experiment-guide + .experiment-guide { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line); }
+.experiment-guide h3 { margin: 10px 0; font-size: 17px; }
+.experiment-guide dl { margin: 0; }
+.experiment-guide dl > div { display: grid; grid-template-columns: 8em minmax(0, 1fr); gap: 12px; padding: 10px 0; }
+.experiment-guide dl > div + div { border-top: 1px solid var(--line); }
+.experiment-guide dt { font-weight: 650; color: var(--accent); font-size: 13px; }
+.experiment-guide dd { margin: 0; font-size: 14px; line-height: 1.75; }
+.experiment-guide ol { margin: 0; padding-left: 1.3em; }
+.experiment-guide li + li { margin-top: 5px; }
+@media (max-width: 680px) {
+  .experiment-flow { padding: 12px; }
+  .experiment-guide dl > div { grid-template-columns: 1fr; gap: 4px; }
+}

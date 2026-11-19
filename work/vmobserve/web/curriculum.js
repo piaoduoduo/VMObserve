@@ -1,5 +1,7 @@
 import { $, state, api, esc, url, table, evidenceButtons, friendlyDistro, friendlyTime, labels, loadOriginalPs } from './ui.js';
 
+import { renderLabFlow } from './experiment-flow.js';
+
 const groups = ['实验环境与工具', '系统调用与容器', '内存管理', '进程与线程', '同步与互斥', '文件系统', '设备与 I/O'];
 // In the order of the current 27-page course guide. Page ranges refer to its PDF.
 const labs = [
@@ -217,6 +219,7 @@ export async function showLab(id, preferredId) {
     <h1>${title}</h1>
     <p>${task}</p>
   </div>
+  ${renderLabFlow(id)}
   <section class="observation lab-observation">
     <h2>${basic ? '历史实测摘录' : focus && replays.length ? '从这里开始' : replays.length ? '实验观测与交互回放' : '实验任务'}</h2>
     <div id="lab-evidence"><p class="muted">${replays.length ? `正在读取 ${esc(friendlyDistro(replays[0].run.distribution))} 的实验回放信息…` : '正在载入本项实验记录…'}</p></div>

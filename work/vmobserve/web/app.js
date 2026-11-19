@@ -1,5 +1,6 @@
 import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine } from './ui.js';
 import { renderEvidence } from './evidence-view.js';
+import { attachReplayFlow } from './experiment-flow.js';
 import { renderSequence, parseMmapCall, groupBlocksIntoRegions } from './sequence-view.js';
 import { renderCourse, renderGroup3, renderGroup4, renderLayout } from './course-views.js';
 import { renderBaseline, renderTHP } from './memory-views.js';
@@ -294,6 +295,7 @@ function render() {
   }
   $('#page-title').hidden = true;
   views[state.tab]();
+  attachReplayFlow();
   const lab = currentLab(state.tab, r, state.selected);
   markLab(lab, state.tab);
   document.title = (lab ? '实验 ' + lab : topics[state.tab]) + ' · 重点任务可视化实验台';

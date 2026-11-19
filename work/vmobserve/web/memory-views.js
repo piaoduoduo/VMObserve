@@ -1,4 +1,4 @@
-import { $, state, phases, esc, kib, table, recheckTarget, diagnosisHTML, findingFor, evidenceButtons, stepNavigation, stepExplanation } from './ui.js';
+import { $, state, phases, esc, kib, table, recheckTarget, diagnosisHTML, findingFor, evidenceButtons, stepNavigation, stepExplanation, stepActions } from './ui.js';
 
 function policyHTML() {
   const cases = state.report.cases.filter(c => c.suite === 'thp' && ['allow', 'disable'].includes(c.parameters.process_thp));
@@ -23,7 +23,7 @@ function policyHTML() {
               c.parameters.process_thp === 'allow' ? '允许大页' : '禁止大页',
               ct?.status_thp_enabled ?? '未采集',
               kib(d?.samples.at(-1)?.huge_kib),
-              ct?.madvise_result === 0 ? '返回成功 (0)' : '未成功',
+              ct?.madvise_result == null ? '未采集' : ct.madvise_result === 0 ? '返回成功 (0)' : '未成功',
               c.validation?.status === 'passed' ? '通过' : (c.validation?.status || '未完成')
             ];
           }))
@@ -98,7 +98,7 @@ function renderTHP() {
   $('#content').innerHTML = `<section class="seq-reading"><header class="focus-intro"><small class="question-kicker">拓展实验 · 透明大页</small>
     <h1>同样的写法，为什么用的物理内存会不同？</h1></header>
     ${stepNavigation(titles, step, 'data-course-step')}
-    <section id="sequence-result" class="seq-panel"><h2>${titles[step]}</h2>${explanation}${table(headers, rows)}${evidence}</section>
+    <section id="sequence-result" class="seq-panel"><h2>${titles[step]}</h2>${explanation}${table(headers, rows)}${evidence}<div class="seq-navigation">${stepActions(step, titles.length)}</div></section>
     <label class="selector"><span>换一组对照</span><select id="case-select">${groups.map((g, i) => `<option value="${i}" data-pattern="${esc(g.split(':')[0])}" ${i === state.selected ? 'selected' : ''}>${g.startsWith('sparse:') ? '稀疏写' : '逐基础页写'} · 第 ${esc(g.split(':')[1])} 次</option>`).join('')}</select></label>
     <details class="secondary-fold"><summary>查看本组诊断与复验</summary>${diagnosisHTML(findings, !policy)}</details>
     <details class="secondary-fold"><summary>进程开关对照与采集</summary>${policyHTML()}</details></section>`;
@@ -171,7 +171,7 @@ function renderBaseline() {
       <section id="sequence-result" class="seq-panel"><h2>${esc(selected[0])}</h2>
       ${stepExplanation(...selected.slice(1))}
       <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, {phase: sample.phase, role: sample.role, stepLabel: selected[0]})}</div>
-      <button id="play">${state.timer ? '暂停' : '自动播放'}</button></div></section>`
+      <button id="play">${state.timer ? '暂停' : '自动播放'}</button>${stepActions(state.phase, samples.length)}</div></section>`
       : `<p class="empty">本次采集不完整。</p><div class="raw-links">${evidenceButtons(c)}</div>`}
     <label class="selector"><span>换一组实验</span><select id="case-select">${cases.map((item, i) => `<option value="${i}" ${i === state.selected ? 'selected' : ''}>${item.parameters.mib} MiB · 改写 ${esc(item.data?.cow?.fraction ?? item.parameters.cow_fraction ?? '1/4')} · 第 ${item.parameters.repeat} 次</option>`).join('')}</select></label>
     <details class="secondary-fold"><summary>对照各步与父子进程的数据</summary>${table(['阶段', '进程', 'RSS', 'PSS'], samples.map(s => [phaseLabel(s,c), s.role === 'parent' ? '父进程' : '子进程', kib(s.rss_kib), kib(s.pss_kib)]), state.phase)}</details>
