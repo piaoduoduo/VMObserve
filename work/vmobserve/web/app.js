@@ -1,6 +1,7 @@
 import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine } from './ui.js';
 import { renderEvidence } from './evidence-view.js';
 import { attachReplayFlow } from './experiment-flow.js';
+import { renderReplayNotes } from './replay-notes.js';
 import { renderSequence, parseMmapCall, groupBlocksIntoRegions } from './sequence-view.js';
 import { renderCourse, renderGroup3, renderGroup4, renderLayout } from './course-views.js';
 import { renderBaseline, renderTHP } from './memory-views.js';
@@ -303,6 +304,7 @@ function render() {
   $('#run').dataset.mode = singleMode || 'complete';
   $('#run').textContent = singleMode === 'group3' ? '重新采集第 3 组' : singleMode ? '重新采集本项实验' : '采集整套实验';
   savePosition();
+  renderReplayNotes();
   evidenceRequest++;
   $('#copy-replay').disabled = false;
   $('#copy-status').textContent = '';
