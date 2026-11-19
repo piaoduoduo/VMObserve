@@ -1,5 +1,6 @@
 """Read-only reconstruction. Never execute saved source or trust cached diagnoses."""
 import copy
+import hashlib
 from pathlib import Path
 
 from . import SCHEMA_VERSION
@@ -49,6 +50,32 @@ def recorded_environment(root, report):
     except (OSError, ValueError) as exc:
         return {}, f"environment.json: {exc}"
 
+
+
+def read_evidence(directory, case_id, kind, limit=2 * 1024 * 1024):
+    """Read and verify only the requested raw artifact, without replaying cases."""
+    root = Path(directory).resolve()
+    report = read_json(root / "report.json")
+    legacy = "schema_version" not in report
+    if not legacy and report["schema_version"] != SCHEMA_VERSION:
+        raise ValueError("unsupported result schema")
+    metadata = legacy_report(root, report) if legacy else report
+    case = next(case for case in metadata["cases"] if case["id"] == case_id)
+    if kind not in ("jsonl", "smaps", "syscalls", "file", "ldd", "readelf", "ldd_stderr", "kernel", "stderr"):
+        raise ValueError("invalid evidence type")
+    relative = case["artifacts"][kind]
+    raw = safe_child(root, relative)
+    with raw.open("rb") as stream:
+        payload = stream.read(limit + 1)
+    if len(payload) > limit:
+        raise ValueError("evidence exceeds viewer size limit")
+    if not legacy:
+        expected = report.get("artifacts", {}).get(relative)
+        if not expected:
+            raise ValueError("raw evidence missing from artifact manifest")
+        if hashlib.sha256(payload).hexdigest() != expected:
+            raise ValueError("artifact hash mismatch: " + relative)
+    return payload
 
 def load_run(directory):
     root = Path(directory).resolve()

@@ -1,16 +1,22 @@
 """Local HTTP contract checks; no real experiment is started by these tests."""
 from http.server import ThreadingHTTPServer
 import json
+import hashlib
+import tempfile
 from pathlib import Path
 import sys
 import threading
 import unittest
+from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "work"))
 from vmobserve.server import experiment_args, Workbench, handler_for
+from vmobserve import SCHEMA_VERSION
+from vmobserve.common import write_json
+from vmobserve.replay import read_evidence
 
 
 class ServerTests(unittest.TestCase):
@@ -60,6 +66,35 @@ class ServerTests(unittest.TestCase):
             with self.assertRaises(HTTPError) as error:
                 urlopen(self.base + suffix)
             self.assertEqual(error.exception.code, 400)
+
+    def test_raw_evidence_does_not_replay_other_cases(self):
+        with patch("vmobserve.server.load_run", side_effect=AssertionError("unexpected full replay")):
+            with urlopen(self.base + "/api/evidence?id=test--legacy-run&case=baseline-16MiB-run1&kind=smaps") as response:
+                self.assertIn(b"BEGIN phase=untouched", response.read())
+
+    def test_raw_evidence_checks_selected_bytes_and_manifest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            payload = b'{"kind":"sample"}\n'
+            (root / "raw.jsonl").write_bytes(payload)
+            report = {"schema_version": SCHEMA_VERSION, "cases": [
+                {"id": "one", "artifacts": {"jsonl": "raw.jsonl"}}],
+                "artifacts": {"raw.jsonl": hashlib.sha256(payload).hexdigest()}}
+            write_json(root / "report.json", report)
+            self.assertEqual(read_evidence(root, "one", "jsonl"), payload)
+            with self.assertRaisesRegex(ValueError, "size limit"):
+                read_evidence(root, "one", "jsonl", limit=2)
+            (root / "raw.jsonl").write_bytes(payload + b"changed")
+            with self.assertRaisesRegex(ValueError, "hash mismatch"):
+                read_evidence(root, "one", "jsonl")
+            report["artifacts"] = {}
+            write_json(root / "report.json", report)
+            with self.assertRaisesRegex(ValueError, "missing from artifact manifest"):
+                read_evidence(root, "one", "jsonl")
+            report["cases"][0]["artifacts"]["jsonl"] = "../outside.jsonl"
+            write_json(root / "report.json", report)
+            with self.assertRaisesRegex(ValueError, "escapes"):
+                read_evidence(root, "one", "jsonl")
 
     def test_full_recheck_keeps_selected_pattern(self):
         command = self.app.command(experiment_args("recheck", pattern="full"), ROOT / "tests/fixtures/legacy-run")

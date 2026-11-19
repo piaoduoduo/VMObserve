@@ -13,7 +13,7 @@ from urllib.parse import parse_qs, urlparse
 from .common import execute, read_json, run_id, timestamp, write_json
 from .cow import COW_CHOICES
 from .export import csv_text, html_text
-from .replay import load_run, recorded_environment, safe_child
+from .replay import load_run, read_evidence, recorded_environment, safe_child
 from .runner import WORK
 from .systems import LABS
 
@@ -204,18 +204,12 @@ def handler_for(app):
                 if path not in ("/api/report", "/api/evidence", "/api/export"):
                     return self.send({"error": "not found"}, code=404)
                 directory = app.directory(query.get("id", [""])[0])
+                if path == "/api/evidence":
+                    payload = read_evidence(directory, query.get("case", [""])[0], query.get("kind", ["jsonl"])[0])
+                    return self.send(payload, "text/plain; charset=utf-8")
                 report = load_run(directory)
                 if path == "/api/report":
                     return self.send(report)
-                if path == "/api/evidence":
-                    case = next(c for c in report["cases"] if c["id"] == query.get("case", [""])[0])
-                    kind = query.get("kind", ["jsonl"])[0]
-                    if kind not in ("jsonl", "smaps", "syscalls", "file", "ldd", "readelf", "ldd_stderr", "kernel", "stderr"):
-                        raise ValueError("invalid evidence type")
-                    raw = safe_child(directory, case["artifacts"][kind])
-                    if raw.stat().st_size > 2 * 1024 * 1024:
-                        raise ValueError("evidence exceeds viewer size limit")
-                    return self.send(raw.read_bytes(), "text/plain; charset=utf-8")
                 format_ = query.get("format", ["html"])[0]
                 if format_ == "html":
                     return self.send(html_text(report), "text/html; charset=utf-8", attachment="memory-report.html")
