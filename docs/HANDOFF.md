@@ -1,5 +1,10 @@
 # 接手说明
 
+**2026-11-19：v0.8.3，cdh_version 功能完善。** 回放页新增可搜索的历史笔记、复制到本步草稿与撤销、全部草稿备份、兼容旧版的 JSON 导入。导入保留本地草稿、拒绝同编号内容冲突，存储空间不足时撤回新增项；损坏条目可导出原始备份。连续 malloc、按需分配、栈增长与 COW 新增同阶段跨记录对照，展示参数、环境和源码差异；同 VMA RSS 去重、父子角色及递归深度分别处理。编辑和对照操作暂停自动播放。使用说明见 [回放对照与学习笔记](LEARNING_WORKFLOW.md)。
+
+本轮 Python 66 项、Node 27 项检查通过；浏览器核对 24 个课程入口、30 个案例和笔记／对照完整流程，无 JavaScript 执行错误。验证回答保持 ui_verification，未新增 Linux 实验或真实学习者试用；7.4／7.5 等候补采事项不变。本机验证材料在 D:\操作系统比赛\VMObserve\复现验证\半小时优化_20261119。
+
+
 **2026-11-18 · 3.2 与两个拓展实验分步讲解。** 3.2 每个圆显示程序动作、Linux 处理和本步结果。第四个圆并列两次 mmap 区间、两根指针和去重后的整段 RSS。写时复制按八份快照区分父子视角，透明大页按设置、写前、写入、读回四步对照。Edge 已用既有 openEuler 记录逐步核对三项回放、子进程原文定位、两种写法及进程开关，覆盖 320 / 390 / 1123 px；本轮 64 项回归测试通过。下一步请初学者自己用第四步的地址和 RSS 解释为什么只加一次。截图见[三次 malloc](../output/verification/focus-tasks/three-malloc-evidence.png)、[子进程](../output/verification/focus-tasks/cow-child-step.png)、[透明大页](../output/verification/focus-tasks/thp-write-step.png)。赛事定位、官网提交格式与协作约定见 [GEMINI.md](../GEMINI.md)。
 
 **3.3 分步回放与首页。** 首页介绍实验台的用法，重点任务从侧栏直接进入。「原始证据」下方展开全部七组、24 项课程实验。3.3 的按需调页按申请前、申请后、写 A、写 B、写 C、释放后六次采样切换。递归实验另看栈上限、递归增长和退出状态。浏览器用 openEuler 历史记录 `20261118T013159.221864Z` 核对了六步指标、JSONL 和 smaps 原文、分享位置、正常返回及 SIGSEGV 两种结局，也检查了 320、390 和 1123 像素宽度。[首页](../output/verification/focus-tasks/overview.png) · [写到四分之一](../output/verification/focus-tasks/demand-step-quarter.png) · [手机预览](../output/verification/focus-tasks/demand-step-mobile.png)

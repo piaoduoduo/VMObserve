@@ -16,13 +16,15 @@ python work/launch.py
 
 点「复制回放链接」，可以让队友直接打开你选的记录、案例和步骤。两边需使用相同工作台地址并有这份记录；用内置课例演示最方便。「原始记录」支持按实验名、编号、参数和状态筛选。
 
-每个实验回放页底部都可以记录本步的预测、观测与解释。草稿按记录、案例和步骤保存在当前浏览器；保存后的独立笔记附带采样、原始文件路径和报告哈希，可导出 JSON 留档。个人笔记保持未评分。
+每个实验回放页底部都可以记录本步的预测、观测与解释。草稿按记录、案例和步骤保存在当前浏览器；保存后的独立笔记附带采样、原始文件路径和报告哈希，支持历史搜索、恢复草稿和 JSON 导入导出。个人笔记保持未评分。
 
 | 学生想弄清楚什么 | 去哪里看 |
 | --- | --- |
 | 地址分别属于哪一段？申请内存后何时真正占用物理页？ | 程序地址、按需分配；[动手任务](http://127.0.0.1:8765/lesson) |
 | fork 后哪些内存仍然共享？稀疏写时大页有什么影响？ | 写时复制、透明大页；可在配置好的 Linux 环境运行对照 |
 | 怎样回到原始证据或交一份报告？ | 原始记录，或右上角「导出报告」：HTML 阅读、CSV 比较、JSON 留档 |
+
+连续 malloc、按需调页、栈增长和 COW 的具体采样步骤支持跨轮次并排对照，会列出参数、环境差异与实际读数。详见[回放对照与学习笔记](docs/LEARNING_WORKFLOW.md)。
 
 ## 运行自己的实验
 
@@ -43,4 +45,4 @@ python3 work/run_all.py --suite sequence
 
 [对照当期指导书、课程目标和报告要求](docs/COURSE_ALIGNMENT.md) · [回放原版 512 MiB 的五个暂停点](http://127.0.0.1:8765/lesson#original-demand)。
 
-当前本地版本 **0.8.2**。[公开仓库](https://github.com/piaoduoduo/VMObserve) · [参赛承诺和开源待办](docs/COMPETITION_COMMITMENTS.md) · [往届作品对照](docs/NATIONAL_REFERENCE_STUDY_20261116.md)。
+当前本地版本 **0.8.3**。[公开仓库](https://github.com/piaoduoduo/VMObserve) · [参赛承诺和开源待办](docs/COMPETITION_COMMITMENTS.md) · [往届作品对照](docs/NATIONAL_REFERENCE_STUDY_20261116.md)。

@@ -20,9 +20,16 @@ from .systems import LABS
 WEB = Path(__file__).parent / "web"
 
 
-WEB_PAGES = {"/": "index.html", "/lesson": "lesson.html",
-             **{"/" + name: name for name in ("app.js", "ui.js", "course-views.js", "memory-views.js",
-                                                 "sequence-view.js", "evidence-view.js", "curriculum.js", "experiment-flow.js", "replay-notes.js", "lesson.js", "style.css")}}
+WEB_PAGES = {
+    "/": "index.html", "/lesson": "lesson.html",
+    **{"/" + name: name for name in (
+        "app.js", "ui.js", "course-views.js", "memory-views.js",
+        "sequence-view.js", "evidence-view.js", "curriculum.js",
+        "experiment-flow.js", "replay-notes.js", "notes-store.js",
+        "notes-library.js", "comparison-data.js", "replay-comparison.js",
+        "lesson.js", "style.css",
+    )},
+}
 
 
 def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all"):

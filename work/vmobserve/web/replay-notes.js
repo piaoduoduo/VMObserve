@@ -1,10 +1,11 @@
 import { state, esc } from './ui.js';
 import { viewCases } from './curriculum.js';
+import { createNotesStore, noteFields } from './notes-store.js';
+import { renderNoteLibrary } from './notes-library.js';
 
 const verification = new URLSearchParams(location.search).get('verification') === '1';
-const prefix = 'vmobserve-replay-notes-v1' + (verification ? '-verification' : '') + ':';
-const memory = new Map();
-const fields = ['prediction', 'observation', 'explanation'];
+const store = createNotesStore(() => localStorage, verification);
+const fields = noteFields;
 
 function selectedCases() {
   let cases = viewCases(state.report.cases, state.tab, item => item.suite);
@@ -63,91 +64,100 @@ function context() {
   };
 }
 
-function readDraft(key) {
-  if (memory.has(key)) return memory.get(key);
-  try {
-    const parsed = JSON.parse(localStorage.getItem(prefix + 'draft:' + key));
-    if (parsed && fields.every(field => typeof parsed[field] === 'string')) return parsed;
-  } catch { /* Keep the editor available when local storage is restricted. */ }
-  return { prediction: '', observation: '', explanation: '' };
-}
 
-function readRecords() {
-  const records = [];
-  for (let index = 0; index < localStorage.length; index++) {
-    const key = localStorage.key(index);
-    if (!key?.startsWith(prefix + 'record:')) continue;
-    const record = JSON.parse(localStorage.getItem(key));
-    if (!record?.evidence?.case_ids || !record.saved_at) throw new Error('已保存笔记的格式需要检查，请保留浏览器存储内容。');
-    records.push(record);
-  }
-  return records.sort((a, b) => a.saved_at.localeCompare(b.saved_at));
+function download(value, filename) {
+  const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], {type: 'application/json'}));
+  const link = document.createElement('a');
+  link.href = url; link.download = filename; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function renderReplayNotes() {
   const binding = context();
   if (!binding || state.tab === 'evidence') return;
-  const draft = readDraft(binding.key);
+  const draft = store.getDraft(binding);
   document.querySelector('#content').insertAdjacentHTML('beforeend',
     '<details class="replay-notes"><summary>记录本步的预测、观测与解释</summary>' +
     '<p class="detail-copy">当前案例 ' + esc(binding.case_ids.join('、')) + ' · 回放位置 ' +
-    (binding.step_index + 1) + '。草稿保存在当前浏览器，导出后可自行留存。</p>' +
-    fields.map((field, index) => '<label>' + ['我的预测', '我在原文中看到的结果', '解释与下一次复验'][index] +
-      '<textarea data-note-field="' + field + '" rows="3">' + esc(draft[field]) + '</textarea></label>').join('') +
-    '<div class="actions"><button data-note-action="save">保存这一步的笔记</button>' +
-    '<button data-note-action="export">导出全部笔记</button></div><p class="note-status" role="status"></p>' +
-    '<p class="detail-copy">保存时附上案例与采样、原始文件路径和报告哈希。个人解释保留为未评分。</p></details>');
+    (binding.step_index + 1) + '。草稿保存在当前浏览器；可导出备份，再到另一浏览器导入。</p>' +
+    fields.map((field, i) => '<label>' + ['我的预测', '我在原文中看到的结果', '解释与下一次复验'][i] +
+      '<textarea data-note-field="' + field + '" rows="3" maxlength="100000">' + esc(draft[field]) + '</textarea></label>').join('') +
+    '<div class="actions"><button data-note-action="save" class="primary">保存这一步的笔记</button>' +
+    '<button data-note-action="export">导出全部笔记</button>' +
+    '<button data-note-action="import">导入笔记</button><input class="note-file" type="file" accept=".json,application/json" hidden></div>' +
+    '<p class="note-status" role="status" aria-live="polite"></p><button data-note-action="undo-restore" hidden>撤销这次草稿替换</button>' +
+    '<p class="detail-copy">保存时附上案例与采样、原始文件路径和报告哈希。个人解释保留为未评分。</p>' +
+    '<details class="note-library"></details></details>');
   const panel = document.querySelector('.replay-notes');
-  const status = message => { panel.querySelector('.note-status').textContent = message; };
-  const captureDraft = () => {
-    const note = Object.fromEntries(fields.map(field => [field,
-      panel.querySelector('[data-note-field="' + field + '"]').value]));
-    memory.set(binding.key, note);
-    return note;
+  let restoreBackup = null;
+  const undo = panel.querySelector('[data-note-action="undo-restore"]');
+  const status = text => { panel.querySelector('.note-status').textContent = text; };
+  const capture = () => Object.fromEntries(fields.map(field => [field,
+    panel.querySelector('[data-note-field="' + field + '"]').value]));
+  const persist = () => {
+    try { store.saveDraft(binding, capture()); status('本步草稿已保存。'); return true; }
+    catch { status('浏览器暂时无法保存，请用“导出全部笔记”保留当前草稿。'); return false; }
   };
+  const library = () => renderNoteLibrary(panel.querySelector('.note-library'), binding, store, record => {
+    // Keep one reversible replacement without changing any saved record.
+    restoreBackup = capture();
+    fields.forEach(field => { panel.querySelector('[data-note-field="' + field + '"]').value = record[field]; });
+    const saved = persist();
+    panel.querySelector('textarea').focus();
+    undo.hidden = false;
+    if (saved) status('已复制到本步草稿，可撤销这次替换。原来保存的笔记仍保留。');
+  }, status);
   panel.addEventListener('input', event => {
     if (!event.target.matches('[data-note-field]')) return;
-    const note = captureDraft();
-    try {
-      localStorage.setItem(prefix + 'draft:' + binding.key, JSON.stringify(note));
-      status('本步草稿已保存。');
-    } catch { status('浏览器暂时无法保存，请用“导出全部笔记”保留当前草稿。'); }
+    restoreBackup = null; undo.hidden = true; persist();
   });
   panel.addEventListener('click', event => {
     const action = event.target.closest('[data-note-action]')?.dataset.noteAction;
     if (!action) return;
-    const note = captureDraft();
-    if (action === 'save') {
-      if (!fields.some(field => note[field].trim())) { status('先写下一项预测、观测或解释。'); return; }
-      const record = {
-        id: crypto.randomUUID(), saved_at: new Date().toISOString(),
-        answer_origin: verification ? 'ui_verification' : 'learner_notes',
-        assessment: 'not_graded', ...note, evidence: binding
-      };
-      try {
-        localStorage.setItem(prefix + 'record:' + record.id, JSON.stringify(record));
-        status('已保存独立笔记，并绑定当前案例与回放位置。');
-      } catch { status('本次笔记未能保存，请立即导出当前草稿。'); }
+    if (action === 'import') { panel.querySelector('.note-file').click(); return; }
+    if (action === 'undo-restore' && restoreBackup) {
+      fields.forEach(field => { panel.querySelector('[data-note-field="' + field + '"]').value = restoreBackup[field]; });
+      const saved = persist();
+      restoreBackup = null; undo.hidden = true;
+      if (saved) status('已恢复替换前的草稿。');
       return;
     }
     try {
-      let storageAvailable = true;
-      try { void localStorage.length; } catch { storageAvailable = false; }
-      const records = storageAvailable ? readRecords() : [];
-      const exported = {
-        schema_version: 'vmobserve.replay-notes/v1', exported_at: new Date().toISOString(),
-        answer_origin: verification ? 'ui_verification' : 'learner_notes', assessment: 'not_graded',
-        saved_records_available: storageAvailable, records,
-        current_draft: { ...note, evidence: binding }
-      };
-      const url = URL.createObjectURL(new Blob([JSON.stringify(exported, null, 2)], {type: 'application/json'}));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'vmobserve-replay-notes.json';
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      status(storageAvailable ? '已导出本浏览器保存的回放笔记与当前草稿。'
-        : '已导出当前草稿。浏览器存储不可用，文件中未包含历史笔记。');
-    } catch (error) { status('导出未完成。' + error.message); }
+      if (action === 'save') {
+        store.saveRecord(binding, capture(), crypto.randomUUID());
+        status('已保存独立笔记，并绑定当前案例与回放位置。');
+        library();
+      } else if (action === 'export') {
+        const archive = store.exportArchive(binding, capture());
+        download(archive, 'vmobserve-replay-notes.json');
+        status(archive.saved_records_available ? '已导出全部已保存笔记、各步草稿和当前草稿。'
+          : '已导出当前可用草稿。浏览器存储不可用，文件中未包含历史笔记。');
+      } else if (action === 'raw-backup') {
+        download(store.rawBackup(), 'vmobserve-replay-notes-raw.json');
+        status('已导出本地笔记原文备份，可用于排查无法读取的条目。');
+      }
+    } catch (error) { status(action === 'save' && ['QuotaExceededError', 'SecurityError'].includes(error.name)
+      ? '本次笔记未能保存，请立即导出当前草稿。' : (action === 'export' ? '导出未完成。' : '') + error.message); }
   });
+  panel.querySelector('.note-file').addEventListener('change', async event => {
+    const input = event.target, file = input.files[0];
+    if (!file) return;
+    try {
+      if (file.size > 20 * 1024 * 1024) throw new Error('文件超过 20 MiB，超出笔记导入上限。');
+      let archive;
+      try { archive = JSON.parse(await file.text()); } catch { throw new Error('文件不是有效的 JSON，未导入任何内容。'); }
+      if (!panel.isConnected) return;
+      const result = store.importArchive(archive);
+      const current = capture();
+      if (!fields.some(field => current[field].trim())) {
+        const imported = store.getDraft(binding);
+        fields.forEach(field => { panel.querySelector('[data-note-field="' + field + '"]').value = imported[field]; });
+      }
+      library();
+      status('导入完成：新增 ' + result.addedRecords + ' 条笔记、' + result.addedDrafts + ' 份草稿；跳过 ' +
+        result.duplicates + ' 条重复笔记，保留 ' + result.keptDrafts + ' 份本地草稿。');
+    } catch (error) { status(error.message); }
+    finally { input.value = ''; }
+  });
+  library();
 }

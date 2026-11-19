@@ -2,6 +2,7 @@ import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, hig
 import { renderEvidence } from './evidence-view.js';
 import { attachReplayFlow } from './experiment-flow.js';
 import { renderReplayNotes } from './replay-notes.js';
+import { renderReplayComparison } from './replay-comparison.js';
 import { renderSequence, parseMmapCall, groupBlocksIntoRegions } from './sequence-view.js';
 import { renderCourse, renderGroup3, renderGroup4, renderLayout } from './course-views.js';
 import { renderBaseline, renderTHP } from './memory-views.js';
@@ -304,6 +305,7 @@ function render() {
   $('#run').dataset.mode = singleMode || 'complete';
   $('#run').textContent = singleMode === 'group3' ? '重新采集第 3 组' : singleMode ? '重新采集本项实验' : '采集整套实验';
   savePosition();
+  renderReplayComparison();
   renderReplayNotes();
   evidenceRequest++;
   $('#copy-replay').disabled = false;
@@ -383,6 +385,17 @@ $('#content').addEventListener('change', ({ target: t }) => {
     render();
   }
 });
+
+function pauseForReading({target}) {
+  if (state.timer && target.closest('.replay-notes, .replay-comparison')) {
+    stop();
+    const play = $('#play');
+    if (play) play.textContent = '自动播放';
+  }
+}
+for (const event of ['focusin', 'pointerdown', 'input']) {
+  $('#content').addEventListener(event, pauseForReading);
+}
 
 $('#content').addEventListener('input', ({ target: t }) => {
   if (t.id === 'phase') { stop(); state.phase = Number(t.value); render(); }

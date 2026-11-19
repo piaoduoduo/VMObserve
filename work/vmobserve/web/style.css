@@ -1545,3 +1545,31 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
 .replay-notes textarea { box-sizing: border-box; width: 100%; min-width: 0; resize: vertical; font: inherit; font-weight: 400; line-height: 1.7; padding: 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--surface); }
 .replay-notes .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .note-status { font-size: 13px; margin-top: 8px; color: var(--accent); }
+
+.note-library { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+.note-count { display: inline-block; min-width: 1.8em; margin-left: 6px; padding: 0 6px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); font-size: 12px; text-align: center; }
+.note-library .note-scope { display: flex; align-items: center; font-weight: 400; }
+.note-library .note-scope input { width: auto; }
+.note-search input { width: 100%; min-width: 0; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; font-weight: 400; }
+.note-results { margin: 10px 0; font-size: 13px; color: var(--muted); }
+.note-list { display: grid; gap: 12px; }
+.note-card { padding: 14px; background: var(--surface-soft); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.note-card header { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+.note-card time { color: var(--muted); font-size: 12px; }
+.note-card dl { margin: 10px 0; }
+.note-card dl > div { display: grid; grid-template-columns: 5.5em minmax(0, 1fr); gap: 8px; margin: 8px 0; }
+.note-card dt { color: var(--muted); font-size: 13px; }
+.note-card dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; }
+.note-card .detail-copy { overflow-wrap: anywhere; }
+@media (max-width: 680px) { .note-card dl > div { grid-template-columns: 1fr; gap: 3px; } }
+
+.replay-comparison { margin-top: 16px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; }
+.replay-comparison > summary { cursor: pointer; font-weight: 650; color: var(--ink-secondary); }
+.comparison-pickers { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 14px 0; }
+.comparison-pickers label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; min-width: 0; }
+.comparison-pickers select { width: 100%; min-width: 0; padding: 8px; border: 1px solid var(--line); border-radius: 7px; font: inherit; background: var(--surface); color: var(--ink); }
+.comparison-context { font-size: 13px; overflow-wrap: anywhere; }
+.replay-comparison .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+@media (max-width: 680px) { .comparison-pickers { grid-template-columns: 1fr; } }
+
+.comparison-result td:not(:first-child) { white-space: nowrap; }
