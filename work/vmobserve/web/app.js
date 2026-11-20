@@ -381,8 +381,14 @@ $('#content').addEventListener('change', ({ target: t }) => {
   if (t.id === 'cow-fraction') state.cowFraction = t.value;
   if (t.id === 'case-select') {
     stop();
-    state.selected = Number(t.value);
-    state.phase = 0;
+    const position = Number(t.value);
+    const cases = viewCases(state.report.cases, state.tab, item => item.suite);
+    const previous = cases[state.selected];
+    const target = cases[position];
+    const keepStep = previous?.suite === 'demand512' && previous.parameters.thp_advice &&
+      target?.suite === 'demand512' && target.parameters.thp_advice;
+    state.selected = position;
+    if (!keepStep) state.phase = 0;
     render();
   }
 });

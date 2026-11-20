@@ -125,6 +125,37 @@ export function newestReplay(id, topic, suite, preferredId) {
   return { run, href: '/#' + new URLSearchParams({ run: run.id, topic, case: index }) };
 }
 
+
+export function demandEnvironmentReplays(runs, currentId, parameters, step) {
+  const current = runs.find(run => run.id === currentId);
+  if (!current || !Number.isInteger(parameters.repeat) || !['off', 'on'].includes(parameters.thp_advice)) return [];
+  const environmentKey = run => JSON.stringify([
+    run.distribution, run.kernel || null, run.execution_context || null
+  ]);
+  const selected = new Map();
+  const findPair = run => {
+    const cases = viewCases(run.case_keys || [], 'group3', key => key[0]);
+    const indexOf = advice => cases.findIndex(([suite, , policy, repeat]) =>
+      suite === 'demand512' && policy === advice && repeat === parameters.repeat);
+    const index = indexOf(parameters.thp_advice);
+    return index >= 0 && indexOf(parameters.thp_advice === 'on' ? 'off' : 'on') >= 0 ? index : -1;
+  };
+  const toReplay = (run, index) => ({run, index, step, current: run.id === currentId});
+  const currentIndex = findPair(current);
+  if (currentIndex >= 0) selected.set(environmentKey(current), toReplay(current, currentIndex));
+  const ordered = [...runs].sort((left, right) =>
+    right.run_id.localeCompare(left.run_id) || Number(right.group === 'example') - Number(left.group === 'example'));
+  for (const run of ordered) {
+    if (run.run_id === current.run_id || run.data_origin !== 'real_execution' ||
+        run.status !== 'completed' || run.environment_issue) continue;
+    const key = environmentKey(run);
+    if (key === environmentKey(current) || selected.has(key)) continue;
+    const index = findPair(run);
+    if (index >= 0) selected.set(key, toReplay(run, index));
+  }
+  return [...selected.values()];
+}
+
 const displayValue = value => Array.isArray(value) ? value.join(' · ') : String(value);
 
 export function renderSystems() {

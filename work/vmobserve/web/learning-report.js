@@ -26,9 +26,14 @@ export function learningReport(entries, {verification = false} = {}) {
   const page = entries.map(({evidence, prediction, observation, explanation}) => {
     const lab = evidence.topic === 'sequence' ? '3.2 连续 malloc' : '3.3 按需调页';
     const env = evidence.environment || {};
+    const conditions = [
+      Number.isFinite(env.page_bytes) ? '基础页 ' + env.page_bytes + ' 字节' : null,
+      env.thp_enabled ? '系统 THP ' + env.thp_enabled : null
+    ].filter(Boolean);
     return '<section><h2>' + lab + ' · 第 ' + (evidence.step_index + 1) + ' 步</h2>' +
       '<p>运行编号 <code>' + esc(evidence.run_id) + '</code> · ' + esc(env.distribution || '系统未记录') + ' · ' +
       esc(env.kernel || '内核未记录') + ' · ' + esc(env.execution_context || '执行环境未记录') + '</p>' +
+      (conditions.length ? '<p>' + esc(conditions.join(' · ')) + '</p>' : '') +
       '<p>报告 SHA-256 <code>' + esc(evidence.report_sha256) + '</code></p>' +
       '<p>校验状态 ' + esc(evidence.integrity?.status || '未记录') + ' · 数据来源 ' + esc(evidence.data_origin || '未记录') + '</p>' +
       [['我的预测', prediction], ['我的观测与原文依据', observation], ['解释与复验', explanation]].map(([name, value]) =>

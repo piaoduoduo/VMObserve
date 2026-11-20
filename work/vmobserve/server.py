@@ -77,10 +77,15 @@ class Workbench:
                     items.append({"id": f"{group}--{path.parent.name}", "run_id": path.parent.name,
                                   "group": group, "kernel": env.get("kernel", "unknown"),
                                   "distribution": env.get("distribution", {}).get("PRETTY_NAME") or env.get("system") or "环境未核验",
+                                  "execution_context": env.get("execution_context"),
                                   "environment_issue": issue,
                                   "status": data.get("status", "completed" if data.get("completed") else "failed"),
                                   "count": len(data["cases"]) if "cases" in data else 18,
-                                  "case_keys": [[c["suite"], c.get("parameters", {}).get("lab"), c.get("parameters", {}).get("thp_advice")] for c in data.get("cases", [])],
+                                  "case_keys": [
+                                      [c["suite"], c.get("parameters", {}).get("lab"),
+                                       c.get("parameters", {}).get("thp_advice"), c.get("parameters", {}).get("repeat")]
+                                      for c in data.get("cases", [])
+                                  ],
                                   "suites": sorted({c["suite"] for c in data["cases"]}) if "cases" in data else ["baseline", "thp"],
                                   "data_origin": data.get("data_origin", "real_execution"),
                                   "legacy": "schema_version" not in data})

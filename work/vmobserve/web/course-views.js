@@ -1,6 +1,6 @@
 import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair } from './ui.js';
 
-import { newestReplay } from './curriculum.js';
+import { newestReplay, demandEnvironmentReplays } from './curriculum.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -215,6 +215,30 @@ function stackSteps(c) {
 }
 
 
+
+function demandEnvironmentNav(parameters) {
+  const env = state.report.environment || {};
+  const options = demandEnvironmentReplays(state.runs, state.id, parameters, state.phase);
+  const distro = env.distribution?.PRETTY_NAME || env.system || '环境未记录';
+  const contextName = name => ({
+    'qemu-tcg': 'QEMU TCG', wsl2: 'WSL2', 'linux-local': '本地 Linux'
+  })[name] || name;
+  const pageInfo = [
+    distro, contextName(env.execution_context), env.kernel,
+    Number.isFinite(env.page_bytes) ? '基础页 ' + kib(env.page_bytes / 1024) : null,
+    env.thp_enabled ? '系统 THP ' + env.thp_enabled : null
+  ].filter(Boolean).join(' · ');
+  const links = options.length > 1 ? `<nav class="demand-environments" aria-label="切换同轮实验环境">
+    ${options.map(({run, index, step, current}) => {
+      const label = [run.distribution, contextName(run.execution_context)].filter(Boolean).join(' · ');
+      if (current) return `<span aria-current="true">${esc(label)}</span>`;
+      const hash = new URLSearchParams({run: run.id, topic: 'group3', case: index, step});
+      return `<a href="/${esc(location.search)}#${esc(hash)}" title="${esc(run.kernel)}">${esc(label)} →</a>`;
+    }).join('')}
+  </nav><p class="detail-copy">切换环境会保留当前轮次、策略组和采样步骤。两组的条件对照在各自环境内进行。</p>` : '';
+  return `<div class="demand-environment"><p class="detail-copy">当前实测 · ${esc(pageInfo)}</p>${links}</div>`;
+}
+
 function demandPolicyPanel(c, sample) {
   const recipe = c.parameters.thp_advice;
   const next = newestReplay('3.3', 'group3', 'demand512-thp');
@@ -246,6 +270,7 @@ function demandPolicyPanel(c, sample) {
   return `<section class="seq-panel demand-policy" aria-labelledby="policy-title">
     <h2 id="policy-title">512 MiB 透明大页对照 · 第 ${esc(repeat)} 轮</h2>
     <p>两个独立进程各用一个带保护页的匿名映射。按相同的 4096 字节步长分批写入，仅切换映射的大页建议。</p>
+    ${demandEnvironmentNav(c.parameters)}
     <div class="demand-prediction"></div>
     <details class="secondary-fold demand-result"><summary>查看本步两组实测与原文</summary>
     ${table(['组别', 'madvise', 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], pair.map((item, i) => {

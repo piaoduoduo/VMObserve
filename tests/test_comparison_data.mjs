@@ -57,3 +57,26 @@ test('source manifests compare by file and hash instead of JSON property order',
   assert.equal(sameSources({a:'1',b:'2'},{b:'2',a:'1'}), true);
   assert.equal(sameSources({a:'1'},{a:'2'}), false);
 });
+
+import {demandEnvironmentReplays} from '../work/vmobserve/web/curriculum.js';
+
+test('demand environment links preserve policy, repeat and phase across distinct case ordering', () => {
+  const run = (id, distribution, case_keys) => ({
+    id, run_id: id.slice(id.indexOf('--') + 2), distribution, case_keys,
+    group: 'example', status: 'completed', data_origin: 'real_execution'
+  });
+  const group = (policy, repeat) => ['demand512', null, policy, repeat];
+  const current = run('example--0002','openEuler',[group('off',2),group('on',2)]);
+  const other = run('example--0001','Ubuntu',[
+    ['io','7.2'],group('off',1),group('on',1),group('on',2),group('off',2)
+  ]);
+  const alias = {...current,id:'local--0002',group:'local'};
+  const partial = run('example--0003','Debian',[group('on',2)]);
+  const invalid = {...other,id:'example--0004',run_id:'0004',environment_issue:'digest mismatch'};
+  const simulated = {...other,id:'example--0005',run_id:'0005',data_origin:'simulation'};
+  const options = demandEnvironmentReplays([other, current, alias, partial, invalid, simulated],current.id,
+    {repeat:2,thp_advice:'on'},4);
+  assert.deepEqual(options.map(({run,index,step,current}) => [run.id,index,step,current]),[
+    ['example--0002',1,4,true],['example--0001',2,4,false]
+  ]);
+});
