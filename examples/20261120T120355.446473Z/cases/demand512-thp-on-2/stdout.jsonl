@@ -1,0 +1,9 @@
+{"kind":"condition","mode":"demand512","pid":8022,"bytes":536870912,"stride":4096,"page_bytes":4096}
+{"kind":"sample","phase":"before_alloc","pid":8022,"address":"0","program_break":"23a9000","count":0,"action_minor":0,"action_major":0,"total_minor":55,"total_major":0}
+{"kind":"policy","policy":"on","pid":8022,"address":"7fd8a0800000","bytes":536870912,"result":0,"errno":0}
+{"kind":"sample","phase":"allocated","pid":8022,"address":"7fd8a0800000","program_break":"23a9000","count":0,"action_minor":0,"action_major":0,"total_minor":56,"total_major":0}
+{"kind":"sample","phase":"write_quarter","pid":8022,"address":"7fd8a0800000","program_break":"23a9000","count":32768,"action_minor":64,"action_major":0,"total_minor":120,"total_major":0}
+{"kind":"sample","phase":"write_half","pid":8022,"address":"7fd8a0800000","program_break":"23a9000","count":65536,"action_minor":64,"action_major":0,"total_minor":184,"total_major":0}
+{"kind":"sample","phase":"write_all","pid":8022,"address":"7fd8a0800000","program_break":"23a9000","count":131072,"action_minor":128,"action_major":0,"total_minor":312,"total_major":0}
+{"kind":"values","checked":131072,"mismatches":0}
+{"kind":"sample","phase":"freed","pid":8022,"address":"7fd8a0800000","program_break":"23a9000","count":0,"action_minor":0,"action_major":0,"total_minor":312,"total_major":0}
