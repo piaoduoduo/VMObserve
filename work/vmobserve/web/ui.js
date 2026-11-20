@@ -241,7 +241,7 @@ function evidenceButtons(c, opts = {}, kinds = Object.keys(c.artifacts || {})) {
     opts.stepLabel ? `data-step-label="${esc(opts.stepLabel)}"` : ''
   ].filter(Boolean).join(' ');
   return kinds.filter(k => c.artifacts?.[k]).map(k =>
-    `<button data-raw="${esc(c.id)}" data-kind="${esc(k)}" ${attrs}>${esc(names[k] || k)}</button>`
+    `<button type="button" data-raw="${esc(c.id)}" data-kind="${esc(k)}" ${attrs}>${esc(names[k] || k)}</button>`
   ).join('');
 }
 

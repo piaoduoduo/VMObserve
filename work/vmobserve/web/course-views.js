@@ -1,5 +1,7 @@
 import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation } from './ui.js';
 
+import { newestReplay } from './curriculum.js';
+
 function renderLayout() {
   const intro = `<div class="course-intro">
     <small class="question-kicker">实验 3.1 · 虚拟地址与映射</small>
@@ -162,7 +164,15 @@ const demandActions = {
 
 function demandSteps(c) {
   return (c.data?.samples || []).map(sample => {
-    const [title, program, kernel] = demandActions[sample.phase] || [sample.phase, '程序在这里记录了一次采样。', '可以用本步的原始映射核对驻留量。'];
+    let [title, program, kernel] = demandActions[sample.phase] || [sample.phase, '程序在这里记录了一次采样。', '可以用本步的原始映射核对驻留量。'];
+    if (c.parameters.thp_advice && sample.phase === 'allocated') {
+      program = '程序建立一段独立的 512 MiB 匿名映射，再对整段设置透明大页建议。';
+      kernel = '映射建立后，内核可以等实际访问时再分配物理页。大页建议和实际驻留量可在下方对照。';
+    }
+    if (c.parameters.thp_advice && sample.phase === 'freed') {
+      program = '程序读回 A、B、C 核对写入值，再用 munmap 释放整个保留区。';
+      kernel = 'Linux 撤掉目标映射及两侧保护区。';
+    }
     let result;
     if (sample.phase === 'before_alloc') {
       result = '尚未取得目标地址，整进程此时的驻留量为 ' + kib(sample.process_rss_kib) + '。';
@@ -204,6 +214,54 @@ function stackSteps(c) {
   return steps;
 }
 
+
+function demandPolicyPanel(c, sample) {
+  const recipe = c.parameters.thp_advice;
+  const next = newestReplay('3.3', 'group3', 'demand512-thp');
+  const collect = state.config?.executor === 'openeuler-vm' || state.config?.host_system === 'Linux'
+    ? '<button id="run-demand-thp">采集三轮策略对照</button>' : '';
+  if (!recipe) {
+    return `<section class="seq-panel demand-policy">
+      <h2>同样写入 512 MiB，改一个条件再试</h2>
+      <p>预测允许透明大页后，次缺页增量和目标映射的 RSS 会怎么变。</p>
+      <div class="raw-links">${next ? `<a class="btn-link" href="${esc(next.href)}">查看透明大页实测对照 →</a>` : ''}${collect}</div>
+      ${!next && !collect ? '<p class="detail-copy">可在 Linux 运行 <code>python3 work/run_all.py --suite demand512-thp</code> 生成对照。</p>' : ''}
+    </section>`;
+  }
+
+  const repeat = c.parameters.repeat;
+  const pair = ['off', 'on'].map(policy => state.report.cases.find(item =>
+    item.suite === 'demand512' && item.parameters.repeat === repeat && item.parameters.thp_advice === policy));
+  const phase = sample?.phase || 'before_alloc';
+  const readings = pair.map(item => item?.data?.samples.find(row => row.phase === phase));
+  const policyName = index => index === 0 ? '禁用大页建议' : '使用大页建议';
+  const matched = pair.every(item => item?.validation?.status === 'passed') &&
+    readings.every(Boolean) && readings[0].count === readings[1].count;
+  const observed = readings[1]?.huge_kib;
+  const interpretation = !matched ? '本轮缺少通过校验的配对证据。可查看已有原文和各组状态。'
+    : !readings[0].mapping_present || !readings[1].mapping_present ? '两组在这个阶段均无可比较的目标映射。'
+    : observed > 0 ? '使用大页建议组本步采到了匿名大页。对照缺页增量时，注意它是进程级计数。'
+    : '使用大页建议组在本步的匿名大页驻留为 0 KiB。可继续查看后续写入阶段。';
+  const baseline = newestReplay('3.3', 'group3', 'demand512');
+  return `<section class="seq-panel demand-policy" aria-labelledby="policy-title">
+    <h2 id="policy-title">512 MiB 透明大页对照 · 第 ${esc(repeat)} 轮</h2>
+    <p>两个独立进程各用一个带保护页的匿名映射。按相同的 4096 字节步长分批写入，仅切换映射的大页建议。</p>
+    ${table(['组别', 'madvise', 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], pair.map((item, i) => {
+      const row = readings[i];
+      const policy = item?.data?.policy;
+      return [policyName(i), !policy ? '未采集' : policy.result === 0 ? '成功' : '失败 · errno ' + policy.errno,
+        row?.vm_flags?.filter(flag => flag === 'hg' || flag === 'nh').join(' ') || '—',
+        row?.count, row?.mapping_present ? kib(row.rss_kib) : '—', row?.mapping_present ? kib(row.huge_kib) : '—',
+        row?.action_minor, item?.validation?.status === 'passed' ? '通过' : item ? '待核对' : '缺失'];
+    }))}
+    <p>${esc(interpretation)}</p>
+    ${pair.map((item, i) => item ? `<div class="raw-links"><strong>${policyName(i)}</strong>
+      ${evidenceButtons(item, {recordKind: 'policy'}, ['jsonl'])}
+      ${evidenceButtons(item, {phase, vmaStart: readings[i]?.mapping_header?.split('-')[0]}, ['smaps'])}</div>` : '').join('')}
+    <div class="raw-links">${baseline ? `<a class="btn-link" href="${esc(baseline.href)}">查看原版 malloc 实验</a>` : ''}${collect}</div>
+  </section>`;
+}
+
 function renderMemorySteps(c, cases) {
   const demand = c.suite === 'demand512';
   const steps = demand ? demandSteps(c) : stackSteps(c);
@@ -213,7 +271,7 @@ function renderMemorySteps(c, cases) {
   const title = demand ? '申请 512 MiB，什么时候用上物理页？' : '递归到哪一步，栈会撑不住？';
   const options = cases.map((item, i) => {
     if (item.suite !== c.suite) return '';
-    const label = demand ? '' : `${item.parameters.mode === 'normal' ? '正常返回组' : '栈溢出组'} · 栈上限 ${kib(item.parameters.limit_kib)} · `;
+    const label = demand ? (item.parameters.thp_advice ? (item.parameters.thp_advice === 'on' ? '使用大页建议 · ' : '禁用大页建议 · ') : '') : `${item.parameters.mode === 'normal' ? '正常返回组' : '栈溢出组'} · 栈上限 ${kib(item.parameters.limit_kib)} · `;
     return `<option value="${i}" ${i === state.selected ? 'selected' : ''}>${esc(label)}第 ${esc(item.parameters.repeat)} 次实验</option>`;
   }).join('');
   const stackIndex = cases.findIndex(x => x.suite === 'stack' && x.parameters.repeat === c.parameters.repeat);
@@ -236,6 +294,7 @@ function renderMemorySteps(c, cases) {
       ${c.validation.status !== 'passed' ? `<p class="phase-note">本次核对结果：${esc(c.error?.message || c.validation.status)}</p>` : ''}
       <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, rawOpts)}</div><div class="seq-step-actions"><button data-course-step="${state.phase - 1}" ${state.phase === 0 ? 'disabled' : ''}>← 上一步</button>${next}</div></div>
     </section>
+    ${demand ? demandPolicyPanel(c, sample) : ''}
     <details class="secondary-fold"><summary>对照完整采样与诊断</summary>
       ${table(['采样时刻', demand ? '已写位置' : '递归深度', '映射大小', '映射驻留 RSS', '本步次缺页', '累计次缺页'], rows, sample ? samples.indexOf(sample) : -1)}
       ${diagnosisHTML(findingFor([c.id], ['group3', 'incomplete_evidence']))}

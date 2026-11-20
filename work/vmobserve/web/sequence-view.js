@@ -172,6 +172,62 @@ function renderObservation(c, phase) {
     r.blocks.map(b => [`块 ${b.num}${b.alive ? '' : '（已释放）'}`, '0x' + b.address, r.start + '–' + r.end, kib(r.size_kib)])))}</details>` : ''}`;
 }
 
+
+function exerciseRegions(sample) {
+  if (sample?.phase !== 'alloc_1MiB' || sample.blocks.length !== 3 ||
+      sample.blocks.some(block => !block.mapping)) return [];
+  const regions = groupBlocksIntoRegions(sample);
+  if (regions.some(region => !Number.isSafeInteger(region.rss_kib))) return [];
+  return regions.sort((a, b) => BigInt('0x' + a.start) < BigInt('0x' + b.start) ? -1 : 1);
+}
+
+function renderRssExercise(c, sample, regions) {
+  const label = index => '映射 ' + (index + 1);
+  const options = regions.map((_, i) => `<option value="${i}">${label(i)}</option>`).join('');
+  return `<section class="seq-panel rss-exercise" aria-labelledby="rss-exercise-title">
+    <h2 id="rss-exercise-title">先算一次这三块内存的 RSS</h2>
+    <p>用“起始地址 ≤ 指针 &lt; 结束地址”判断三个返回指针的归属。再将与三个块相交的各段映射 RSS 各加一次。</p>
+    ${table(['映射', 'smaps 地址区间', '整段 RSS'], regions.map((r, i) =>
+      [label(i), r.start + '–' + r.end, kib(r.rss_kib)]))}
+    <form class="rss-exercise-form">
+      <div class="rss-inputs">${sample.blocks.map((block, i) => `<label>块 ${i + 1} · <code>0x${esc(block.address)}</code>
+        <select name="block-${i}" required><option value="">请选择映射</option>${options}</select></label>`).join('')}
+      <label>去重后的 RSS（KiB）<input name="rss" type="number" min="0" step="1" required></label></div>
+      <div class="raw-links"><button type="submit" class="primary">核对我的答案</button>
+      ${evidenceButtons(c, {phase: sample.phase, stepLabel: '第三次申请', vmaStart: regions.map(r => r.start).join(',')}, ['smaps'])}</div>
+      <div class="rss-feedback" aria-live="polite"></div>
+    </form>
+  </section>`;
+}
+
+function attachRssExercise(sample, regions) {
+  const form = $('.rss-exercise-form');
+  const expected = sample.blocks.map(block =>
+    regions.findIndex(region => region.start === block.mapping?.start && region.end === block.mapping?.end));
+  const result = $('#rss-observation');
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const answers = new FormData(form);
+    const entered = Number(answers.get('rss'));
+    const wrong = expected.flatMap((index, i) => Number(answers.get('block-' + i)) === index ? [] : [i + 1]);
+    const total = regions.reduce((sum, region) => sum + region.rss_kib, 0);
+    const groups = regions.filter(region => region.blocks.length > 1);
+    const repeated = regions.reduce((sum, region) => sum + region.rss_kib * region.blocks.length, 0);
+    const duplicate = entered !== total && entered === repeated && groups.length;
+    const correct = !wrong.length && entered === total;
+    const matches = expected.map((index, i) => `块 ${i + 1} → 映射 ${index + 1}`).join('，');
+    const equation = regions.map(region => region.rss_kib).join(' + ') + ' = ' + total + ' KiB';
+    const feedback = correct ? '全部正确。' : [
+      wrong.length ? '需重新核对块 ' + wrong.join('、') + ' 的指针归属。' : '三个指针的归属都正确。',
+      entered !== total ? 'RSS 合计需重新核对。' : 'RSS 合计正确。',
+      duplicate ? groups.map(region => '块 ' + region.blocks.map(block => block.num).join('、') +
+        ' 与同一段映射相交，该段 ' + kib(region.rss_kib) + ' 只加一次。').join('') : ''
+    ].join('');
+    form.querySelector('.rss-feedback').textContent = feedback + ' ' + matches + '。RSS 合计 ' + equation + '。';
+    result.open = true;
+  });
+}
+
 function renderComparison(samples) {
   const peak = samples[3], freed = samples[4];
   const stages = table(
@@ -223,6 +279,9 @@ export function renderSequence() {
   const titles = [...PHASES.slice(0, data.samples.length), '结果对照'];
   state.phase = Math.min(Math.max(0, state.phase), titles.length - 1);
   const comparing = state.phase === data.samples.length;
+  const sample = data.samples[state.phase];
+  const regions = exerciseRegions(sample);
+  const exercise = regions.length ? renderRssExercise(c, sample, regions) : '';
 
   const calls = table(
     ['动作', '返回指针', '系统调用原文', '实际分配去向'],
@@ -242,13 +301,14 @@ export function renderSequence() {
         <h1>连续三次 malloc，内存去了哪里？</h1>
       </header>
       ${stepNavigation(titles, state.phase)}
-      ${comparing ? renderComparison(data.samples) : renderObservation(c, state.phase)}
+      ${comparing ? renderComparison(data.samples) : exercise ? `${exercise}<details class="secondary-fold" id="rss-observation"><summary>展开本步实测结果</summary>${renderObservation(c, state.phase)}</details>` : renderObservation(c, state.phase)}
       <details class="secondary-fold"><summary>对照各次记录与完整数据</summary>${picker}
         <h3>系统调用与指针</h3>${calls}
         <p class="detail-copy">系统调用跟踪工具：${esc(cleanTracerVersion(state.report.trace_tool?.version))}</p>
         <div class="raw-links">${evidenceButtons(c)}</div>
       </details>
     </section>`;
+  if (exercise) attachRssExercise(sample, regions);
 }
 
 export { parseMmapCall, groupBlocksIntoRegions };

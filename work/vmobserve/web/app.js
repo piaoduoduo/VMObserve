@@ -320,6 +320,7 @@ const runModes = {
   'run-course': 'course',
   'run-sequence': 'sequence',
   'run-group3': 'group3',
+  'run-demand-thp': 'demand512-thp',
   'run-group4': 'group4',
   'run-policy': 'policy',
   recheck: 'recheck',
@@ -635,7 +636,7 @@ try {
     $('#content').textContent = '正在读取实验记录…';
     [state.config, state.runs] = await Promise.all([api('/api/config'), api('/api/runs')]);
     const suite = new URLSearchParams(location.search).get('replay');
-    const topic = ({ sequence: 'sequence', demand512: 'group3', stack: 'group3' })[suite];
+    const topic = ({ sequence: 'sequence', demand512: 'group3', 'demand512-thp': 'group3', stack: 'group3' })[suite];
     const entry = topic && newestReplay(lab, topic, suite);
     if (entry) {
       window.history.replaceState(null, '', entry.href);

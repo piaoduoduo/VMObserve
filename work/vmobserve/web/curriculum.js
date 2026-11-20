@@ -35,7 +35,7 @@ const byId = Object.fromEntries(labs.map(row => [row[0], row]));
 const replayTasks = {
   '3.1': [['打开 7 类程序地址分布图', 'layout', 'layout'], ['动态链接映射', 'group3', 'link-dynamic'], ['静态链接映射', 'group3', 'link-static']],
   '3.2': [['回放三次申请', 'sequence', 'sequence']],
-  '3.3': [['512 MiB 分批触碰', 'group3', 'demand512'], ['栈增长与溢出', 'group3', 'stack'], ['按需分配逐步对照', 'course', 'course']],
+  '3.3': [['512 MiB 分批触碰', 'group3', 'demand512'], ['512 MiB 透明大页实测对照', 'group3', 'demand512-thp'], ['栈增长与溢出', 'group3', 'stack'], ['按需分配逐步对照', 'course', 'course']],
   '4.1': [['打开父子进程事件回放', 'group4', 'g4-fork']],
   '4.2': [['打开线程与共享变量回放', 'group4', 'g4-pthread']],
   '4.3': [['打开用户级线程调度回放', 'group4', 'g4-uthread']],
@@ -112,12 +112,16 @@ export function currentLab(topic, report, index) {
 }
 
 export function newestReplay(id, topic, suite, preferredId) {
+  const matches = ([key, lab, policy]) => suite === 'demand512-thp'
+    ? key === 'demand512' && Boolean(policy)
+    : key === suite && (topic !== 'systems' || lab === id) && (suite !== 'demand512' || !policy);
   const runs = (state.runs || []).filter(r => r.data_origin === 'real_execution' && !r.environment_issue &&
-    r.status === 'completed' && r.case_keys.some(([s, lab]) => s === suite && (topic !== 'systems' || lab === id)));
+    (r.status === 'completed' || (suite === 'demand512-thp' && r.status === 'completed_with_deviations')) &&
+    r.case_keys.some(matches));
   runs.sort((a, b) => b.run_id.localeCompare(a.run_id) || Number(a.group === 'example') - Number(b.group === 'example'));
   const run = runs.find(r => r.id === preferredId) || runs[0];
   if (!run) return null;
-  const index = viewCases(run.case_keys, topic, x => x[0]).findIndex(([s, lab]) => s === suite && (topic !== 'systems' || lab === id));
+  const index = viewCases(run.case_keys, topic, x => x[0]).findIndex(matches);
   return { run, href: '/#' + new URLSearchParams({ run: run.id, topic, case: index }) };
 }
 

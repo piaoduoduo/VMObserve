@@ -7,7 +7,7 @@ FIELDS = {"size_kib": "Size", "rss_kib": "Rss", "pss_kib": "Pss",
 HEADER = re.compile(r"^([0-9a-f]+)-([0-9a-f]+) ([rwxps-]{4})\s+([0-9a-f]+)\s+\S+\s+\d+[^\n]*$", re.M)
 
 
-def parse_mappings(body):
+def parse_mappings(body, *, include_flags=False):
     headers = list(HEADER.finditer(body))
     if not headers:
         raise ValueError("smaps has no mappings")
@@ -23,6 +23,9 @@ def parse_mappings(body):
         mapping = {"start": header[1], "end": header[2], "header": header[0],
                    "permissions": header[3], "file_offset": int(header[4], 16),
                    "pathname": fields[5] if len(fields) == 6 else ""}
+        if include_flags:
+            flags = re.search(r"^VmFlags:[ \t]*(.*)$", section, re.M)
+            mapping["vm_flags"] = flags[1].split() if flags else []
         for field, label in FIELDS.items():
             values = re.findall(rf"^{label}:\s+(\d+) kB$", section, re.M)
             if len(values) != 1:

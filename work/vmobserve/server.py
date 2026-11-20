@@ -3,6 +3,7 @@ import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+import platform
 from pathlib import Path
 import secrets
 import subprocess
@@ -46,6 +47,7 @@ def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all
         "student": ["--suite", "course", "--course-code", "student"],
         "cow": ["--suite", "baseline", "--cow-fraction", cow_fraction],
         "group3": ["--suite", "group3", "--timeout", "120"],
+        "demand512-thp": ["--suite", "demand512-thp", "--timeout", "120"],
         "group4": ["--suite", "group4", "--group4-task", group4_task, "--timeout", "120"],
         "policy": ["--suite", "thp", "--thp", "on", "--thp-process", "pair", "--pattern", pattern],
         "recheck": ["--pattern", pattern],
@@ -78,7 +80,7 @@ class Workbench:
                                   "environment_issue": issue,
                                   "status": data.get("status", "completed" if data.get("completed") else "failed"),
                                   "count": len(data["cases"]) if "cases" in data else 18,
-                                  "case_keys": [[c["suite"], c.get("parameters", {}).get("lab")] for c in data.get("cases", [])],
+                                  "case_keys": [[c["suite"], c.get("parameters", {}).get("lab"), c.get("parameters", {}).get("thp_advice")] for c in data.get("cases", [])],
                                   "suites": sorted({c["suite"] for c in data["cases"]}) if "cases" in data else ["baseline", "thp"],
                                   "data_origin": data.get("data_origin", "real_execution"),
                                   "legacy": "schema_version" not in data})
@@ -202,7 +204,7 @@ def handler_for(app):
                                       "reference": (WORK / "proj5-course/access_pattern.h").read_text(encoding="utf-8"),
                                       "worksheet": (WORK / "lessons/demand/WORKSHEET.md").read_text(encoding="utf-8")})
                 if path == "/api/config":
-                    return self.send({"token": app.token, "executor": app.executor})
+                    return self.send({"token": app.token, "executor": app.executor, "host_system": platform.system()})
                 if path == "/api/runs":
                     return self.send(app.catalog())
                 if path == "/api/job":

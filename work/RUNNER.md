@@ -95,3 +95,11 @@ Linux 使用相同参数传给 `python3 work/run_all.py`。`--thp-process` 支�
 网页 `/lesson` 提供草稿、证据选择与学习记录 JSON；个人解释不自动评分。主页面 THP 页提供新对照及关联复验。课例 v2 采集完整可退出 0，但累计位置/页首值检查不通过时统一运行器返回 1，整轮 `failed`。这与采集不完整、编译失败不同。原始 v1 课例兼容读取，不重写。
 
 VM 在传输目录完成副本后再一次性移入公开历史目录，避免页面将复制中的不完整目录误判为证据损坏。失败执行仍取回；不覆盖历史。
+
+### 3.3 的 512 MiB 透明大页对照
+
+在 Linux 运行 `python3 work/run_all.py --suite demand512-thp --repeats 3 --timeout 120`。
+已有 openEuler 虚拟机可运行 `./work/vm.ps1 retest --suite demand512-thp --repeats 3 --timeout 120`。
+每组独立启动进程，顺序按轮次交替，每次最多写入 512 MiB。对照保留原课例 A/B/C 的访问次序与 4096 字节步长，用两侧带保护页的私有匿名映射建立精确的 512 MiB 统计范围。建议作用于整个区间，使用 `MADV_NOHUGEPAGE` 与 `MADV_HUGEPAGE` 配对，写入前保存返回值和地址，再按阶段复核 `VmFlags`、RSS 和 `AnonHugePages`。
+
+网页在实验 3.3 中分别提供原版 malloc 回放和透明大页对照。对照记录可按阶段打开两组的策略 JSONL 与 smaps。策略请求成功后，实际大页驻留仍以采样为准。次缺页增量来自进程级 `getrusage`。真实采集记录默认保存于工具目录的 `runs/` 或虚拟机回传目录。Windows Python 本地服务可以回放已采集记录。

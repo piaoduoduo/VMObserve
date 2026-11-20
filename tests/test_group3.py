@@ -37,4 +37,31 @@ class Group3Tests(unittest.TestCase):
         bad=copy.deepcopy(data); bad['samples'][4]['rss_kib']=4
         self.assertEqual(validate('demand512',bad)['status'],'failed')
 
+    def test_demand_thp_pairs_alternate_order_and_use_same_suite(self):
+        args = parser().parse_args(experiment_args("demand512-thp"))
+        cases = plan_cases(args)
+        self.assertEqual([(case["parameters"]["repeat"], case["arguments"][0]) for case in cases],
+                         [(1, "off"), (1, "on"), (2, "on"), (2, "off"), (3, "off"), (3, "on")])
+        self.assertTrue(all(case["suite"] == "demand512" for case in cases))
+
+    def test_demand_thp_checks_advice_separately_from_huge_page_observation(self):
+        data = {
+            "samples": [{"rss_kib": n, "huge_kib": 0, "vm_flags": ["hg"],
+                         "mapping_present": 0 < i < 5}
+                        for i, n in enumerate((0, 0, 131072, 262144, 524288, 0))],
+            "values": {"kind": "values", "checked": 131072, "mismatches": 0},
+            "policy": {"policy": "on", "result": 0},
+        }
+        self.assertEqual(validate("demand512", data)["status"], "passed")
+        for field, value in (("result", -1), ("policy", "off")):
+            failed = copy.deepcopy(data)
+            failed["policy"][field] = value
+            self.assertEqual(validate("demand512", failed)["status"], "failed")
+        data["policy"]["policy"] = "off"
+        for sample in data["samples"][1:5]:
+            sample["vm_flags"] = ["nh"]
+        self.assertEqual(validate("demand512", data)["status"], "passed")
+        data["samples"][2]["huge_kib"] = 2048
+        self.assertEqual(validate("demand512", data)["status"], "failed")
+
 if __name__=='__main__': unittest.main()
