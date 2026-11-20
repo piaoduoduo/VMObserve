@@ -196,6 +196,7 @@ function renderRssExercise(c, sample, regions) {
       <div class="raw-links"><button type="submit" class="primary">核对我的答案</button>
       ${evidenceButtons(c, {phase: sample.phase, stepLabel: '第三次申请', vmaStart: regions.map(r => r.start).join(',')}, ['smaps'])}</div>
       <div class="rss-feedback" aria-live="polite"></div>
+      <button class="rss-note" type="button" hidden>打开本步笔记</button>
     </form>
   </section>`;
 }
@@ -205,6 +206,12 @@ function attachRssExercise(sample, regions) {
   const expected = sample.blocks.map(block =>
     regions.findIndex(region => region.start === block.mapping?.start && region.end === block.mapping?.end));
   const result = $('#rss-observation');
+  const note = form.querySelector('.rss-note');
+  note.addEventListener('click', () => {
+    const editor = $('#replay-notes');
+    editor.open = true;
+    editor.querySelector('textarea').focus();
+  });
   form.addEventListener('submit', event => {
     event.preventDefault();
     const answers = new FormData(form);
@@ -225,6 +232,7 @@ function attachRssExercise(sample, regions) {
     ].join('');
     form.querySelector('.rss-feedback').textContent = feedback + ' ' + matches + '。RSS 合计 ' + equation + '。';
     result.open = true;
+    note.hidden = false;
   });
 }
 

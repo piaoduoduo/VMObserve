@@ -1,4 +1,4 @@
-import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation } from './ui.js';
+import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair } from './ui.js';
 
 import { newestReplay } from './curriculum.js';
 
@@ -230,8 +230,8 @@ function demandPolicyPanel(c, sample) {
   }
 
   const repeat = c.parameters.repeat;
-  const pair = ['off', 'on'].map(policy => state.report.cases.find(item =>
-    item.suite === 'demand512' && item.parameters.repeat === repeat && item.parameters.thp_advice === policy));
+  const available = demandPair(state.report.cases, c);
+  const pair = ['off', 'on'].map(advice => available.find(item => item.parameters.thp_advice === advice));
   const phase = sample?.phase || 'before_alloc';
   const readings = pair.map(item => item?.data?.samples.find(row => row.phase === phase));
   const policyName = index => index === 0 ? '禁用大页建议' : '使用大页建议';
@@ -246,6 +246,8 @@ function demandPolicyPanel(c, sample) {
   return `<section class="seq-panel demand-policy" aria-labelledby="policy-title">
     <h2 id="policy-title">512 MiB 透明大页对照 · 第 ${esc(repeat)} 轮</h2>
     <p>两个独立进程各用一个带保护页的匿名映射。按相同的 4096 字节步长分批写入，仅切换映射的大页建议。</p>
+    <div class="demand-prediction"></div>
+    <details class="secondary-fold demand-result"><summary>查看本步两组实测与原文</summary>
     ${table(['组别', 'madvise', 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], pair.map((item, i) => {
       const row = readings[i];
       const policy = item?.data?.policy;
@@ -258,12 +260,14 @@ function demandPolicyPanel(c, sample) {
     ${pair.map((item, i) => item ? `<div class="raw-links"><strong>${policyName(i)}</strong>
       ${evidenceButtons(item, {recordKind: 'policy'}, ['jsonl'])}
       ${evidenceButtons(item, {phase, vmaStart: readings[i]?.mapping_header?.split('-')[0]}, ['smaps'])}</div>` : '').join('')}
+    </details>
     <div class="raw-links">${baseline ? `<a class="btn-link" href="${esc(baseline.href)}">查看原版 malloc 实验</a>` : ''}${collect}</div>
   </section>`;
 }
 
 function renderMemorySteps(c, cases) {
   const demand = c.suite === 'demand512';
+  const controlled = demand && Boolean(c.parameters.thp_advice);
   const steps = demand ? demandSteps(c) : stackSteps(c);
   state.phase = Math.max(0, Math.min(state.phase, steps.length - 1));
   const step = steps[state.phase];
@@ -288,11 +292,13 @@ function renderMemorySteps(c, cases) {
     ${stepNavigation(steps.map(s => s.title), state.phase, 'data-course-step')}
     <section class="seq-panel" id="sequence-result" aria-labelledby="memory-heading">
       <div class="demand-heading"><h2 id="memory-heading">${esc(step?.title || '缺少采样')}</h2><label>回放记录 <select id="case-select">${options}</select></label></div>
+      ${controlled ? '<details class="secondary-fold"><summary>查看这一组的单步记录</summary>' : ''}
       ${step ? `${stepExplanation(step.program, step.kernel, step.result)}
         ${sample ? `<dl class="sample-readings"><div><dt>映射大小</dt><dd>${kib(sample.size_kib)}</dd></div>
           <div><dt>映射驻留 RSS</dt><dd>${kib(sample.rss_kib)}</dd></div><div><dt>本步次缺页</dt><dd>${esc(sample.action_minor)} 次</dd></div></dl>` : ''}` : '<p>这次没有采到分步记录，可以切换记录或打开原文。</p>'}
       ${c.validation.status !== 'passed' ? `<p class="phase-note">本次核对结果：${esc(c.error?.message || c.validation.status)}</p>` : ''}
-      <div class="seq-navigation"><div class="raw-links">${evidenceButtons(c, rawOpts)}</div><div class="seq-step-actions"><button data-course-step="${state.phase - 1}" ${state.phase === 0 ? 'disabled' : ''}>← 上一步</button>${next}</div></div>
+      ${controlled ? `<div class="raw-links">${evidenceButtons(c, rawOpts)}</div></details>` : ''}
+      <div class="seq-navigation"><div class="raw-links">${controlled ? '' : evidenceButtons(c, rawOpts)}</div><div class="seq-step-actions"><button data-course-step="${state.phase - 1}" ${state.phase === 0 ? 'disabled' : ''}>← 上一步</button>${next}</div></div>
     </section>
     ${demand ? demandPolicyPanel(c, sample) : ''}
     <details class="secondary-fold"><summary>对照完整采样与诊断</summary>

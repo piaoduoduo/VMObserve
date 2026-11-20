@@ -27,7 +27,7 @@ WEB_PAGES = {
         "app.js", "ui.js", "course-views.js", "memory-views.js",
         "sequence-view.js", "evidence-view.js", "curriculum.js",
         "experiment-flow.js", "replay-notes.js", "notes-store.js",
-        "notes-library.js", "comparison-data.js", "replay-comparison.js",
+        "notes-library.js", "learning-report.js", "comparison-data.js", "replay-comparison.js",
         "lesson.js", "style.css",
     )},
 }

@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>重点任务可视化实验台 · VMObserve</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+<div class="app-frame">
+  <aside class="course-rail" aria-label="课程实验目录">
+    <a class="rail-brand" href="/">
+      <svg aria-hidden="true" viewBox="0 0 32 32"><g fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="11" height="11" rx="2"/><rect x="18" y="3" width="11" height="11" rx="2"/><rect x="3" y="18" width="11" height="11" rx="2"/><rect x="18" y="18" width="11" height="11" rx="2"/></g></svg>
+      <div>
+        <strong>VMObserve</strong>
+        <span>重点任务可视化实验台</span>
+      </div>
+    </a>
+
+    <nav class="rail-nav" aria-label="实验章节">
+      <label class="mobile-directory">实验目录<select id="mobile-directory"></select></label>
+      <a class="rail-link rail-home" data-nav="home" href="/">实验台首页</a>
+      <div class="rail-group">
+        <a class="rail-group-title" data-lab="focus" href="/labs/focus">重点任务目录</a>
+        <div id="course-directory"></div>
+      </div>
+      <details class="rail-more rail-isolated">
+        <summary>拓展实验</summary>
+        <a class="rail-link" data-topic="baseline" href="/#topic=baseline"><em>COW</em>写时复制</a>
+        <a class="rail-link" data-topic="thp" href="/#topic=thp"><em>THP</em>透明大页</a>
+      </details>
+      <div class="rail-group">
+        <span class="rail-group-title">原始证据</span>
+        <a class="rail-link" data-topic="evidence" href="/#topic=evidence"><em>RAW</em>原始记录</a>
+      </div>
+      <details class="rail-more full-directory rail-isolated">
+        <summary>完整课程目录</summary>
+        <div id="full-directory"></div>
+      </details>
+    </nav>
+
+    <div class="rail-footer">
+      <button id="run" class="rail-btn">采集新实验数据</button>
+      <button id="export" class="rail-btn">导出实验报告</button>
+    </div>
+  </aside>
+
+  <div class="stage-shell">
+    <header class="stage-bar">
+      <div class="dataset-bar">
+        <span class="dataset-label">当前回放记录</span>
+        <button id="toggle-runs" class="dataset-pill" aria-expanded="false" aria-controls="runs-drawer">
+          <span id="mode">正在读取记录</span>
+          <span class="pill-caret">换一份数据 ▾</span>
+        </button>
+        <span id="metadata" class="meta-text"></span>
+      </div>
+      <div class="share-bar">
+        <span id="copy-status" role="status"></span>
+        <button id="copy-replay" class="share-btn" disabled>复制当前步骤链接</button>
+      </div>
+    </header>
+
+    <main class="stage-main">
+      <h1 id="page-title" hidden>VMObserve</h1>
+      <div id="job" role="status" aria-live="polite" hidden></div>
+      <div id="error" role="alert" hidden></div>
+      <section id="content" aria-live="polite"></section>
+      <details class="manifest">
+        <summary>实验记录完整性校验</summary>
+        <p id="integrity"></p>
+        <details class="manifest-sub"><summary>查看实验文件校验指纹（SHA-256）</summary><pre id="manifest"></pre></details>
+      </details>
+    </main>
+  </div>
+</div>
+
+<div id="drawer-backdrop" class="drawer-backdrop" hidden></div>
+<aside id="runs-drawer" class="runs-drawer" aria-label="切换实验记录" hidden>
+  <div class="drawer-head">
+    <div>
+      <h2>切换历史实验记录</h2>
+      <p>想对比 openEuler 和 Ubuntu 的区别，可以在这里切换记录</p>
+    </div>
+    <button id="close-drawer">关闭</button>
+  </div>
+  <label class="filter">环境筛选：
+    <select id="environment">
+      <option value="all">全部环境</option>
+      <option value="example">课内标准样例</option>
+      <option value="openeuler">openEuler 虚拟机</option>
+      <option value="local">本地 / WSL</option>
+    </select>
+  </label>
+  <nav id="runs" aria-label="实验记录列表"></nav>
+</aside>
+
+<dialog id="raw-dialog">
+  <div class="dialog-head">
+    <h2 id="dialog-title">原始证据</h2>
+    <button id="close-dialog">关闭</button>
+  </div>
+  <div id="dialog-body"></div>
+</dialog>
+</body>
+</html>

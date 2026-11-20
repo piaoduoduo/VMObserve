@@ -1,4 +1,4 @@
-import {state, esc, api, url} from './ui.js';
+import {state, esc, api, url, demandPair} from './ui.js';
 import {viewCases} from './curriculum.js';
 
 const names = {sequence: '三次 malloc', course: '按需分配', baseline: '写时复制', thp: '透明大页',
@@ -25,7 +25,10 @@ async function replayURL(record) {
     selected = target ? groups.indexOf(target.parameters.pattern + ':' + target.parameters.repeat) : -1;
     const pair = cases.filter(item => item.parameters.pattern + ':' + item.parameters.repeat === groups[selected]);
     if (JSON.stringify(pair.map(item => item.id)) !== JSON.stringify(binding.case_ids)) selected = -1;
-  } else if (binding.case_ids.length !== 1) selected = -1;
+  } else if (binding.case_ids.length !== 1) {
+    const pair = demandPair(cases, cases[selected]);
+    if (JSON.stringify(pair.map(item => item.id)) !== JSON.stringify(binding.case_ids)) selected = -1;
+  }
   if (selected < 0) throw new Error('报告中找不到笔记对应的案例，请保留笔记并核对记录。');
   const target = new URL('/', location.origin);
   if (new URLSearchParams(location.search).get('verification') === '1') target.searchParams.set('verification', '1');

@@ -58,6 +58,14 @@ export function stepActions(selected, length, attr = 'data-course-step') {
   </div>`;
 }
 
+
+export function demandPair(cases, selected) {
+  if (selected?.suite !== 'demand512' || !selected.parameters.thp_advice) return [];
+  return ['off', 'on'].map(advice => cases.find(item =>
+    item.suite === 'demand512' && item.parameters.repeat === selected.parameters.repeat &&
+    item.parameters.thp_advice === advice)).filter(Boolean);
+}
+
 export function stepNavigation(titles, selected, attr = 'data-sequence-step') {
   return `<nav class="seq-steps" aria-label="实验步骤"><ol>${titles.map((title, i) =>
     `<li><button type="button" ${attr}="${i}" aria-controls="sequence-result" ${i === selected ? 'aria-current="step"' : ''}>

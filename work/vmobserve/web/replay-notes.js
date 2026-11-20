@@ -1,7 +1,8 @@
-import { state, esc } from './ui.js';
+import { state, esc, demandPair } from './ui.js';
 import { viewCases } from './curriculum.js';
 import { createNotesStore, noteFields } from './notes-store.js';
 import { renderNoteLibrary } from './notes-library.js';
+import { learningReport } from './learning-report.js';
 
 const verification = new URLSearchParams(location.search).get('verification') === '1';
 const store = createNotesStore(() => localStorage, verification);
@@ -18,7 +19,9 @@ function selectedCases() {
     const group = groups[state.selected];
     return cases.filter(item => item.parameters.pattern + ':' + item.parameters.repeat === group);
   }
-  return cases[state.selected] ? [cases[state.selected]] : [];
+  const selected = cases[state.selected];
+  if (selected?.parameters.thp_advice) return demandPair(cases, selected);
+  return selected ? [selected] : [];
 }
 
 function snapshot(item) {
@@ -42,7 +45,10 @@ function snapshot(item) {
   return {
     case_id: item.id, suite: item.suite, parameters: item.parameters,
     case_status: item.status, validation: item.validation, integrity: item.integrity ?? null,
-    artifacts: item.artifacts || {}, stage, samples: selected,
+    artifacts: item.artifacts || {},
+    artifact_sha256: Object.fromEntries(Object.values(item.artifacts || {}).map(path =>
+      [path, state.report.artifacts?.[path] || null])),
+    stage, samples: selected, policy: item.data?.policy ?? null,
     measurements: ['whole_case', 'comparison'].includes(stage) ? item.data : null,
     condition: item.data?.condition ?? null,
     outcome: item.data?.outcome ?? null, value_check: item.data?.value_check ?? item.data?.values ?? null
@@ -60,24 +66,68 @@ function context() {
     case_ids: cases.map(item => item.id), case_index: state.selected, step_index: state.phase,
     report_sha256: state.report.original_report_sha256, source_sha256: state.report.sources,
     integrity: state.report.integrity, data_origin: state.report.data_origin,
-    view_mode: state.report.view_mode, replay_url: location.href, cases: cases.map(snapshot)
+    view_mode: state.report.view_mode,
+    environment: {
+      distribution: state.report.environment?.distribution?.PRETTY_NAME ?? null,
+      kernel: state.report.environment?.kernel ?? null,
+      execution_context: state.report.environment?.execution_context ?? null,
+      page_bytes: state.report.environment?.page_bytes ?? null,
+      thp_enabled: state.report.environment?.thp_enabled ?? null,
+      thp_defrag: state.report.environment?.thp_defrag ?? null
+    },
+    replay_url: location.href, cases: cases.map(snapshot)
   };
 }
 
 
-function download(value, filename) {
-  const url = URL.createObjectURL(new Blob([JSON.stringify(value, null, 2)], {type: 'application/json'}));
+function download(value, filename, type = 'application/json') {
+  const data = type === 'text/html' ? value : JSON.stringify(value, null, 2);
+  const url = URL.createObjectURL(new Blob([data], {type}));
   const link = document.createElement('a');
   link.href = url; link.download = filename; link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+
+function attachDemandPrediction(binding, draft, panel) {
+  const host = document.querySelector('.demand-prediction');
+  if (!host) return;
+  const result = document.querySelector('.demand-result');
+  host.innerHTML = '<label for="demand-prediction">看数据前，预测两组的次缺页与映射 RSS 会如何变化</label>' +
+    '<textarea id="demand-prediction" rows="2" maxlength="100000">' + esc(draft.prediction) + '</textarea>' +
+    '<div class="raw-links"><button class="primary" type="button">记录预测并查看实测</button></div>' +
+    '<p class="detail-copy" role="status"></p>';
+  host.querySelector('button').addEventListener('click', () => {
+    const input = host.querySelector('textarea');
+    if (!input.value.trim()) {
+      host.querySelector('[role=status]').textContent = '先写一句预测，也可以直接展开下面的实测。';
+      input.focus();
+      return;
+    }
+    const field = panel.querySelector('[data-note-field=prediction]');
+    field.value = input.value;
+    field.dispatchEvent(new Event('input', {bubbles: true}));
+    result.open = true;
+    result.querySelector('summary').focus();
+    host.querySelector('[role=status]').textContent = '预测已填入本步笔记。核对实测后，记下证据和解释。';
+  });
+}
+
+function reportChoices(binding) {
+  if (!binding.cases.some(item => item.suite === 'demand512')) return [];
+  try {
+    return store.records().filter(record => record.evidence.topic === 'sequence').slice(-30).reverse();
+  } catch { return []; }
 }
 
 export function renderReplayNotes() {
   const binding = context();
   if (!binding || state.tab === 'evidence') return;
   const draft = store.getDraft(binding);
+  const focusReport = binding.cases.some(item => ['sequence', 'demand512'].includes(item.suite));
+  const prior = reportChoices(binding);
   document.querySelector('#content').insertAdjacentHTML('beforeend',
-    '<details class="replay-notes"><summary>记录本步的预测、观测与解释</summary>' +
+    '<details class="replay-notes" id="replay-notes"><summary>记录本步的预测、观测与解释</summary>' +
     '<p class="detail-copy">当前案例 ' + esc(binding.case_ids.join('、')) + ' · 回放位置 ' +
     (binding.step_index + 1) + '。草稿保存在当前浏览器；可导出备份，再到另一浏览器导入。</p>' +
     fields.map((field, i) => '<label>' + ['我的预测', '我在原文中看到的结果', '解释与下一次复验'][i] +
@@ -87,6 +137,12 @@ export function renderReplayNotes() {
     '<button data-note-action="import">导入笔记</button><input class="note-file" type="file" accept=".json,application/json" hidden></div>' +
     '<p class="note-status" role="status" aria-live="polite"></p><button data-note-action="undo-restore" hidden>撤销这次草稿替换</button>' +
     '<p class="detail-copy">保存时附上案例与采样、原始文件路径和报告哈希。个人解释保留为未评分。</p>' +
+    (focusReport ? '<div class="notes-report">' +
+      (prior.length ? '<label>一并导出已保存的 3.2 笔记<select class="prior-note"><option value="">只导出本步</option>' +
+        prior.map((record, index) => '<option value="' + index + '">' +
+          esc(record.evidence.case_ids.join('、') + ' · 第 ' + (record.evidence.step_index + 1) +
+            ' 步 · ' + new Date(record.saved_at).toLocaleString('zh-CN')) + '</option>').join('') + '</select></label>' : '') +
+      '<button data-note-action="report">导出实验报告 HTML</button></div>' : '') +
     '<details class="note-library"></details></details>');
   const panel = document.querySelector('.replay-notes');
   let restoreBackup = null;
@@ -127,6 +183,12 @@ export function renderReplayNotes() {
         store.saveRecord(binding, capture(), crypto.randomUUID());
         status('已保存独立笔记，并绑定当前案例与回放位置。');
         library();
+      } else if (action === 'report') {
+        const index = panel.querySelector('.prior-note')?.value || '';
+        const entries = index === '' ? [] : [prior[Number(index)]];
+        entries.push({...capture(), evidence: binding});
+        download(learningReport(entries, {verification}), 'vmobserve-learning-report.html', 'text/html');
+        status('已生成实验报告，包含回答、实测值和原文路径。');
       } else if (action === 'export') {
         const archive = store.exportArchive(binding, capture());
         download(archive, 'vmobserve-replay-notes.json');
@@ -159,5 +221,6 @@ export function renderReplayNotes() {
     } catch (error) { status(error.message); }
     finally { input.value = ''; }
   });
+  attachDemandPrediction(binding, draft, panel);
   library();
 }

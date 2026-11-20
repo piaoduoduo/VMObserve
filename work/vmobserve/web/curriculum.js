@@ -152,8 +152,10 @@ export function renderHome(focusOnly = false) {
   if (!focusOnly) {
     $('#content').innerHTML = `<article class="workbench-overview">
       <header class="focus-intro"><small class="question-kicker">华中科技大学 · 操作系统课程实践</small>
-        <h1>重点任务可视化实验台</h1>
-        <p>调用 <code>malloc</code> 申请一块内存、再往里写数据时，Linux 在后台到底做了什么？这里把真实运行抓下来的记录按步骤拆开，带你看清每一步的来龙去脉。</p>
+        <h1>申请了 1281 KiB，为什么只驻留 16 KiB？</h1>
+        <p>从一次 openEuler 实测开始。先用三个指针和 <code>smaps</code> 算出真实驻留量，再改变透明大页建议，比较两组写入 512 MiB 的过程。</p>
+        <div class="raw-links"><a class="btn-link primary" href="/#run=example--20261118T013159.221864Z&amp;topic=sequence&amp;step=3">开始 3.2 地址归属练习</a>
+        <a class="btn-link" href="/labs/3.3?replay=demand512-thp">打开 3.3 大页对照</a></div>
       </header>
       <section class="overview-guide"><h2>怎么看懂一次实验</h2>
         <dl><div><dt>看程序做了什么</dt><dd>从左侧栏选好实验进去，点顶上的步骤按钮，停在某一次申请、写入或释放后。</dd></div>

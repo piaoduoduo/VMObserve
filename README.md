@@ -26,6 +26,8 @@ python work/launch.py
 
 连续 malloc、按需调页、栈增长和 COW 的具体采样步骤支持跨轮次并排对照，会列出参数、环境差异与实际读数。详见[回放对照与学习笔记](docs/LEARNING_WORKFLOW.md)。
 
+参赛主线从首页的地址归属练习进入。完成 3.2 后，在 3.3 记录预测、核对两组原文，再导出可合并两项实验的 HTML 报告。三轮 WSL2 对照已随仓库提供。见[参赛基线](docs/FOCUS_BASELINE.md)、[技术说明](docs/FOCUS_TECHNICAL_REPORT.md)与[课堂试用任务单](docs/FOCUS_TRIAL.md)。
+
 ## 运行自己的实验
 
 Linux 采集需要 GCC；连续分配实验还需要 strace。在项目根目录运行：

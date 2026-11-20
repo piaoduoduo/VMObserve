@@ -1580,3 +1580,10 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
 .rss-inputs select, .rss-inputs input { width: 100%; min-width: 0; padding: 9px; border: 1px solid var(--line); border-radius: 7px; font: inherit; }
 .rss-feedback:not(:empty) { padding: 10px 12px; margin: 12px 0 0; background: var(--accent-soft); border-radius: 7px; }
 @media (max-width: 680px) { .rss-inputs { grid-template-columns: 1fr; } }
+
+.demand-policy { margin-top: 14px; }
+.demand-prediction { display: grid; gap: 8px; margin: 14px 0; }
+.demand-prediction textarea { width: 100%; min-height: 70px; padding: 10px; border: 1px solid var(--line); border-radius: 7px; font: inherit; }
+.demand-prediction .detail-copy:empty { display: none; }
+.notes-report { margin: 14px 0; }
+.rss-note { margin-top: 10px; }
