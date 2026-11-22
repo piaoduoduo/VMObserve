@@ -1596,23 +1596,23 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
 
 /* Focused malloc and demand-paging replays. */
 .lab-replay {
-  --lab-ink: #302b23;
-  --lab-amber: #ffd85f;
-  --lab-line: #e8decc;
-  --lab-wash: #fffbf2;
-  --lab-shadow: 0 9px 26px rgba(69, 53, 25, .065);
+  --lab-ink: #172554;
+  --lab-step: #bfdbfe;
+  --lab-line: #dbe6f4;
+  --lab-wash: #f5f9ff;
+  --lab-shadow: 0 9px 26px rgba(30, 64, 175, .075);
 }
 .lab-replay > .focus-intro {
   margin: 0 0 14px;
   padding: clamp(19px, 4vw, 34px);
   border: 1px solid var(--lab-line);
   border-radius: 24px;
-  background: linear-gradient(111deg, #fffefa 35%, #fff0bc 100%);
+  background: linear-gradient(111deg, #fbfdff 35%, #dbeafe 100%);
   color: var(--lab-ink);
   box-shadow: var(--lab-shadow);
 }
 .lab-replay > .focus-intro h1 { margin: 7px 0 0; }
-.lab-replay .question-kicker { color: #745316; letter-spacing: .02em; }
+.lab-replay .question-kicker { color: #1e40af; letter-spacing: .02em; }
 .lab-replay .seq-panel {
   border-radius: 22px;
   border-color: var(--lab-line);
@@ -1633,8 +1633,8 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
   border-radius: 11px;
   color: var(--lab-ink);
 }
-.lab-replay .seq-steps button:not([aria-current]):hover { background: #faefd7; }
-.lab-replay .seq-steps button[aria-current="step"] { background: var(--lab-ink); color: #fff; }
+.lab-replay .seq-steps button:not([aria-current]):hover { background: #e7f0ff; }
+.lab-replay .seq-steps button[aria-current="step"] { background: #1e3a8a; color: #fff; }
 .lab-replay .seq-steps .step-number {
   width: 25px;
   height: 25px;
@@ -1642,8 +1642,8 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
   font-size: 12px;
 }
 .lab-replay .seq-steps button[aria-current="step"] .step-number {
-  background: var(--lab-amber);
-  border-color: var(--lab-amber);
+  background: var(--lab-step);
+  border-color: var(--lab-step);
   color: var(--lab-ink);
 }
 .lab-replay .seq-metric,
@@ -1656,14 +1656,14 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
 }
 .lab-replay .seq-metric:last-child,
 .demand-reading .sample-readings > div:nth-child(2) {
-  border-color: #edd389;
-  background: linear-gradient(135deg, #fff6d8, #ffeaaa);
+  border-color: #bfdbfe;
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
 }
 .lab-replay .seq-metric dd, .demand-reading .sample-readings dd { color: var(--lab-ink); }
 .lab-replay .metric-change {
   display: block;
   margin-top: 7px;
-  color: #6b5836;
+  color: #334e78;
   font-size: 11px;
   font-weight: 500;
   letter-spacing: 0;
@@ -1688,7 +1688,7 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
 #demand-chart-metric {
   max-width: 100%;
   padding: 5px 7px;
-  border: 1px solid #b9ab91;
+  border: 1px solid #94a3b8;
   border-radius: 8px;
   background: var(--surface);
   color: var(--ink);
@@ -1704,8 +1704,8 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
   font-size: 12px;
   color: var(--ink-secondary);
 }
-.demand-timeline [data-group="0"] { --bar-color: #5c554c; }
-.demand-timeline [data-group="1"] { --bar-color: #d29816; }
+.demand-timeline [data-group="0"] { --bar-color: #475569; }
+.demand-timeline [data-group="1"] { --bar-color: var(--accent); }
 .demand-chart-legend li::before {
   content: "";
   display: inline-block;
@@ -1729,11 +1729,11 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
   color: var(--lab-ink);
   font-size: 13px;
 }
-.demand-chart-rows [aria-current="step"] { border-left-color: #a57410; background: var(--lab-wash); }
+.demand-chart-rows [aria-current="step"] { border-left-color: var(--accent); background: var(--lab-wash); }
 .demand-bar { display: grid; grid-template-columns: minmax(0, 1fr) 6.6em; align-items: center; gap: 8px; }
 .demand-bar b { font-weight: 600; font-variant-numeric: tabular-nums; }
 .demand-chart-group { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.demand-bar-track { display: block; height: 7px; border-radius: 6px; background: #efeae0; }
+.demand-bar-track { display: block; height: 7px; border-radius: 6px; background: #e6eef9; }
 .demand-bar-track span { display: block; height: 100%; border-radius: inherit; background: var(--bar-color); }
 @media (max-width: 660px) {
   .lab-replay .seq-steps ol { grid-auto-flow: row; grid-template-columns: repeat(3, minmax(0, 1fr)); }
