@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {demandPairTimeline, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
+import {demandPairTimeline, demandMetricData, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 const item = (suite, samples, parameters = {}) => ({suite, data: {samples}, parameters});
 test('sample matching uses phase and process role rather than array index', () => {
   const source = {phase:'fork_shared',role:'child'};
@@ -92,4 +92,32 @@ test('demand pair timeline joins by phase and rejects incomplete or mismatched m
   assert.deepEqual(demandPairTimeline([off, {...on, validation: {status: 'failed'}}]), []);
   on.data.samples[0].count = 1;
   assert.deepEqual(demandPairTimeline([off, on]), []);
+});
+
+test('demand charts distinguish missing mappings, zero RSS and per-process counts', () => {
+  const absent = {mapping_present: false, rss_kib: 0, huge_kib: 0, action_minor: 3};
+  const untouched = {mapping_present: true, rss_kib: 0, huge_kib: null, action_minor: 0};
+  const written = {mapping_present: true, rss_kib: 131072, huge_kib: 131072, action_minor: 64};
+  const rows = [
+    {phase: 'before_alloc', disabled: absent, enabled: absent},
+    {phase: 'allocated', disabled: untouched, enabled: untouched},
+    {phase: 'write_quarter', disabled: {...written, huge_kib: 0, action_minor: 32768}, enabled: written}
+  ];
+  const rss = demandMetricData(rows, 'rss_kib');
+  assert.equal(rss.maximum, 131072);
+  assert.deepEqual(rss.readings.map(row => row.values), [[null, null], [0, 0], [131072, 131072]]);
+  const huge = demandMetricData(rows, 'huge_kib');
+  assert.deepEqual(huge.readings.map(row => row.values), [[null, null], [null, null], [0, 131072]]);
+  const faults = demandMetricData(rows, 'action_minor');
+  assert.equal(faults.maximum, 32768);
+  assert.deepEqual(faults.readings.map(row => row.values), [[3, 3], [0, 0], [32768, 64]]);
+  assert.deepEqual(demandMetricData(rows.slice(0, 1), 'rss_kib'), {maximum: 0,
+    readings: [{phase: 'before_alloc', values: [null, null]}]});
+});
+
+test('requested size drops to zero when the sampled blocks have been freed', () => {
+  const block = {alive: true, requested_bytes: 262144};
+  assert.equal(liveRequestedKib({blocks: [block]}), 256);
+  assert.equal(liveRequestedKib({blocks: [{...block, alive: false}]}), 0);
+  assert.equal(liveRequestedKib({}), null);
 });

@@ -1,7 +1,7 @@
 import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url } from './ui.js';
 
 import { newestReplay, demandEnvironmentReplays } from './curriculum.js';
-import { demandPairTimeline } from './comparison-data.js';
+import { demandPairTimeline, demandMetricData } from './comparison-data.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -240,6 +240,37 @@ function demandEnvironmentNav(parameters) {
   return `<div class="demand-environment"><p class="detail-copy">当前实测 · ${esc(pageInfo)}</p>${links}</div>`;
 }
 
+const demandChartMetrics = [
+  ['rss_kib', '目标映射 RSS', kib],
+  ['huge_kib', '匿名大页驻留量', kib],
+  ['action_minor', '本步次缺页', value => value.toLocaleString('zh-CN') + ' 次']
+];
+const demandChartGroups = ['禁用大页建议', '使用大页建议'];
+let demandTimelineView;
+
+function demandChart(rows, activePhase, [metric, label, format], selected) {
+  const {readings, maximum} = demandMetricData(rows, metric);
+  const bar = (value, index) => {
+    const width = value === null || maximum === 0 ? 0 : value / maximum * 100;
+    const text = value === null ? (metric === 'action_minor' ? '未记录' : '—') : format(value);
+    return `<div class="demand-bar" data-group="${index}">
+      <span class="demand-bar-track" aria-hidden="true"><span style="width:${width}%"></span></span>
+      <b><span class="demand-chart-group">${demandChartGroups[index]}：</span>${esc(text)}</b>
+    </div>`;
+  };
+  const scale = maximum > 0 ? `统一量程 0 – ${format(maximum)}`
+    : readings.some(row => row.values.includes(0)) ? '已有读数均为 0' : '暂无读数';
+  return `<div class="demand-chart" data-metric="${metric}"${selected ? '' : ' hidden'}>
+    <p class="demand-chart-scale">${esc(scale)}</p>
+    <ol class="demand-chart-rows" aria-label="${label}分步对照">
+      ${readings.map(({phase, values}) => `<li${phase === activePhase ? ' aria-current="step"' : ''}>
+        <strong>${esc(demandActions[phase]?.[0] || phase)}</strong>
+        <div>${values.map(bar).join('')}</div>
+      </li>`).join('')}
+    </ol>
+  </div>`;
+}
+
 function demandTimeline(c, pair, activePhase) {
   if (state.report.integrity?.status !== 'verified' || state.report.data_origin !== 'real_execution') return '';
   const rows = demandPairTimeline(pair);
@@ -247,14 +278,44 @@ function demandTimeline(c, pair, activePhase) {
   const rss = sample => sample.mapping_present ? kib(sample.rss_kib) : '无目标映射';
   const huge = sample => sample.mapping_present ? kib(sample.huge_kib) : '—';
   const csvUrl = url('/api/export', {id: state.id, format: 'demand-pair-csv', case: c.id});
-  return `<details class="secondary-fold demand-timeline"><summary>对照本轮六个阶段</summary>
-    ${table(['阶段', '禁用 RSS', '请求 RSS', '禁用大页量', '请求大页量', '禁用次缺页', '请求次缺页'],
-      rows.map(({phase, disabled, enabled}) => [demandActions[phase]?.[0] || phase, rss(disabled), rss(enabled),
-        huge(disabled), huge(enabled), disabled.action_minor, enabled.action_minor]),
-      rows.findIndex(row => row.phase === activePhase))}
-    <p class="detail-copy">RSS 和匿名大页量来自目标映射。每步次缺页取自各自进程。目标映射尚未建立或已释放时，CSV 的相关指标留空。</p>
+  const repeat = c.parameters.repeat;
+  if (!demandTimelineView || demandTimelineView.run !== state.id || demandTimelineView.repeat !== repeat) {
+    demandTimelineView = {run: state.id, repeat, metric: 'rss_kib', open: false};
+  }
+  const {metric, open} = demandTimelineView;
+  return `<details class="secondary-fold demand-timeline"${open ? ' open' : ''}><summary>对照本轮六个阶段</summary>
+    <div class="demand-chart-toolbar">
+      <label>比较指标 <select id="demand-chart-metric">${demandChartMetrics.map(([key, label]) =>
+        `<option value="${key}"${key === metric ? ' selected' : ''}>${label}</option>`).join('')}</select></label>
+      <ul class="demand-chart-legend" aria-label="策略组图例">${demandChartGroups.map((name, index) =>
+        `<li data-group="${index}">${name}</li>`).join('')}</ul>
+    </div>
+    ${demandChartMetrics.map(spec => demandChart(rows, activePhase, spec, spec[0] === metric)).join('')}
+    <p class="detail-copy">RSS 和匿名大页量来自目标映射。每步次缺页取自各自进程。映射尚未建立或已释放时，图中显示「—」，CSV 对应单元格留空。</p>
+    <details class="secondary-fold"><summary>查看六阶段数据表</summary>
+      ${table(['阶段', '禁用 RSS', '请求 RSS', '禁用大页量', '请求大页量', '禁用次缺页', '请求次缺页'],
+        rows.map(({phase, disabled, enabled}) => [demandActions[phase]?.[0] || phase, rss(disabled), rss(enabled),
+          huge(disabled), huge(enabled), disabled.action_minor, enabled.action_minor]),
+        rows.findIndex(row => row.phase === activePhase))}
+    </details>
     <div class="raw-links"><a class="btn-link" href="${esc(csvUrl)}" download>下载本轮两组 CSV</a></div>
   </details>`;
+}
+
+function bindDemandTimeline() {
+  const timeline = $('.demand-timeline');
+  if (!timeline) return;
+  const view = demandTimelineView;
+  const select = timeline.querySelector('#demand-chart-metric');
+  timeline.addEventListener('toggle', () => {
+    if (timeline.isConnected) view.open = timeline.open;
+  });
+  select.addEventListener('change', () => {
+    view.metric = select.value;
+    for (const chart of timeline.querySelectorAll('.demand-chart')) {
+      chart.hidden = chart.dataset.metric !== view.metric;
+    }
+  });
 }
 
 function demandPolicyPanel(c, sample) {
@@ -327,19 +388,20 @@ function renderMemorySteps(c, cases) {
   const next = state.phase + 1 < steps.length ? `<button class="primary" data-course-step="${state.phase + 1}">下一步 →</button>` :
     demand ? `<a class="btn-link primary" href="${esc(stackLink)}">看栈增长与溢出 →</a>` : '<a class="btn-link primary" href="/lesson">记下实验结果 →</a>';
   const samples = c.data?.samples || [];
-  const rows = samples.map(s => [demand ? demandActions[s.phase]?.[0] || s.phase : `递归 ${s.count} 层`, s.count, kib(s.size_kib), kib(s.rss_kib), s.action_minor, s.total_minor]);
+  const rows = samples.map(s => [demand ? demandActions[s.phase]?.[0] || s.phase : `递归 ${s.count} 层`, s.count, demand && !s.mapping_present ? '无映射' : kib(s.size_kib), demand && !s.mapping_present ? '—' : kib(s.rss_kib),
+    s.action_minor, s.total_minor]);
   const rawOpts = sample ? {phase:sample.phase, stepLabel:step.title, count:sample.count,
     occurrence:samples.filter(s => s.phase === sample.phase).indexOf(sample),
     vmaStart:sample.mapping_header?.split('-')[0]} : {};
-  $('#content').innerHTML = `<section class="seq-reading">
+  $('#content').innerHTML = `<section class="seq-reading${demand ? ' lab-replay demand-reading' : ''}">
     <header class="focus-intro"><small class="question-kicker">实验 3.3 · ${demand ? '按需调页' : '栈增长与溢出'} · 历史实测回放</small><h1>${title}</h1></header>
     ${stepNavigation(steps.map(s => s.title), state.phase, 'data-course-step')}
     <section class="seq-panel" id="sequence-result" aria-labelledby="memory-heading">
       <div class="demand-heading"><h2 id="memory-heading">${esc(step?.title || '缺少采样')}</h2><label>回放记录 <select id="case-select">${options}</select></label></div>
       ${controlled ? '<details class="secondary-fold"><summary>查看这一组的单步记录</summary>' : ''}
       ${step ? `${stepExplanation(step.program, step.kernel, step.result)}
-        ${sample ? `<dl class="sample-readings"><div><dt>映射大小</dt><dd>${kib(sample.size_kib)}</dd></div>
-          <div><dt>映射驻留 RSS</dt><dd>${kib(sample.rss_kib)}</dd></div><div><dt>本步次缺页</dt><dd>${esc(sample.action_minor)} 次</dd></div></dl>` : ''}` : '<p>这次没有采到分步记录，可以切换记录或打开原文。</p>'}
+        ${sample ? `<dl class="sample-readings"><div><dt>映射大小</dt><dd>${demand && !sample.mapping_present ? '无映射' : kib(sample.size_kib)}</dd></div>
+          <div><dt>映射驻留 RSS</dt><dd>${demand && !sample.mapping_present ? '—' : kib(sample.rss_kib)}</dd></div><div><dt>本步次缺页</dt><dd>${esc(sample.action_minor)} 次</dd></div></dl>` : ''}` : '<p>这次没有采到分步记录，可以切换记录或打开原文。</p>'}
       ${c.validation.status !== 'passed' ? `<p class="phase-note">本次核对结果：${esc(c.error?.message || c.validation.status)}</p>` : ''}
       ${controlled ? `<div class="raw-links">${evidenceButtons(c, rawOpts)}</div></details>` : ''}
       <div class="seq-navigation"><div class="raw-links">${controlled ? '' : evidenceButtons(c, rawOpts)}</div><div class="seq-step-actions"><button data-course-step="${state.phase - 1}" ${state.phase === 0 ? 'disabled' : ''}>← 上一步</button>${next}</div></div>
@@ -353,7 +415,10 @@ function renderMemorySteps(c, cases) {
       <div id="demand-original-ps"></div></details>` : ''}
     <nav class="lab-neighbours"><a class="nav-link" href="/lesson">记录本节预测与思考题笔记 →</a><a class="nav-link" href="/labs/focus">重点任务目录</a></nav>
   </section>`;
-  if (demand) loadOriginalPs($('#demand-original-ps'));
+  if (demand) {
+    bindDemandTimeline();
+    loadOriginalPs($('#demand-original-ps'));
+  }
 }
 
 function renderGroup3() {

@@ -1,4 +1,5 @@
 import { $, state, esc, kib, table, evidenceButtons, stepNavigation, stepExplanation } from './ui.js';
+import { liveRequestedKib } from './comparison-data.js';
 
 const BLOCK_SIZES = ['1 KiB', '256 KiB', '1 MiB'];
 const PHASES = ['申请前', '申请 1 KiB', '申请 256 KiB', '申请 1 MiB', '全部释放'];
@@ -145,14 +146,18 @@ function renderObservation(c, phase) {
     ? regions.map(r => kib(r.rss_kib)).join(' + ') + ' = ' + kib(sample.related_rss_kib)
     : kib(sample.related_rss_kib);
 
-  const requested = sample.blocks.filter(block => block.alive)
-    .reduce((total, block) => total + block.requested_bytes / 1024, 0);
-  const metric = (label, value, unit) => `<div class="seq-metric"><dt>${label}</dt>
-    <dd>${esc(value)} <span class="metric-unit">${unit}</span></dd></div>`;
+  const previous = data.samples[phase - 1];
+  const metric = (label, value, unit, before) => {
+    const delta = Number.isFinite(value) && Number.isFinite(before) ? value - before : null;
+    const change = delta === null ? '' :
+      `<small class="metric-change">较上一步 <strong>${delta > 0 ? '+' : ''}${delta.toLocaleString('zh-CN')}</strong></small>`;
+    return `<div class="seq-metric"><dt>${label}</dt>
+      <dd>${esc(value?.toLocaleString('zh-CN'))} <span class="metric-unit">${unit}</span>${change}</dd></div>`;
+  };
   const metrics = `<dl class="seq-metrics" aria-label="当前阶段实测结果">
-    ${metric('存活块申请量', requested.toLocaleString('zh-CN'), 'KiB')}
-    ${metric('相关映射', sample.related_vma_count, '段 VMA')}
-    ${metric('整段驻留量', sample.related_rss_kib.toLocaleString('zh-CN'), 'KiB RSS')}</dl>`;
+    ${metric('存活块申请量', liveRequestedKib(sample), 'KiB', previous && liveRequestedKib(previous))}
+    ${metric('相关映射', sample.related_vma_count, '段 VMA', previous?.related_vma_count)}
+    ${metric('整段驻留量', sample.related_rss_kib, 'KiB RSS', previous?.related_rss_kib)}</dl>`;
 
   return `<section class="seq-panel" id="sequence-result" aria-labelledby="sequence-heading">
     <div class="phase-heading"><h2 id="sequence-heading">${esc(stepLabel)}</h2><code>${esc(C_CODE[phase])}</code></div>
@@ -303,7 +308,7 @@ export function renderSequence() {
   );
 
   content.innerHTML = `
-    <section class="malloc-lesson seq-reading">
+    <section class="malloc-lesson seq-reading lab-replay">
       <header class="focus-intro">
         <small class="question-kicker">实验 3.2 · 历史实测回放</small>
         <h1>连续三次 malloc，内存去了哪里？</h1>

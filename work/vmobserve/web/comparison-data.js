@@ -9,6 +9,26 @@ export function demandPairTimeline(pair) {
   return rows.every(({disabled, enabled}) => enabled?.count === disabled.count) ? rows : [];
 }
 
+export function demandMetricData(rows, metric) {
+  const read = sample => {
+    if (metric !== 'action_minor' && !sample.mapping_present) return null;
+    const value = sample[metric];
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  };
+  const readings = rows.map(({phase, disabled, enabled}) => ({
+    phase, values: [read(disabled), read(enabled)]
+  }));
+  const maximum = Math.max(0, ...readings.flatMap(row => row.values.filter(value => value !== null)));
+  return {readings, maximum};
+}
+
+export function liveRequestedKib(sample) {
+  return Array.isArray(sample.blocks)
+    ? sample.blocks.filter(block => block.alive)
+      .reduce((sum, block) => sum + block.requested_bytes / 1024, 0)
+    : null;
+}
+
 export function replaySample(item, step) {
   const samples = item?.data?.samples || [];
   if (item?.suite === 'stack') return step === 0 ? samples[0] : step === 1 ? samples.at(-1) : null;
@@ -22,8 +42,7 @@ export function matchingSample(item, source) {
 }
 const specs = {
   sequence: [
-    ['存活块申请量', 'KiB', sample => Array.isArray(sample.blocks)
-      ? sample.blocks.filter(block => block.alive).reduce((sum, block) => sum + block.requested_bytes / 1024, 0) : null],
+    ['存活块申请量', 'KiB', liveRequestedKib],
     ['涉及的 VMA 数', '个', sample => sample.related_vma_count],
     ['相关映射大小', 'KiB', sample => sample.related_size_kib],
     ['相关映射 RSS（每段只计一次）', 'KiB', sample => sample.related_rss_kib]
