@@ -1,3 +1,14 @@
+export function demandPairTimeline(pair) {
+  if (pair.length !== 2 || pair.some(caseItem => caseItem?.validation?.status !== 'passed')) return [];
+  const [off, on] = pair.map(caseItem => caseItem.data?.samples || []);
+  if (!off.length || off.length !== on.length) return [];
+  const byPhase = new Map(on.map(sample => [sample.phase, sample]));
+  const uniqueOff = new Set(off.map(sample => sample.phase));
+  if (byPhase.size !== on.length || uniqueOff.size !== off.length) return [];
+  const rows = off.map(disabled => ({phase: disabled.phase, disabled, enabled: byPhase.get(disabled.phase)}));
+  return rows.every(({disabled, enabled}) => enabled?.count === disabled.count) ? rows : [];
+}
+
 export function replaySample(item, step) {
   const samples = item?.data?.samples || [];
   if (item?.suite === 'stack') return step === 0 ? samples[0] : step === 1 ? samples.at(-1) : null;

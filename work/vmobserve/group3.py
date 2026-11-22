@@ -5,6 +5,7 @@ from .smaps import parse_mappings, FIELDS
 from .sequence import trace_actions, attach_mappings, describe_allocations, allocation_overview
 
 SUITES = ("link-dynamic", "link-static", "sequence", "demand512", "stack")
+DEMAND_PHASES = ("before_alloc", "allocated", "write_quarter", "write_half", "write_all", "freed")
 TITLES = {"link-dynamic": "3.1 动态链接与装入", "link-static": "3.1 静态链接对照",
           "sequence": "3.2 同进程连续 malloc", "demand512": "3.3 原尺寸按需调页", "stack": "3.3 栈增长与溢出"}
 
@@ -131,7 +132,7 @@ def parse(records, raw, suite, parameters, folder):
         result["actions"] = trace_actions(trace)
         describe_allocations(result["actions"], samples, addresses, condition["sizes"])
     elif suite == "demand512":
-        if phases != ["before_alloc", "allocated", "write_quarter", "write_half", "write_all", "freed"]:
+        if tuple(phases) != DEMAND_PHASES:
             raise ValueError("demand phases missing")
         allocated_address = samples[1]["address"]
         if (condition["mode"] != "demand512" or int(allocated_address, 16) == 0

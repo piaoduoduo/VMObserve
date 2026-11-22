@@ -13,7 +13,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .common import execute, read_json, run_id, timestamp, write_json
 from .cow import COW_CHOICES
-from .export import csv_text, html_text
+from .export import csv_text, demand_pair_csv, html_text
 from .replay import load_run, read_evidence, recorded_environment, safe_child
 from .runner import WORK
 from .systems import LABS
@@ -229,6 +229,9 @@ def handler_for(app):
                     return self.send(html_text(report), "text/html; charset=utf-8", attachment="memory-report.html")
                 if format_ == "csv":
                     return self.send("\ufeff" + csv_text(report), "text/csv; charset=utf-8", attachment="memory-samples.csv")
+                if format_ == "demand-pair-csv":
+                    paired = demand_pair_csv(report, query.get("case", [""])[0])
+                    return self.send("\ufeff" + paired, "text/csv; charset=utf-8", attachment="demand-pair-samples.csv")
                 if format_ == "json":
                     return self.send(report, attachment="memory-report.json")
                 raise ValueError("unsupported export format")

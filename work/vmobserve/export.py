@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 
 from .common import write_json
+from .group3 import DEMAND_PHASES
 from .replay import load_run
 
 LABELS = {"confirmed": "已确认", "probable": "可能原因", "insufficient_evidence": "证据不足"}
@@ -37,6 +38,53 @@ def csv_text(report):
                                  recheck_environment=((report.get("related_run") or {}).get("environment_comparison") or {}).get("status"),
                                  case_id=c["id"], suite=c["suite"], cow_fraction=cow.get("fraction"),
                                  cow_written_pages=cow.get("written_pages"), cow_total_pages=cow.get("total_pages"), **extra, **s))
+    return out.getvalue()
+
+
+def demand_pair_csv(report, case_id):
+    """Export both policies and all six phases of one verified demand-paging repeat."""
+    if report.get("data_origin") != "real_execution" or report["integrity"]["status"] != "verified":
+        raise ValueError("Paired CSV requires a verified real experiment record")
+    demand_cases = [c for c in report["cases"] if c["suite"] == "demand512"]
+    selected = next((c for c in demand_cases if c["id"] == case_id), None)
+    if selected is None or selected["parameters"].get("thp_advice") not in ("off", "on"):
+        raise ValueError("Select a demand512 THP policy case")
+    repeat = selected["parameters"]["repeat"]
+    cases = {}
+    for case in demand_cases:
+        parameters = case["parameters"]
+        advice = parameters.get("thp_advice")
+        if parameters.get("repeat") != repeat or advice not in ("off", "on"):
+            continue
+        if advice in cases or case["status"] != "completed" or case["validation"]["status"] != "passed":
+            raise ValueError("The selected repeat lacks a unique, passing case for each policy")
+        cases[advice] = case
+    if len(cases) != 2:
+        raise ValueError("The selected repeat needs both THP policies")
+
+    samples = {policy: {s["phase"]: s for s in case["data"]["samples"]} for policy, case in cases.items()}
+    environment = report["environment"]
+    common = [report["run_id"], report["original_report_sha256"], repeat,
+              environment.get("distribution", {}).get("PRETTY_NAME"), environment.get("kernel"),
+              environment.get("execution_context"), environment.get("page_bytes"), environment.get("thp_enabled")]
+    out = io.StringIO(newline="")
+    writer = csv.writer(out)
+    writer.writerow(["run_id", "report_sha256", "repeat", "distribution", "kernel", "execution_context", "page_bytes",
+                     "system_thp", "phase", "thp_advice", "case_id", "written_positions", "mapping_present", "rss_kib",
+                     "anon_huge_kib", "process_minor_delta", "smaps_path", "smaps_sha256"])
+    for phase in DEMAND_PHASES:
+        for policy in ("off", "on"):
+            case = cases[policy]
+            sample = samples[policy][phase]
+            present = sample["mapping_present"]
+            smaps = case["artifacts"]["smaps"]
+            row = [*common, phase, policy, case["id"], None if phase == "freed" else sample["count"],
+                   int(present), sample["rss_kib"] if present else None, sample["huge_kib"] if present else None,
+                   sample["action_minor"], smaps, report["artifacts"][smaps]]
+            # Quoting a CSV field alone does not neutralize a spreadsheet formula.
+            writer.writerow(["'" + cell if isinstance(cell, str)
+                             and (cell.lstrip()[:1] in ("=", "+", "-", "@") or cell[:1] in ("\t", "\r", "\n"))
+                             else cell for cell in row])
     return out.getvalue()
 
 

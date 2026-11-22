@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
+import {demandPairTimeline, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 const item = (suite, samples, parameters = {}) => ({suite, data: {samples}, parameters});
 test('sample matching uses phase and process role rather than array index', () => {
   const source = {phase:'fork_shared',role:'child'};
@@ -79,4 +79,17 @@ test('demand environment links preserve policy, repeat and phase across distinct
   assert.deepEqual(options.map(({run,index,step,current}) => [run.id,index,step,current]),[
     ['example--0002',1,4,true],['example--0001',2,4,false]
   ]);
+});
+
+test('demand pair timeline joins by phase and rejects incomplete or mismatched measurements', () => {
+  const sample = (phase, count, rss_kib) => ({phase, count, rss_kib});
+  const make = samples => ({validation: {status: 'passed'}, data: {samples}});
+  const off = make([sample('allocated', 0, 0), sample('write_quarter', 32768, 131072)]);
+  const on = make([sample('write_quarter', 32768, 131072), sample('allocated', 0, 0)]);
+  assert.deepEqual(demandPairTimeline([off, on]).map(row => [row.phase, row.enabled.rss_kib]),
+    [['allocated', 0], ['write_quarter', 131072]]);
+  assert.deepEqual(demandPairTimeline([off]), []);
+  assert.deepEqual(demandPairTimeline([off, {...on, validation: {status: 'failed'}}]), []);
+  on.data.samples[0].count = 1;
+  assert.deepEqual(demandPairTimeline([off, on]), []);
 });

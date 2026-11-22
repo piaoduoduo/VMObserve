@@ -1,6 +1,7 @@
-import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair } from './ui.js';
+import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url } from './ui.js';
 
 import { newestReplay, demandEnvironmentReplays } from './curriculum.js';
+import { demandPairTimeline } from './comparison-data.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -239,6 +240,23 @@ function demandEnvironmentNav(parameters) {
   return `<div class="demand-environment"><p class="detail-copy">当前实测 · ${esc(pageInfo)}</p>${links}</div>`;
 }
 
+function demandTimeline(c, pair, activePhase) {
+  if (state.report.integrity?.status !== 'verified' || state.report.data_origin !== 'real_execution') return '';
+  const rows = demandPairTimeline(pair);
+  if (!rows.length) return '';
+  const rss = sample => sample.mapping_present ? kib(sample.rss_kib) : '无目标映射';
+  const huge = sample => sample.mapping_present ? kib(sample.huge_kib) : '—';
+  const csvUrl = url('/api/export', {id: state.id, format: 'demand-pair-csv', case: c.id});
+  return `<details class="secondary-fold demand-timeline"><summary>对照本轮六个阶段</summary>
+    ${table(['阶段', '禁用 RSS', '请求 RSS', '禁用大页量', '请求大页量', '禁用次缺页', '请求次缺页'],
+      rows.map(({phase, disabled, enabled}) => [demandActions[phase]?.[0] || phase, rss(disabled), rss(enabled),
+        huge(disabled), huge(enabled), disabled.action_minor, enabled.action_minor]),
+      rows.findIndex(row => row.phase === activePhase))}
+    <p class="detail-copy">RSS 和匿名大页量来自目标映射。每步次缺页取自各自进程。目标映射尚未建立或已释放时，CSV 的相关指标留空。</p>
+    <div class="raw-links"><a class="btn-link" href="${esc(csvUrl)}" download>下载本轮两组 CSV</a></div>
+  </details>`;
+}
+
 function demandPolicyPanel(c, sample) {
   const recipe = c.parameters.thp_advice;
   const next = newestReplay('3.3', 'group3', 'demand512-thp');
@@ -286,6 +304,7 @@ function demandPolicyPanel(c, sample) {
       ${evidenceButtons(item, {recordKind: 'policy'}, ['jsonl'])}
       ${evidenceButtons(item, {phase, vmaStart: readings[i]?.mapping_header?.split('-')[0]}, ['smaps'])}</div>` : '').join('')}
     </details>
+    ${demandTimeline(c, pair, phase)}
     <div class="raw-links">${baseline ? `<a class="btn-link" href="${esc(baseline.href)}">查看原版 malloc 实验</a>` : ''}${collect}</div>
   </section>`;
 }
