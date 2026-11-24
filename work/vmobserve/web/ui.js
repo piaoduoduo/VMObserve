@@ -51,6 +51,12 @@ async function api(route, options) {
   return value;
 }
 
+export function replayOriginLabel(report) {
+  if (report.data_origin === 'real_execution') return '历史实测回放';
+  if (report.data_origin === 'synthetic') return '模拟回放';
+  return '历史记录回放';
+}
+
 export function stepActions(selected, length, attr = 'data-course-step') {
   return `<div class="seq-step-actions">
     <button ${attr}="${selected - 1}" ${selected === 0 ? 'disabled' : ''}>← 上一步</button>

@@ -3,7 +3,7 @@ import { renderEvidence } from './evidence-view.js';
 import { attachReplayFlow } from './experiment-flow.js';
 import { renderReplayNotes } from './replay-notes.js';
 import { renderReplayComparison } from './replay-comparison.js';
-import { renderSequence, parseMmapCall, groupBlocksIntoRegions } from './sequence-view.js';
+import { renderSequence, parseMmapCall, groupBlocksIntoRegions, sharedPointerRegion } from './sequence-view.js';
 import { renderCourse, renderGroup3, renderGroup4, renderLayout } from './course-views.js';
 import { renderBaseline, renderTHP } from './memory-views.js';
 import { directory, currentLab, viewCases, markLab, renderHome, renderSystems, showLab, newestReplay } from './curriculum.js';
@@ -279,7 +279,7 @@ function render() {
   if (rel) $('#metadata').textContent += ' · ' + (envLabels[rel.environment_comparison?.status] || '早期复验');
 
   if (r.integrity.status === 'verified') {
-    $('#integrity').textContent = '本轮实验采样日志与程序文件的校验指纹（SHA-256）核对一致，数据真实完整。';
+    $('#integrity').textContent = '采样日志和程序文件的 SHA-256 与当前记录清单一致。数据来源见顶部，案例检查结果见实验回放。';
   } else if (r.integrity.status === 'legacy_partial') {
     $('#integrity').textContent = '这是早期版本保存的记录，采样日志格式检查通过。';
   } else {
@@ -522,14 +522,14 @@ async function compareMerge(caseId) {
     if (!res.ok) throw new Error(smapsText);
     const lines = smapsText.split('\n');
     const s2 = c.data.samples[2], s3 = c.data.samples[3];
-    const r2 = groupBlocksIntoRegions(s2).find(r => r.blocks.some(b => b.num === 2));
-    const r3 = groupBlocksIntoRegions(s3).find(r => r.blocks.some(b => b.num === 2) && r.blocks.some(b => b.num === 3));
+    const r2 = groupBlocksIntoRegions(s2).find(r => r.blocks.some(b => b.num === 2 && b.containsPointer));
+    const r3 = sharedPointerRegion(groupBlocksIntoRegions(s3));
     const mmap2 = parseMmapCall(c.data.actions[1]);
     const mmap3 = parseMmapCall(c.data.actions[2]);
     const sec2 = r2 ? extractSmapsSection(lines, s2.phase, r2.start) : null;
     const sec3 = r3 ? extractSmapsSection(lines, s3.phase, r3.start) : null;
     const html = `
-      <div class="raw-locate-banner">第三次申请时，新的 mmap 区间终点 <code>0x${esc(mmap3?.endHex)}</code> 等于上次 mmap 的起点 <code>0x${esc(mmap2?.startHex)}</code>。右侧是申请后覆盖两个块的映射。</div>
+      <div class="raw-locate-banner">第三次申请时，新的 mmap 区间终点 <code>0x${esc(mmap3?.endHex)}</code> 等于上次 mmap 的起点 <code>0x${esc(mmap2?.startHex)}</code>。右侧是申请后包含两个返回指针的映射。</div>
       <div class="compare-grid">
         <article class="compare-col">
           <div class="compare-col-head"><span class="step-badge">第 3 步 · 申请 256 KiB 后</span><strong>虚拟 ${kib(r2?.size_kib)} · 已驻留物理内存 ${kib(r2?.rss_kib)}</strong></div>

@@ -8,8 +8,19 @@ from pathlib import Path
 from .common import write_json
 from .group3 import DEMAND_PHASES
 from .replay import load_run
+from .smaps import FIELDS
 
 LABELS = {"confirmed": "已确认", "probable": "可能原因", "insufficient_evidence": "证据不足"}
+
+
+def demand_sample_export(sample):
+    """Keep raw event count while giving tabular metrics their measured meaning."""
+    if not sample:
+        return {}
+    mapped = sample["mapping_present"]
+    fields = sample if mapped else {**sample, **dict.fromkeys(FIELDS)}
+    written = None if sample["phase"] == "freed" else sample["count"]
+    return {**fields, "written_positions": written}
 
 
 def csv_text(report):
@@ -29,6 +40,8 @@ def csv_text(report):
         extra = {k: condition.get(k) for k in ("course_code", "process_thp", "process_thp_disabled", "status_thp_enabled", "madvise_result")}
         # A failed case without samples still needs a status row, not silent omission.
         for s in (c.get("data") or {}).get("samples") or [{}]:
+            if c["suite"] == "demand512":
+                s = demand_sample_export(s)
             writer.writerow(dict(run_id=report["run_id"], data_origin=report["data_origin"], view_mode=report["view_mode"],
                                  run_status=report["status"], case_status=c["status"],
                                  validation_status=c["validation"]["status"],
@@ -75,11 +88,11 @@ def demand_pair_csv(report, case_id):
     for phase in DEMAND_PHASES:
         for policy in ("off", "on"):
             case = cases[policy]
-            sample = samples[policy][phase]
+            sample = demand_sample_export(samples[policy][phase])
             present = sample["mapping_present"]
             smaps = case["artifacts"]["smaps"]
-            row = [*common, phase, policy, case["id"], None if phase == "freed" else sample["count"],
-                   int(present), sample["rss_kib"] if present else None, sample["huge_kib"] if present else None,
+            row = [*common, phase, policy, case["id"], sample["written_positions"],
+                   int(present), sample["rss_kib"], sample["huge_kib"],
                    sample["action_minor"], smaps, report["artifacts"][smaps]]
             # Quoting a CSV field alone does not neutralize a spreadsheet formula.
             writer.writerow(["'" + cell if isinstance(cell, str)
@@ -89,13 +102,22 @@ def demand_pair_csv(report, case_id):
 
 
 def html_text(report):
-    esc = lambda value: html.escape(str(value))
+    esc = lambda value: html.escape("—" if value is None else str(value))
     rows = []
     for case in report["cases"]:
         if case["suite"] in ("layout", "sync", "io") or case["suite"].startswith("g4-"):
             continue
         for s in (case.get("data") or {}).get("samples", []):
-            cells = [case["id"], s["phase"], s["role"], s.get("scope", "exact_vma"), s["rss_kib"], s["pss_kib"], s["huge_kib"], s["action_minor"]]
+            if case["suite"] == "demand512":
+                s = demand_sample_export(s)
+            scope = s.get("scope", "exact_vma")
+            memory_fields = ("rss_kib", "pss_kib", "huge_kib")
+            if case["suite"] == "sequence":
+                scope = "相关 VMA 去重合计"
+                memory = [s.get("related_" + key) for key in memory_fields]
+            else:
+                memory = [s[key] for key in memory_fields]
+            cells = [case["id"], s["phase"], s["role"], scope, *memory, s["action_minor"]]
             rows.append("<tr>" + "".join(f"<td>{esc(v)}</td>" for v in cells) + "</tr>")
     findings = []
     for f in report["diagnosis"]["findings"]:

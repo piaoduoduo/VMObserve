@@ -9,12 +9,16 @@ export function demandPairTimeline(pair) {
   return rows.every(({disabled, enabled}) => enabled && enabled.count === disabled.count) ? rows : [];
 }
 
+export function demandMeasurement(sample, metric) {
+  if (!sample) return null;
+  if (metric === 'count' ? sample.phase === 'freed' :
+    metric !== 'action_minor' && !sample.mapping_present) return null;
+  const value = sample[metric];
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
 function demandMetricValues({disabled, enabled}, metric) {
-  return [disabled, enabled].map(sample => {
-    if (!sample || (metric !== 'action_minor' && !sample.mapping_present)) return null;
-    const value = sample[metric];
-    return Number.isFinite(value) && value >= 0 ? value : null;
-  });
+  return [demandMeasurement(disabled, metric), demandMeasurement(enabled, metric)];
 }
 
 export function demandMetricData(rows, metric) {
@@ -84,19 +88,21 @@ const specs = {
     ['相关映射 RSS（每段只计一次）', 'KiB', sample => sample.related_rss_kib]
   ],
   memory: [
-    ['目标映射大小', 'KiB', sample => sample.size_kib],
-    ['目标映射 RSS', 'KiB', sample => sample.rss_kib],
-    ['目标映射 PSS', 'KiB', sample => sample.pss_kib],
-    ['其中匿名大页', 'KiB', sample => sample.huge_kib]
+    ['目标映射大小', 'KiB', 'size_kib'],
+    ['目标映射 RSS', 'KiB', 'rss_kib'],
+    ['目标映射 PSS', 'KiB', 'pss_kib'],
+    ['其中匿名大页', 'KiB', 'huge_kib']
   ]
 };
 export function comparisonMetrics(suite, current, other) {
   if (!current || !other) return [];
-  const metrics = [...specs[suite === 'sequence' ? 'sequence' : 'memory'],
-    ['本步次缺页', '次', sample => sample.action_minor]];
+  const readField = key => sample => suite === 'demand512' ? demandMeasurement(sample, key) : sample[key];
+  const metrics = suite === 'sequence' ? [...specs.sequence] :
+    specs.memory.map(([label, unit, key]) => [label, unit, readField(key)]);
+  metrics.push(['本步次缺页', '次', readField('action_minor')]);
   if (suite === 'stack') metrics.unshift(['采样递归深度', '层', sample => sample.count]);
   if (suite === 'course') metrics.unshift(['已写位置', '个', sample => sample.written_positions]);
-  if (suite === 'demand512') metrics.unshift(['已写位置', '个', sample => sample.count]);
+  if (suite === 'demand512') metrics.unshift(['已写位置', '个', readField('count')]);
   const numeric = value => typeof value === 'number' && Number.isFinite(value);
   return metrics.map(([label, unit, read]) => {
     const left = read(current), right = read(other);

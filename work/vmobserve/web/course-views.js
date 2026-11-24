@@ -1,7 +1,7 @@
-import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url } from './ui.js';
+import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
 
 import { newestReplay, demandEnvironmentReplays } from './curriculum.js';
-import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric } from './comparison-data.js';
+import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement } from './comparison-data.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -237,7 +237,7 @@ function demandEnvironmentNav(parameters) {
       return `<a href="/${esc(location.search)}#${esc(hash)}" title="${esc(run.kernel)}">${esc(label)} →</a>`;
     }).join('')}
   </nav><p class="detail-copy">切换环境会保留当前轮次、策略组和采样步骤。两组的条件对照在各自环境内进行。</p>` : '';
-  return `<div class="demand-environment"><p class="detail-copy">当前实测 · ${esc(pageInfo)}</p>${links}</div>`;
+  return `<div class="demand-environment"><p class="detail-copy">当前环境 · ${esc(pageInfo)}</p>${links}</div>`;
 }
 
 const demandChartMetrics = [
@@ -374,7 +374,7 @@ function demandPolicyPanel(c, sample) {
     readings.every(Boolean) && readings[0].count === readings[1].count;
   const observed = readings[1]?.huge_kib;
   const interpretation = !matched ? '本轮缺少通过校验的配对证据。可查看已有原文和各组状态。'
-    : !readings[0].mapping_present || !readings[1].mapping_present ? '两组在这个阶段均无可比较的目标映射。'
+    : !readings[0].mapping_present || !readings[1].mapping_present ? '本阶段至少一组缺少目标映射，驻留量无法配对。'
     : observed > 0 ? '使用大页建议组本步采到了匿名大页。对照缺页增量时，注意它是进程级计数。'
     : '使用大页建议组在本步的匿名大页驻留为 0 KiB。可继续查看后续写入阶段。';
   const baseline = newestReplay('3.3', 'group3', 'demand512');
@@ -383,14 +383,14 @@ function demandPolicyPanel(c, sample) {
     <p>两个独立进程各用一个带保护页的匿名映射。按相同的 4096 字节步长分批写入，仅切换映射的大页建议。</p>
     ${demandEnvironmentNav(c.parameters)}
     <div class="demand-prediction"></div>
-    <details class="secondary-fold demand-result"><summary>查看本步两组实测与原文</summary>
+    <details class="secondary-fold demand-result"><summary>查看本步两组采样与原文</summary>
     ${table(['组别', 'madvise', 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], pair.map((item, i) => {
       const row = readings[i];
       const policy = item?.data?.policy;
       return [policyName(i), !policy ? '未采集' : policy.result === 0 ? '成功' : '失败 · errno ' + policy.errno,
         row?.vm_flags?.filter(flag => flag === 'hg' || flag === 'nh').join(' ') || '—',
-        row?.count, row?.mapping_present ? kib(row.rss_kib) : '—', row?.mapping_present ? kib(row.huge_kib) : '—',
-        row?.action_minor, item?.validation?.status === 'passed' ? '通过' : item ? '待核对' : '缺失'];
+        demandMeasurement(row, 'count'), kib(demandMeasurement(row, 'rss_kib')), kib(demandMeasurement(row, 'huge_kib')),
+        demandMeasurement(row, 'action_minor'), item?.validation?.status === 'passed' ? '通过' : item ? '待核对' : '缺失'];
     }))}
     <p>${esc(interpretation)}</p>
     ${pair.map((item, i) => item ? `<div class="raw-links"><strong>${policyName(i)}</strong>
@@ -421,13 +421,18 @@ function renderMemorySteps(c, cases) {
   const next = state.phase + 1 < steps.length ? `<button class="primary" data-course-step="${state.phase + 1}">下一步 →</button>` :
     demand ? `<a class="btn-link primary" href="${esc(stackLink)}">看栈增长与溢出 →</a>` : '<a class="btn-link primary" href="/lesson">记下实验结果 →</a>';
   const samples = c.data?.samples || [];
-  const rows = samples.map(s => [demand ? demandActions[s.phase]?.[0] || s.phase : `递归 ${s.count} 层`, s.count, demand && !s.mapping_present ? '无映射' : kib(s.size_kib), demand && !s.mapping_present ? '—' : kib(s.rss_kib),
-    s.action_minor, s.total_minor]);
+  const rows = samples.map(s => [
+    demand ? demandActions[s.phase]?.[0] || s.phase : `递归 ${s.count} 层`,
+    demand ? demandMeasurement(s, 'count') : s.count,
+    demand && !s.mapping_present ? '无映射' : kib(s.size_kib),
+    demand ? kib(demandMeasurement(s, 'rss_kib')) : kib(s.rss_kib),
+    s.action_minor, s.total_minor
+  ]);
   const rawOpts = sample ? {phase:sample.phase, stepLabel:step.title, count:sample.count,
     occurrence:samples.filter(s => s.phase === sample.phase).indexOf(sample),
     vmaStart:sample.mapping_header?.split('-')[0]} : {};
   $('#content').innerHTML = `<section class="seq-reading${demand ? ' lab-replay demand-reading' : ''}">
-    <header class="focus-intro"><small class="question-kicker">实验 3.3 · ${demand ? '按需调页' : '栈增长与溢出'} · 历史实测回放</small><h1>${title}</h1></header>
+    <header class="focus-intro"><small class="question-kicker">实验 3.3 · ${demand ? '按需调页' : '栈增长与溢出'} · ${replayOriginLabel(state.report)}</small><h1>${title}</h1></header>
     ${stepNavigation(steps.map(s => s.title), state.phase, 'data-course-step')}
     <section class="seq-panel" id="sequence-result" aria-labelledby="memory-heading">
       <div class="demand-heading"><h2 id="memory-heading">${esc(step?.title || '缺少采样')}</h2><label>回放记录 <select id="case-select">${options}</select></label></div>

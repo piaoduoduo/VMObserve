@@ -1,6 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
+import {groupBlocksIntoRegions, sharedPointerRegion} from '../work/vmobserve/web/sequence-view.js';
+import {learningReport} from '../work/vmobserve/web/learning-report.js';
 const item = (suite, samples, parameters = {}) => ({suite, data: {samples}, parameters});
 test('sample matching uses phase and process role rather than array index', () => {
   const source = {phase:'fork_shared',role:'child'};
@@ -161,4 +163,40 @@ test('repeat metrics use paired differences and leave absent mappings blank', ()
   });
   assert.deepEqual(demandRepeatMetric(rows, 'action_minor').summary, {count: 3, median: -6, min: -6, max: -4});
   assert.deepEqual(demandRepeatMetric(rows.slice(1, 2), 'rss_kib'), {values: [[null, 50]], summary: null});
+});
+
+test('demand comparisons keep a missing mapping separate from a measured zero', () => {
+  const absent = {phase: 'freed', mapping_present: false, count: 0, rss_kib: 0, huge_kib: 0, action_minor: 2};
+  const mapped = {phase: 'freed', mapping_present: true, count: 0, rss_kib: 8, huge_kib: 0, action_minor: 1};
+  const rows = comparisonMetrics('demand512', absent, mapped);
+  assert.deepEqual(rows.map(({label, current, other, delta}) => [label, current, other, delta]), [
+    ['目标映射 RSS', null, 8, null], ['其中匿名大页', null, 0, null], ['本步次缺页', 2, 1, -1]
+  ]);
+  assert.deepEqual(comparisonMetrics('demand512', absent, absent).map(row => row.label), ['本步次缺页']);
+  const allocated = {...mapped, phase: 'allocated'};
+  assert.equal(comparisonMetrics('demand512', allocated, allocated)[0].current, 0);
+});
+
+test('a shared range does not imply the malloc pointers belong to the same VMA', () => {
+  const first = {start: '1000', end: '2000', rss_kib: 4};
+  const second = {start: '2000', end: '3000', rss_kib: 8};
+  const block = (address, mapping, mappings) => ({address, mapping, mappings, alive: true});
+  const blocks = [
+    block('1010', first, [first]),
+    block('1ff0', first, [first, second]),
+    block('2200', second, [second])
+  ];
+  const regions = groupBlocksIntoRegions({blocks});
+  assert.deepEqual(regions[1].blocks.map(({num, containsPointer}) => [num, containsPointer]), [[2, false], [3, true]]);
+  assert.equal(sharedPointerRegion(regions), undefined);
+  assert.equal(regions.reduce((total, region) => total + region.rss_kib, 0), 12);
+});
+
+test('learning report keeps released write count and absent VMA measurements blank', () => {
+  const sample = {phase: 'freed', count: 0, mapping_present: false, rss_kib: 0, huge_kib: 0, action_minor: 0};
+  const cases = [{suite: 'demand512', case_id: 'case-1', samples: [sample]}];
+  const html = learningReport([{evidence: {topic: 'group3', step_index: 5, cases}}]);
+  assert.match(html, /<dt>累计写入位置<\/dt><dd>—<\/dd>/);
+  assert.match(html, /<dt>目标映射 RSS（KiB）<\/dt><dd>—<\/dd>/);
+  assert.match(html, /<dt>进程本步次缺页<\/dt><dd>0<\/dd>/);
 });

@@ -72,6 +72,39 @@ class ServerTests(unittest.TestCase):
         with urlopen(export + "&case=demand512-thp-off-2") as response:
             self.assertEqual(list(csv.DictReader(io.StringIO(response.read().decode("utf-8-sig")))), rows)
 
+    def test_demand_csv_formats_agree_on_missing_measurements(self):
+        endpoint = self.base + "/api/export?id=example--20261120T120355.446473Z"
+        with urlopen(endpoint + "&format=csv") as response:
+            general = list(csv.DictReader(io.StringIO(response.read().decode("utf-8-sig"))))
+        case = "demand512-thp-off-2"
+        with urlopen(endpoint + f"&format=demand-pair-csv&case={case}") as response:
+            paired = list(csv.DictReader(io.StringIO(response.read().decode("utf-8-sig"))))
+        comparable = ("phase", "written_positions", "rss_kib")
+        self.assertEqual([tuple(row[key] for key in comparable) for row in general if row["case_id"] == case],
+                         [tuple(row[key] for key in comparable) for row in paired if row["case_id"] == case])
+        released = next(row for row in general if row["case_id"] == case and row["phase"] == "freed")
+        self.assertEqual((released["count"], released["written_positions"], released["pss_kib"]), ("0", "", ""))
+        observed = next(row for row in general if row["case_id"] == case and row["phase"] == "write_quarter")
+        self.assertEqual(observed["huge_kib"], "0")
+        with urlopen(endpoint + "&format=html") as response:
+            page = response.read().decode("utf-8")
+        self.assertIn(f"<td>{case}</td><td>freed</td><td>parent</td><td>address_containing_vma</td>"
+                      "<td>—</td><td>—</td><td>—</td>", page)
+
+    def test_sequence_html_agrees_with_deduplicated_report_rss(self):
+        endpoint = self.base + "/api"
+        identifier = "example--20261118T013159.221864Z"
+        with urlopen(endpoint + f"/report?id={identifier}") as response:
+            report = json.load(response)
+        case = next(item for item in report["cases"] if item["suite"] == "sequence")
+        sample = next(row for row in case["data"]["samples"] if row["phase"] == "alloc_1MiB")
+        self.assertEqual(sample["related_rss_kib"], 16)
+        self.assertNotEqual(sample["rss_kib"], sample["related_rss_kib"])
+        with urlopen(endpoint + f"/export?id={identifier}&format=html") as response:
+            page = response.read().decode("utf-8")
+        self.assertIn(f'<td>{case["id"]}</td><td>alloc_1MiB</td><td>parent</td>'
+                      "<td>相关 VMA 去重合计</td><td>16</td>", page)
+
     def test_demand_pair_export_rejects_unpaired_baseline(self):
         path = "/api/export?id=example--20261118T013159.221864Z&format=demand-pair-csv&case=demand512-1"
         with self.assertRaises(HTTPError) as error:

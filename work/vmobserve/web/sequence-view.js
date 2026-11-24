@@ -1,4 +1,4 @@
-import { $, state, esc, kib, table, evidenceButtons, stepNavigation, stepExplanation } from './ui.js';
+import { $, state, esc, kib, table, evidenceButtons, stepNavigation, stepExplanation, replayOriginLabel } from './ui.js';
 import { liveRequestedKib } from './comparison-data.js';
 
 const BLOCK_SIZES = ['1 KiB', '256 KiB', '1 MiB'];
@@ -59,10 +59,16 @@ function groupBlocksIntoRegions(sample) {
           blocks: []
         });
       }
-      map.get(key).blocks.push({ num: idx + 1, size: BLOCK_SIZES[idx], address: b.address, alive: b.alive });
+      const containsPointer = b.mapping?.start === m.start && b.mapping.end === m.end;
+      map.get(key).blocks.push({num: idx + 1, size: BLOCK_SIZES[idx], address: b.address, alive: b.alive, containsPointer});
     });
   });
   return [...map.values()];
+}
+
+function sharedPointerRegion(regions) {
+  return regions.find(region => [2, 3].every(num =>
+    region.blocks.some(block => block.num === num && block.containsPointer)));
 }
 
 function allocationLesson(phase, action, sample, regions, join) {
@@ -84,7 +90,7 @@ function allocationLesson(phase, action, sample, regions, join) {
     no_memory_syscall: '本次跟踪窗口没有新的内存管理调用，分配器可能使用了已有空间。',
     unresolved: '可以用返回地址定位所在映射。本步跟踪还不足以确定分配器从哪里取得这块空间。'
   };
-  const shared = regions.find(r => r.blocks.some(b => b.num === 2) && r.blocks.some(b => b.num === 3));
+  const shared = sharedPointerRegion(regions);
   const kernel = join ? '两次 mmap 都请求可读写的私有匿名内存，地址又首尾相接。Linux 可以用一个虚拟内存区域（VMA）描述这片连续空间。分配器仍然分别管理两块内存。'
     : mechanisms[action?.allocation_source] || mechanisms.unresolved;
   const where = block?.mapping;
@@ -101,7 +107,7 @@ function mappingDiagram(regions, sample) {
     return `<article class="mapping-row ${r.pathname === '[heap]' ? 'heap-row' : ''}">
       <div class="mapping-main">
         <div class="mapping-head"><strong>${esc(name)}</strong><code class="mapping-addr">${esc(r.start)}–${esc(r.end)}</code></div>
-        <div class="mapping-blocks">${r.blocks.map(b => `<span>块 ${b.num} · ${esc(b.size)}${b.alive ? '' : ' · 已释放'} <code>0x${esc(b.address)}</code></span>`).join('')}</div>
+        <div class="mapping-blocks">${r.blocks.map(b => `<span>块 ${b.num} · ${esc(b.size)}${b.alive ? '' : ' · 已释放'} ${b.containsPointer ? `<code>0x${esc(b.address)}</code>` : ' · 范围相交'}</span>`).join('')}</div>
       </div>
       <div class="mapping-rss"><strong>${kib(r.rss_kib)}</strong><small>已驻留物理内存</small></div>
     </article>`;
@@ -116,7 +122,7 @@ function renderObservation(c, phase) {
   const regions = groupBlocksIntoRegions(sample);
   const mmap2 = parseMmapCall(data.actions[1]), mmap3 = parseMmapCall(data.actions[2]);
   const adjacent = phase === 3 && mmap2 && mmap3 && (mmap3.endHex === mmap2.startHex || mmap2.endHex === mmap3.startHex) &&
-    regions.some(r => r.blocks.some(b => b.num === 2) && r.blocks.some(b => b.num === 3));
+    sharedPointerRegion(regions);
 
   const join = adjacent && mmap2.privateAnonymousRW && mmap3.privateAnonymousRW;
   const ranges = join ? `<div class="mmap-evidence"><p><strong>把两次 mmap 的地址放在一起看</strong></p>
@@ -153,7 +159,7 @@ function renderObservation(c, phase) {
     return `<div class="seq-metric"><dt>${label}</dt>
       <dd>${esc(value?.toLocaleString('zh-CN'))} <span class="metric-unit">${unit}</span>${change}</dd></div>`;
   };
-  const metrics = `<dl class="seq-metrics" aria-label="当前阶段实测结果">
+  const metrics = `<dl class="seq-metrics" aria-label="当前阶段采样结果">
     ${metric('存活块申请量', liveRequestedKib(sample), 'KiB', previous && liveRequestedKib(previous))}
     ${metric('相关映射', sample.related_vma_count, '段 VMA', previous?.related_vma_count)}
     ${metric('整段驻留量', sample.related_rss_kib, 'KiB RSS', previous?.related_rss_kib)}</dl>`;
@@ -170,8 +176,8 @@ function renderObservation(c, phase) {
   </section>`;
   const evidence = `<details class="secondary-fold"><summary>${regions.length ? '本步原文与指针' : '本步原文'}</summary>
     <div class="raw-links">${stepRawButtons}</div>
-    ${regions.length ? table(['块', 'malloc 返回地址', '所在映射', '映射大小'], regions.flatMap(r =>
-      r.blocks.map(b => [`块 ${b.num}${b.alive ? '' : '（已释放）'}`, '0x' + b.address, r.start + '–' + r.end, kib(r.size_kib)]))) : ''}
+    ${regions.length ? table(['块', 'malloc 返回地址', '相交映射', '包含首地址', '映射大小'], regions.flatMap(r =>
+      r.blocks.map(b => [`块 ${b.num}${b.alive ? '' : '（已释放）'}`, '0x' + b.address, r.start + '–' + r.end, b.containsPointer ? '是' : '否', kib(r.size_kib)]))) : ''}
   </details>`;
   return {observation, evidence};
 }
@@ -273,7 +279,8 @@ export function renderSequence() {
   state.phase = Math.min(Math.max(0, state.phase), titles.length - 1);
   const comparing = state.phase === data.samples.length;
   const sample = data.samples[state.phase];
-  const regions = exerciseRegions(sample);
+  const verified = c.validation?.status === 'passed';
+  const regions = verified ? exerciseRegions(sample) : [];
   const exercise = regions.length ? renderRssExercise(sample, regions) : '';
   const stepResult = comparing ? null : renderObservation(c, state.phase);
   const next = state.phase === data.samples.length - 1 ? '对照五步结果' : '下一步';
@@ -292,15 +299,16 @@ export function renderSequence() {
   content.innerHTML = `
     <section class="malloc-lesson seq-reading lab-replay">
       <header class="focus-intro">
-        <small class="question-kicker">实验 3.2 · 历史实测回放</small>
+        <small class="question-kicker">实验 3.2 · ${replayOriginLabel(state.report)}</small>
         <h1>连续三次 malloc，内存去了哪里？</h1>
       </header>
+      ${verified ? '' : `<p class="phase-note">案例检查：${esc(c.error?.message || c.validation?.status || '未记录')}</p>`}
       <div class="replay-step-toolbar">
         ${stepNavigation(titles, state.phase)}
         ${picker}
       </div>
       ${comparing ? renderComparison(data.samples) : `
-        ${exercise ? `${exercise}<details class="secondary-fold" id="rss-observation"><summary>展开本步实测结果</summary>${stepResult.observation}</details>` : stepResult.observation}
+        ${exercise ? `${exercise}<details class="secondary-fold" id="rss-observation"><summary>展开本步采样结果</summary>${stepResult.observation}</details>` : stepResult.observation}
         ${stepResult.evidence}
         <div class="replay-next"><button class="primary" data-sequence-step="${state.phase + 1}">${next} →</button></div>`}
       <details class="secondary-fold"><summary>完整系统调用与采样文件</summary>
@@ -312,4 +320,4 @@ export function renderSequence() {
   if (exercise) attachRssExercise(sample, regions);
 }
 
-export { parseMmapCall, groupBlocksIntoRegions };
+export { parseMmapCall, groupBlocksIntoRegions, sharedPointerRegion };

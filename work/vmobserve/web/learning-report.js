@@ -1,4 +1,5 @@
 import {esc} from './ui.js';
+import {demandMeasurement} from './comparison-data.js';
 
 function rowsFor(caseRecord) {
   const sample = caseRecord.samples?.[0];
@@ -13,10 +14,10 @@ function rowsFor(caseRecord) {
       '。去重合计 ' + esc(sample.related_rss_kib) + ' KiB。</p>';
   }
   return '<dl>' + [
-    ['采样阶段', sample.phase], ['累计写入位置', sample.count],
-    ['目标映射 RSS（KiB）', sample.mapping_present ? sample.rss_kib : null],
-    ['匿名大页（KiB）', sample.mapping_present ? sample.huge_kib : null],
-    ['进程本步次缺页', sample.action_minor],
+    ['采样阶段', sample.phase], ['累计写入位置', demandMeasurement(sample, 'count')],
+    ['目标映射 RSS（KiB）', demandMeasurement(sample, 'rss_kib')],
+    ['匿名大页（KiB）', demandMeasurement(sample, 'huge_kib')],
+    ['进程本步次缺页', demandMeasurement(sample, 'action_minor')],
     ['大页建议及返回值', caseRecord.policy && caseRecord.policy.policy + ' / ' + caseRecord.policy.result],
     ['VmFlags', sample.vm_flags?.join(' ')]
   ].map(([name, value]) => '<dt>' + esc(name) + '</dt><dd>' + esc(value ?? '—') + '</dd>').join('') + '</dl>';
@@ -38,7 +39,7 @@ export function learningReport(entries, {verification = false} = {}) {
       '<p>校验状态 ' + esc(evidence.integrity?.status || '未记录') + ' · 数据来源 ' + esc(evidence.data_origin || '未记录') + '</p>' +
       [['我的预测', prediction], ['我的观测与原文依据', observation], ['解释与复验', explanation]].map(([name, value]) =>
         '<h3>' + name + '</h3><p class="answer">' + esc(value || '待填写') + '</p>').join('') +
-      '<h3>实测与复核</h3>' + evidence.cases.map(item => {
+      '<h3>采样与复核</h3>' + evidence.cases.map(item => {
         const artifacts = Object.values(item.artifacts || {}).map(path => '<li><code>' + esc(path) + '</code>' +
           (item.artifact_sha256?.[path] ? ' · SHA-256 <code>' + esc(item.artifact_sha256[path]) + '</code>' : '') + '</li>');
         return '<article><h4>' + esc(item.case_id) + '</h4>' +
