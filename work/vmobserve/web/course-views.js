@@ -352,10 +352,10 @@ function demandRepeatReview(activePhase, currentRepeat) {
 
 function demandPolicyPanel(c, sample) {
   const recipe = c.parameters.thp_advice;
-  const next = newestReplay('3.3', 'group3', 'demand512-thp');
-  const collect = state.config?.executor === 'openeuler-vm' || state.config?.host_system === 'Linux'
-    ? '<button id="run-demand-thp">采集三轮策略对照</button>' : '';
   if (!recipe) {
+    const next = newestReplay('3.3', 'group3', 'demand512-thp');
+    const collect = state.config?.executor === 'openeuler-vm' || state.config?.host_system === 'Linux'
+      ? '<button id="run-demand-thp">采集三轮策略对照</button>' : '';
     return `<section class="seq-panel demand-policy">
       <h2>同样写入 512 MiB，改一个条件再试</h2>
       <p>预测允许透明大页后，次缺页增量和目标映射的 RSS 会怎么变。</p>
@@ -399,7 +399,7 @@ function demandPolicyPanel(c, sample) {
     </details>
     ${demandTimeline(c, pair, phase)}
     ${demandRepeatReview(phase, repeat)}
-    <div class="raw-links">${baseline ? `<a class="btn-link" href="${esc(baseline.href)}">查看原版 malloc 实验</a>` : ''}${collect}</div>
+    ${baseline ? `<p class="detail-copy"><a href="${esc(baseline.href)}">返回原版 malloc 实验</a></p>` : ''}
   </section>`;
 }
 
@@ -436,17 +436,18 @@ function renderMemorySteps(c, cases) {
         ${sample ? `<dl class="sample-readings"><div><dt>映射大小</dt><dd>${demand && !sample.mapping_present ? '无映射' : kib(sample.size_kib)}</dd></div>
           <div><dt>映射驻留 RSS</dt><dd>${demand && !sample.mapping_present ? '—' : kib(sample.rss_kib)}</dd></div><div><dt>本步次缺页</dt><dd>${esc(sample.action_minor)} 次</dd></div></dl>` : ''}` : '<p>这次没有采到分步记录，可以切换记录或打开原文。</p>'}
       ${c.validation.status !== 'passed' ? `<p class="phase-note">本次核对结果：${esc(c.error?.message || c.validation.status)}</p>` : ''}
-      ${controlled ? `<div class="raw-links">${evidenceButtons(c, rawOpts)}</div></details>` : ''}
-      <div class="seq-navigation"><div class="raw-links">${controlled ? '' : evidenceButtons(c, rawOpts)}</div><div class="seq-step-actions"><button data-course-step="${state.phase - 1}" ${state.phase === 0 ? 'disabled' : ''}>← 上一步</button>${next}</div></div>
+      ${controlled ? '</details>' : ''}
+      <div class="seq-navigation replay-next">${next}</div>
     </section>
     ${demand ? demandPolicyPanel(c, sample) : ''}
-    <details class="secondary-fold"><summary>对照完整采样与诊断</summary>
+    <details class="secondary-fold"><summary>完整采样、原文与诊断</summary>
+      <div class="raw-links">${evidenceButtons(c, rawOpts)}</div>
       ${table(['采样时刻', demand ? '已写位置' : '递归深度', '映射大小', '映射驻留 RSS', '本步次缺页', '累计次缺页'], rows, sample ? samples.indexOf(sample) : -1)}
       ${diagnosisHTML(findingFor([c.id], ['group3', 'incomplete_evidence']))}
     </details>
     ${demand ? `<details class="secondary-fold" id="original-demand"><summary>课内原程序的五次 ps 输出 · 整个进程</summary>
       <div id="demand-original-ps"></div></details>` : ''}
-    <nav class="lab-neighbours"><a class="nav-link" href="/lesson">记录本节预测与思考题笔记 →</a><a class="nav-link" href="/labs/focus">重点任务目录</a></nav>
+    ${demand || state.phase + 1 < steps.length ? '<p class="detail-copy"><a href="/lesson">查看思考题与课程笔记</a></p>' : ''}
   </section>`;
   if (demand) {
     bindDemandTimeline();
@@ -461,14 +462,11 @@ function renderGroup3() {
     <small class="question-kicker">实验第 3 组 · 链接、调页与栈</small>
     <h2>从程序装入到栈溢出</h2>
     <p>对比同一段代码在静态/动态链接下的映射差异；在同进程里连续申请三块内存；按原课例分批写入 512 MiB；以及观察递归深度超过栈限制时的段错误（SIGSEGV）。</p>
-    <div class="sequence-controls">
-      <button id="run-group3" class="primary">重新采集第 3 组实验</button>
-      <span class="picker-hint">每项重复 3 次，共 24 组数据</span>
-    </div>
+
   </div>`;
   const cases = state.report.cases.filter(c => suites.includes(c.suite));
   if (!cases.length) {
-    $('#content').innerHTML = intro + '<p class="empty">当前记录里没有第 3 组实验，请点顶部“切换记录”选一条“链接与栈”记录或点击上方按钮采集。</p>';
+    $('#content').innerHTML = intro + '<p class="empty">这份记录里没有第 3 组实验。可在顶部更换记录，或从侧栏重新采集第 3 组。</p>';
     return;
   }
   state.selected = Math.min(state.selected, cases.length - 1);

@@ -374,34 +374,6 @@ h3 { font-size: 16.5px; line-height: 1.38; margin: 6px 0; }
 .hero-copy { max-width: 64ch; }
 .hero-copy p { margin: 0; font-size: 14.5px; color: var(--ink-secondary); line-height: 1.55; }
 
-/* Repeat Pills Switcher */
-.repeat-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px 10px;
-  flex-wrap: wrap;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 6px 10px;
-}
-.repeat-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.repeat-label { font-size: 12px; font-weight: 700; color: var(--muted); }
-.repeat-pills { display: flex; gap: 5px; flex-wrap: wrap; }
-.repeat-pill {
-  padding: 3px 10px;
-  font-size: 12.5px;
-  border-radius: 999px;
-  border-color: var(--line-strong);
-  color: var(--ink-secondary);
-  background: #f8fafc;
-}
-.repeat-pill[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-}
 .picker-hint { font-size: 11.5px; color: var(--muted); }
 
 /* Stepper Bar */
@@ -1586,7 +1558,7 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
 .demand-prediction textarea { width: 100%; min-height: 70px; padding: 10px; border: 1px solid var(--line); border-radius: 7px; font: inherit; }
 .demand-prediction .detail-copy:empty { display: none; }
 .notes-report { margin: 14px 0; }
-.rss-note { margin-top: 10px; }
+
 
 .demand-environment { padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; }
 .demand-environment .detail-copy { margin: 0; overflow-wrap: anywhere; }
@@ -1595,6 +1567,18 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
 .demand-environments [aria-current="true"] { background: var(--accent-soft); border-color: var(--accent); font-weight: 600; }
 
 /* Focused malloc and demand-paging replays. */
+.replay-step-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  margin-bottom: 14px;
+}
+.replay-step-toolbar .seq-steps { flex: 1 1 520px; min-width: 0; margin: 0; }
+.replay-picker { margin-left: auto; font-size: 13px; color: var(--ink-secondary); }
+.replay-picker select { max-width: 100%; }
+.replay-next { display: flex; justify-content: flex-end; margin-top: 12px; }
+
 .lab-replay {
   --lab-ink: #172554;
   --lab-step: #bfdbfe;

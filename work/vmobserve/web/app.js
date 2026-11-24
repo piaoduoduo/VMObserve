@@ -119,7 +119,7 @@ function linkedPosition() {
 function savePosition() {
   if (!state.id) return;
   const hash = new URLSearchParams({ run: state.id, topic: state.tab });
-  if ($('#case-select, [data-select-case]') && state.selected) hash.set('case', state.selected);
+  if ($('#case-select') && state.selected) hash.set('case', state.selected);
   if ($('#phase, [data-course-step], [data-sequence-step]')) hash.set('step', state.phase);
   const next = '#' + hash;
   if (location.hash !== next) window.history.replaceState(null, '', next);
@@ -301,9 +301,12 @@ function render() {
   const lab = currentLab(state.tab, r, state.selected);
   markLab(lab, state.tab);
   document.title = (lab ? '实验 ' + lab : topics[state.tab]) + ' · 重点任务可视化实验台';
-  const singleMode = { sequence: 'sequence', group3: 'group3', course: 'course' }[state.tab];
+  const selected = state.tab === 'group3' ? viewCases(r.cases, state.tab, item => item.suite)[state.selected] : null;
+  const pairedDemand = selected?.suite === 'demand512' && Boolean(selected.parameters.thp_advice);
+  const singleMode = pairedDemand ? 'demand512-thp' : {sequence: 'sequence', group3: 'group3', course: 'course'}[state.tab];
   $('#run').dataset.mode = singleMode || 'complete';
-  $('#run').textContent = singleMode === 'group3' ? '重新采集第 3 组' : singleMode ? '重新采集本项实验' : '采集整套实验';
+  $('#run').textContent = pairedDemand ? '重新采集三轮大页对照'
+    : singleMode === 'group3' ? '重新采集第 3 组' : singleMode ? '重新采集本项实验' : '采集整套实验';
   savePosition();
   renderReplayComparison();
   renderReplayNotes();
@@ -318,8 +321,6 @@ const runModes = {
   'run-cow': 'cow',
   'run-layout': 'layout',
   'run-course': 'course',
-  'run-sequence': 'sequence',
-  'run-group3': 'group3',
   'run-demand-thp': 'demand512-thp',
   'run-group4': 'group4',
   'run-policy': 'policy',
@@ -344,17 +345,6 @@ $('#content').addEventListener('click', e => {
       vmaStarts: b.dataset.vmaStarts ? b.dataset.vmaStarts.split(',').filter(Boolean) : [],
       stepLabel: b.dataset.stepLabel || null
     });
-  }
-  if (b.dataset.selectCase !== undefined) {
-    stop();
-    state.selected = Number(b.dataset.selectCase);
-    if (state.tab !== 'sequence') state.phase = 0;
-    render();
-    const selection = document.querySelector(`[data-select-case="${state.selected}"]`);
-    const details = selection?.closest('details');
-    if (details) details.open = true;
-    selection?.focus({ preventScroll: true });
-    return;
   }
   const step = b.dataset.courseStep ?? b.dataset.sequenceStep;
   if (step !== undefined) {
@@ -385,11 +375,12 @@ $('#content').addEventListener('change', ({ target: t }) => {
     const cases = viewCases(state.report.cases, state.tab, item => item.suite);
     const previous = cases[state.selected];
     const target = cases[position];
-    const keepStep = previous?.suite === 'demand512' && previous.parameters.thp_advice &&
-      target?.suite === 'demand512' && target.parameters.thp_advice;
+    const keepStep = state.tab === 'sequence' ||
+      (previous?.suite === 'demand512' && target?.suite === 'demand512');
     state.selected = position;
     if (!keepStep) state.phase = 0;
     render();
+    $('#case-select')?.focus({preventScroll: true});
   }
 });
 

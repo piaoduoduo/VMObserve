@@ -138,8 +138,7 @@ function renderObservation(c, phase) {
     ? `<button data-raw="${esc(c.id)}" data-kind="syscalls" data-line-start="${esc(action.begin_line)}" data-line-end="${esc(action.end_line)}" data-step-label="${esc(stepLabel)}">看系统调用原文</button>
        <button data-raw="${esc(c.id)}" data-kind="smaps" data-phase="${esc(sample.phase)}" data-vma-starts="${esc(vmaStarts.join(','))}" data-step-label="${esc(stepLabel)}">定位 smaps 原行</button>
        ${mergeCompareBtn}`
-    : `<button data-raw="${esc(c.id)}" data-kind="smaps" data-phase="${esc(sample.phase)}" data-step-label="${esc(stepLabel)}">对照申请前的 smaps</button>
-       <button data-raw="${esc(c.id)}" data-kind="syscalls">查看完整系统调用原文</button>`;
+    : `<button data-raw="${esc(c.id)}" data-kind="smaps" data-phase="${esc(sample.phase)}" data-step-label="${esc(stepLabel)}">对照申请前的 smaps</button>`;
 
   const shared = regions.some(r => r.blocks.length > 1);
   const rss = shared && regions.length > 1
@@ -159,7 +158,7 @@ function renderObservation(c, phase) {
     ${metric('相关映射', sample.related_vma_count, '段 VMA', previous?.related_vma_count)}
     ${metric('整段驻留量', sample.related_rss_kib, 'KiB RSS', previous?.related_rss_kib)}</dl>`;
 
-  return `<section class="seq-panel" id="sequence-result" aria-labelledby="sequence-heading">
+  const observation = `<section class="seq-panel" id="sequence-result" aria-labelledby="sequence-heading">
     <div class="phase-heading"><h2 id="sequence-heading">${esc(stepLabel)}</h2><code>${esc(C_CODE[phase])}</code></div>
     ${metrics}
     ${mappingDiagram(regions, sample)}
@@ -168,13 +167,13 @@ function renderObservation(c, phase) {
       ${allocationLesson(phase, action, sample, regions, join)}
       ${ranges}
     </details>
-    <div class="seq-navigation"><div class="raw-links">${stepRawButtons}</div>
-      <div class="seq-step-actions"><button data-sequence-step="${phase - 1}"${phase === 0 ? ' disabled' : ''}>← 上一步</button>
-      <button class="primary" data-sequence-step="${phase + 1}">${phase === data.samples.length - 1 ? '对照五步结果' : '下一步'} →</button></div>
-    </div>
-  </section>
-  ${regions.length ? `<details class="secondary-fold"><summary>本步指针与地址范围</summary>${table(['块', 'malloc 返回地址', '所在映射', '映射大小'], regions.flatMap(r =>
-    r.blocks.map(b => [`块 ${b.num}${b.alive ? '' : '（已释放）'}`, '0x' + b.address, r.start + '–' + r.end, kib(r.size_kib)])))}</details>` : ''}`;
+  </section>`;
+  const evidence = `<details class="secondary-fold"><summary>${regions.length ? '本步原文与指针' : '本步原文'}</summary>
+    <div class="raw-links">${stepRawButtons}</div>
+    ${regions.length ? table(['块', 'malloc 返回地址', '所在映射', '映射大小'], regions.flatMap(r =>
+      r.blocks.map(b => [`块 ${b.num}${b.alive ? '' : '（已释放）'}`, '0x' + b.address, r.start + '–' + r.end, kib(r.size_kib)]))) : ''}
+  </details>`;
+  return {observation, evidence};
 }
 
 
@@ -186,7 +185,7 @@ function exerciseRegions(sample) {
   return regions.sort((a, b) => BigInt('0x' + a.start) < BigInt('0x' + b.start) ? -1 : 1);
 }
 
-function renderRssExercise(c, sample, regions) {
+function renderRssExercise(sample, regions) {
   const label = index => '映射 ' + (index + 1);
   const options = regions.map((_, i) => `<option value="${i}">${label(i)}</option>`).join('');
   return `<section class="seq-panel rss-exercise" aria-labelledby="rss-exercise-title">
@@ -198,10 +197,8 @@ function renderRssExercise(c, sample, regions) {
       <div class="rss-inputs">${sample.blocks.map((block, i) => `<label>块 ${i + 1} · <code>0x${esc(block.address)}</code>
         <select name="block-${i}" required><option value="">请选择映射</option>${options}</select></label>`).join('')}
       <label>去重后的 RSS（KiB）<input name="rss" type="number" min="0" step="1" required></label></div>
-      <div class="raw-links"><button type="submit" class="primary">核对我的答案</button>
-      ${evidenceButtons(c, {phase: sample.phase, stepLabel: '第三次申请', vmaStart: regions.map(r => r.start).join(',')}, ['smaps'])}</div>
+      <button type="submit" class="primary">核对我的答案</button>
       <div class="rss-feedback" aria-live="polite"></div>
-      <button class="rss-note" type="button" hidden>打开本步笔记</button>
     </form>
   </section>`;
 }
@@ -211,12 +208,6 @@ function attachRssExercise(sample, regions) {
   const expected = sample.blocks.map(block =>
     regions.findIndex(region => region.start === block.mapping?.start && region.end === block.mapping?.end));
   const result = $('#rss-observation');
-  const note = form.querySelector('.rss-note');
-  note.addEventListener('click', () => {
-    const editor = $('#replay-notes');
-    editor.open = true;
-    editor.querySelector('textarea').focus();
-  });
   form.addEventListener('submit', event => {
     event.preventDefault();
     const answers = new FormData(form);
@@ -237,7 +228,6 @@ function attachRssExercise(sample, regions) {
     ].join('');
     form.querySelector('.rss-feedback').textContent = feedback + ' ' + matches + '。RSS 合计 ' + equation + '。';
     result.open = true;
-    note.hidden = false;
   });
 }
 
@@ -254,17 +244,15 @@ function renderComparison(samples) {
       peak && freed ? `第三次申请后，${peak.count} 个块涉及 ${peak.related_vma_count} 段映射，RSS 合计 ${kib(peak.related_rss_kib)}。释放后还剩 ${freed.count} 个块，旧地址涉及的映射 RSS 合计 ${kib(freed.related_rss_kib)}。` : '下表列出了这次运行已有的快照。')}
     ${stages}
     <p class="detail-copy">表中只统计覆盖这些块地址的映射。同一段映射里的块共用一份 RSS 读数。释放后，分配器还可能保留堆区，供下次申请使用。</p>
-    <div class="seq-navigation"><button data-sequence-step="3">回看第三次申请</button>
-      <a class="btn-link primary" href="/labs/3.3?replay=demand512">继续 3.3 · 第一次写入 →</a></div>
+    <div class="seq-navigation replay-next"><a class="btn-link primary" href="/labs/3.3?replay=demand512">继续 3.3 · 第一次写入 →</a></div>
   </section>`;
 }
 
 export function renderSequence() {
   const cases = state.report.cases.filter(c => c.suite === 'sequence');
   const content = $('#content');
-  const rerun = '<button id="run-sequence" class="ghost-action">重跑这组实验</button>';
   if (!cases.length) {
-    content.innerHTML = '<h2>连续三次 malloc</h2><p>这份记录里没有连续分配实验。点上方“换一份数据”选一条有连续分配的记录，或点下面按钮重跑。</p>' + rerun;
+    content.innerHTML = '<h2>连续三次 malloc</h2><p>这份记录里没有连续分配实验。可在顶部更换记录，或从侧栏重新采集本项实验。</p>';
     return;
   }
 
@@ -272,20 +260,12 @@ export function renderSequence() {
   const c = cases[state.selected];
   const data = c.data;
 
-  const repeatPills = cases.map((item, i) =>
-    `<button class="repeat-pill" data-select-case="${i}" aria-pressed="${i === state.selected}">第 ${esc(item.parameters.repeat)} 次实验</button>`
-  ).join('');
-
-  const picker = `<div class="repeat-toolbar">
-    <div class="repeat-group" role="group" aria-label="切换实验次数">
-      <span class="repeat-label">对照记录</span>
-      <div class="repeat-pills">${repeatPills}</div>
-    </div>
-    ${rerun}
-  </div>`;
+  const picker = cases.length > 1 ? `<label class="replay-picker">实验轮次 <select id="case-select">
+    ${cases.map((item, i) => `<option value="${i}"${i === state.selected ? ' selected' : ''}>第 ${esc(item.parameters.repeat)} 轮</option>`).join('')}
+  </select></label>` : '';
 
   if (!data?.samples?.length) {
-    content.innerHTML = `<section class="malloc-lesson">${picker}<p class="empty">这次运行没拿到完整数据，点下面按钮看报错或原件。</p><pre>${esc(c.error?.message || c.status)}</pre><div class="raw-links">${evidenceButtons(c)}</div></section>`;
+    content.innerHTML = `<section class="malloc-lesson">${picker}<p class="empty">这轮运行缺少完整数据。</p><pre>${esc(c.error?.message || c.status)}</pre><div class="raw-links">${evidenceButtons(c)}</div></section>`;
     return;
   }
 
@@ -294,7 +274,9 @@ export function renderSequence() {
   const comparing = state.phase === data.samples.length;
   const sample = data.samples[state.phase];
   const regions = exerciseRegions(sample);
-  const exercise = regions.length ? renderRssExercise(c, sample, regions) : '';
+  const exercise = regions.length ? renderRssExercise(sample, regions) : '';
+  const stepResult = comparing ? null : renderObservation(c, state.phase);
+  const next = state.phase === data.samples.length - 1 ? '对照五步结果' : '下一步';
 
   const calls = table(
     ['动作', '返回指针', '系统调用原文', '实际分配去向'],
@@ -313,9 +295,15 @@ export function renderSequence() {
         <small class="question-kicker">实验 3.2 · 历史实测回放</small>
         <h1>连续三次 malloc，内存去了哪里？</h1>
       </header>
-      ${stepNavigation(titles, state.phase)}
-      ${comparing ? renderComparison(data.samples) : exercise ? `${exercise}<details class="secondary-fold" id="rss-observation"><summary>展开本步实测结果</summary>${renderObservation(c, state.phase)}</details>` : renderObservation(c, state.phase)}
-      <details class="secondary-fold"><summary>对照各次记录与完整数据</summary>${picker}
+      <div class="replay-step-toolbar">
+        ${stepNavigation(titles, state.phase)}
+        ${picker}
+      </div>
+      ${comparing ? renderComparison(data.samples) : `
+        ${exercise ? `${exercise}<details class="secondary-fold" id="rss-observation"><summary>展开本步实测结果</summary>${stepResult.observation}</details>` : stepResult.observation}
+        ${stepResult.evidence}
+        <div class="replay-next"><button class="primary" data-sequence-step="${state.phase + 1}">${next} →</button></div>`}
+      <details class="secondary-fold"><summary>完整系统调用与采样文件</summary>
         <h3>系统调用与指针</h3>${calls}
         <p class="detail-copy">系统调用跟踪工具：${esc(cleanTracerVersion(state.report.trace_tool?.version))}</p>
         <div class="raw-links">${evidenceButtons(c)}</div>
