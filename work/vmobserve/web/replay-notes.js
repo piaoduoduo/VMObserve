@@ -92,24 +92,24 @@ function download(value, filename, type = 'application/json') {
 function attachDemandPrediction(binding, draft, panel) {
   const host = document.querySelector('.demand-prediction');
   if (!host) return;
-  const result = document.querySelector('.demand-result');
+  const evidence = document.querySelector('.demand-evidence');
   host.innerHTML = '<label for="demand-prediction">看数据前，预测两组的次缺页与映射 RSS 会如何变化</label>' +
     '<textarea id="demand-prediction" rows="2" maxlength="100000">' + esc(draft.prediction) + '</textarea>' +
-    '<div class="raw-links"><button class="primary" type="button">记录预测并查看实测</button></div>' +
+    '<div class="raw-links"><button class="primary" type="button">记录预测并读原文</button></div>' +
     '<p class="detail-copy" role="status"></p>';
   host.querySelector('button').addEventListener('click', () => {
     const input = host.querySelector('textarea');
     if (!input.value.trim()) {
-      host.querySelector('[role=status]').textContent = '先写一句预测，也可以直接展开下面的实测。';
+      host.querySelector('[role=status]').textContent = '先写一句预测，也可以直接展开下面的原文。';
       input.focus();
       return;
     }
     const field = panel.querySelector('[data-note-field=prediction]');
     field.value = input.value;
     field.dispatchEvent(new Event('input', {bubbles: true}));
-    result.open = true;
-    result.querySelector('summary').focus();
-    host.querySelector('[role=status]').textContent = '预测已填入本步笔记。核对实测后，记下证据和解释。';
+    evidence.open = true;
+    evidence.querySelector('summary').focus();
+    host.querySelector('[role=status]').textContent = '预测已填入本步笔记。读原文后，记下证据和解释。';
   });
 }
 

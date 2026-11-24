@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
+import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 import {groupBlocksIntoRegions, sharedPointerRegion} from '../work/vmobserve/web/sequence-view.js';
 import {learningReport} from '../work/vmobserve/web/learning-report.js';
 const item = (suite, samples, parameters = {}) => ({suite, data: {samples}, parameters});
@@ -199,4 +199,20 @@ test('learning report keeps released write count and absent VMA measurements bla
   assert.match(html, /<dt>累计写入位置<\/dt><dd>—<\/dd>/);
   assert.match(html, /<dt>目标映射 RSS（KiB）<\/dt><dd>—<\/dd>/);
   assert.match(html, /<dt>进程本步次缺页<\/dt><dd>0<\/dd>/);
+});
+
+test('evidence exercise follows the phase readings and requires a measurable pair', () => {
+  const reading = (rss_kib, huge_kib, mapping_present = true) =>
+    ({rss_kib, huge_kib, mapping_present, action_minor: 0});
+  const disabled = reading(131072, 0);
+  const enabled = reading(131072, 131072);
+  assert.deepEqual(demandExerciseReadings({disabled, enabled}), {
+    disabledRss: 131072, enabledRss: 131072, enabledHuge: 131072, rss: 0, huge: 'present'
+  });
+  assert.deepEqual(demandExerciseReadings({disabled: reading(8, 0), enabled: reading(0, 0)}), {
+    disabledRss: 8, enabledRss: 0, enabledHuge: 0, rss: -1, huge: 'zero'
+  });
+  assert.equal(demandExerciseReadings({disabled, enabled: reading(0, 0, false)}), null);
+  assert.equal(demandExerciseReadings({disabled, enabled: {...enabled, action_minor: null}}), null);
+  assert.equal(demandExerciseReadings({repeat: 2, issue: 'validation'}), null);
 });

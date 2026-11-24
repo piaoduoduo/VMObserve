@@ -49,6 +49,19 @@ export function demandRepeatReadings(report, phase) {
   });
 }
 
+export function demandExerciseReadings(row) {
+  if (!row || row.issue) return null;
+  const [disabledRss, enabledRss] = demandMetricValues(row, 'rss_kib');
+  const enabledHuge = demandMeasurement(row.enabled, 'huge_kib');
+  const faults = demandMetricValues(row, 'action_minor');
+  if ([disabledRss, enabledRss, enabledHuge, ...faults].includes(null)) return null;
+  return {
+    disabledRss, enabledRss, enabledHuge,
+    rss: Math.sign(enabledRss - disabledRss),
+    huge: enabledHuge > 0 ? 'present' : 'zero'
+  };
+}
+
 export function demandRepeatMetric(rows, metric) {
   const values = rows.map(row => demandMetricValues(row, metric));
   const deltas = values.filter(([off, on]) => off !== null && on !== null)

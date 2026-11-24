@@ -1,7 +1,7 @@
 import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
 
 import { newestReplay, demandEnvironmentReplays } from './curriculum.js';
-import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement } from './comparison-data.js';
+import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings } from './comparison-data.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -318,8 +318,7 @@ function bindDemandTimeline() {
   });
 }
 
-function demandRepeatReview(activePhase, currentRepeat) {
-  const rows = demandRepeatReadings(state.report, activePhase);
+function demandRepeatReview(rows, activePhase, currentRepeat) {
   if (!rows.length) return '';
   const previous = $('#demand-repeat-review');
   const open = previous?.dataset.run === state.id && previous.open;
@@ -350,7 +349,45 @@ function demandRepeatReview(activePhase, currentRepeat) {
   </details>`;
 }
 
-function demandPolicyPanel(c, sample) {
+function demandEvidencePractice(practice) {
+  if (!practice) return '';
+  return `<form class="demand-evidence-exercise">
+    <p class="detail-copy">在两组 <code>smaps</code> 查本步目标映射的 <code>Rss</code> 与 <code>AnonHugePages</code>。第三项查同阶段 JSONL 的 <code>action_minor</code>，并结合探针的 <code>getrusage</code> 采集口径判断。</p>
+    <div class="demand-exercise-fields">
+      <label>使用组的 RSS 相对禁用组<select name="rss" required>
+        <option value="">请选择</option><option value="-1">更小</option><option value="0">相同</option><option value="1">更大</option>
+      </select></label>
+      <label>使用组的 AnonHugePages<select name="huge" required>
+        <option value="">请选择</option><option value="present">有匿名大页驻留</option><option value="zero">实测为 0 KiB</option>
+      </select></label>
+      <label>本步次缺页采用的统计范围<select name="scope" required>
+        <option value="">请选择</option><option value="mapping">目标 VMA</option><option value="process">各组各自的进程</option>
+      </select></label>
+    </div>
+    <button class="primary" type="submit">核对三项判断</button>
+    <div class="demand-exercise-feedback" role="status"></div>
+  </form>`;
+}
+
+function bindDemandEvidencePractice(practice) {
+  const form = $('.demand-evidence-exercise');
+  if (!form || !practice) return;
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const answers = new FormData(form);
+    const checks = [
+      [answers.get('rss') === String(practice.rss), `禁用组 RSS ${kib(practice.disabledRss)}，使用组 RSS ${kib(practice.enabledRss)}。依据是两组目标 VMA 的 Rss。`],
+      [answers.get('huge') === practice.huge, `使用组 AnonHugePages 为 ${kib(practice.enabledHuge)}。实际驻留量由这一项读出，madvise 的返回值用于判断建议调用是否成功。`],
+      [answers.get('scope') === 'process', '次缺页取自各组进程本步的 getrusage 增量，统计范围覆盖整个进程。']
+    ];
+    const correct = checks.filter(([passed]) => passed).length;
+    form.querySelector('.demand-exercise-feedback').innerHTML =
+      `<strong>答对 ${correct} / ${checks.length} 项</strong><ol>${checks.map(([passed, explanation]) =>
+        `<li>${passed ? '正确' : '再核对'} · ${esc(explanation)}</li>`).join('')}</ol>`;
+  });
+}
+
+function demandPolicyPanel(c, sample, rounds, practice) {
   const recipe = c.parameters.thp_advice;
   if (!recipe) {
     const next = newestReplay('3.3', 'group3', 'demand512-thp');
@@ -383,7 +420,13 @@ function demandPolicyPanel(c, sample) {
     <p>两个独立进程各用一个带保护页的匿名映射。按相同的 4096 字节步长分批写入，仅切换映射的大页建议。</p>
     ${demandEnvironmentNav(c.parameters)}
     <div class="demand-prediction"></div>
-    <details class="secondary-fold demand-result"><summary>查看本步两组采样与原文</summary>
+    <details class="secondary-fold demand-evidence"><summary>${practice ? '读原文，核对三项判断' : '查看本步两组原文'}</summary>
+    ${pair.map((item, i) => item ? `<div class="raw-links"><strong>${policyName(i)}</strong>
+      ${evidenceButtons(item, practice ? {phase, stepLabel: demandActions[phase]?.[0]} : {recordKind: 'policy'}, ['jsonl'])}
+      ${evidenceButtons(item, {phase, vmaStart: readings[i]?.mapping_header?.split('-')[0]}, ['smaps'])}</div>` : '').join('')}
+    ${demandEvidencePractice(practice)}
+    </details>
+    <details class="secondary-fold demand-result"><summary>查看本步两组采样</summary>
     ${table(['组别', 'madvise', 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], pair.map((item, i) => {
       const row = readings[i];
       const policy = item?.data?.policy;
@@ -393,12 +436,9 @@ function demandPolicyPanel(c, sample) {
         demandMeasurement(row, 'action_minor'), item?.validation?.status === 'passed' ? '通过' : item ? '待核对' : '缺失'];
     }))}
     <p>${esc(interpretation)}</p>
-    ${pair.map((item, i) => item ? `<div class="raw-links"><strong>${policyName(i)}</strong>
-      ${evidenceButtons(item, {recordKind: 'policy'}, ['jsonl'])}
-      ${evidenceButtons(item, {phase, vmaStart: readings[i]?.mapping_header?.split('-')[0]}, ['smaps'])}</div>` : '').join('')}
     </details>
     ${demandTimeline(c, pair, phase)}
-    ${demandRepeatReview(phase, repeat)}
+    ${demandRepeatReview(rounds, phase, repeat)}
     ${baseline ? `<p class="detail-copy"><a href="${esc(baseline.href)}">返回原版 malloc 实验</a></p>` : ''}
   </section>`;
 }
@@ -410,6 +450,8 @@ function renderMemorySteps(c, cases) {
   state.phase = Math.max(0, Math.min(state.phase, steps.length - 1));
   const step = steps[state.phase];
   const sample = step?.sample;
+  const rounds = controlled ? demandRepeatReadings(state.report, sample?.phase || 'before_alloc') : [];
+  const practice = demandExerciseReadings(rounds.find(row => row.repeat === c.parameters.repeat));
   const title = demand ? '申请 512 MiB，什么时候用上物理页？' : '递归到哪一步，栈会撑不住？';
   const options = cases.map((item, i) => {
     if (item.suite !== c.suite) return '';
@@ -444,7 +486,7 @@ function renderMemorySteps(c, cases) {
       ${controlled ? '</details>' : ''}
       <div class="seq-navigation replay-next">${next}</div>
     </section>
-    ${demand ? demandPolicyPanel(c, sample) : ''}
+    ${demand ? demandPolicyPanel(c, sample, rounds, practice) : ''}
     <details class="secondary-fold"><summary>完整采样、原文与诊断</summary>
       <div class="raw-links">${evidenceButtons(c, rawOpts)}</div>
       ${table(['采样时刻', demand ? '已写位置' : '递归深度', '映射大小', '映射驻留 RSS', '本步次缺页', '累计次缺页'], rows, sample ? samples.indexOf(sample) : -1)}
@@ -456,6 +498,7 @@ function renderMemorySteps(c, cases) {
   </section>`;
   if (demand) {
     bindDemandTimeline();
+    bindDemandEvidencePractice(practice);
     loadOriginalPs($('#demand-original-ps'));
   }
 }
