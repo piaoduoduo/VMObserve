@@ -1,7 +1,7 @@
 import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url } from './ui.js';
 
 import { newestReplay, demandEnvironmentReplays } from './curriculum.js';
-import { demandPairTimeline, demandMetricData } from './comparison-data.js';
+import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric } from './comparison-data.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -318,6 +318,38 @@ function bindDemandTimeline() {
   });
 }
 
+function demandRepeatReview(activePhase, currentRepeat) {
+  const rows = demandRepeatReadings(state.report, activePhase);
+  if (!rows.length) return '';
+  const previous = $('#demand-repeat-review');
+  const open = previous?.dataset.run === state.id && previous.open;
+  const issues = {
+    pair: '两组未唯一配对',
+    validation: '案例未完成或未通过校验',
+    phase: '阶段或写入量不一致'
+  };
+  const metrics = demandChartMetrics.map(([key, label, format]) => ({
+    label, format, ...demandRepeatMetric(rows, key)
+  }));
+  const signed = (value, format) => (value > 0 ? '+' : value < 0 ? '−' : '') + format(Math.abs(value));
+  const matched = rows.filter(row => !row.issue).length;
+  return `<details class="secondary-fold demand-repeat-review" id="demand-repeat-review" data-run="${esc(state.id)}"${open ? ' open' : ''}>
+    <summary>跨轮核对本步</summary>
+    <p class="detail-copy"><strong>${esc(demandActions[activePhase]?.[0] || activePhase)} · ${matched}/${rows.length} 轮可配对</strong>。汇总当前记录中的同一阶段。配对差为使用大页建议组减去禁用组。</p>
+    ${matched ? `<dl class="sample-readings demand-repeat-metrics">
+      ${metrics.map(({label, format, summary}) => `<div><dt>${label} · 差值中位数</dt>
+        <dd>${summary ? signed(summary.median, format) : '—'}</dd>
+        <small>${summary ? `范围 ${signed(summary.min, format)} 至 ${signed(summary.max, format)} · ${summary.count} 轮`
+          : '没有两组均可用的读数'}</small></div>`).join('')}</dl>` : ''}
+    <p class="detail-copy">每格按「禁用 / 使用」列出两组原始读数。「—」表示没有该指标的读数。</p>
+    ${table(['轮次', ...metrics.map(({label}) => label), '配对状态'], rows.map(({repeat, issue}, index) => [
+      `第 ${repeat} 轮`,
+      ...metrics.map(({values, format}) => issue ? '—' : values[index].map(value => value === null ? '—' : format(value)).join(' / ')),
+      issue ? issues[issue] : '已配对'
+    ]), rows.findIndex(row => row.repeat === currentRepeat))}
+  </details>`;
+}
+
 function demandPolicyPanel(c, sample) {
   const recipe = c.parameters.thp_advice;
   const next = newestReplay('3.3', 'group3', 'demand512-thp');
@@ -366,6 +398,7 @@ function demandPolicyPanel(c, sample) {
       ${evidenceButtons(item, {phase, vmaStart: readings[i]?.mapping_header?.split('-')[0]}, ['smaps'])}</div>` : '').join('')}
     </details>
     ${demandTimeline(c, pair, phase)}
+    ${demandRepeatReview(phase, repeat)}
     <div class="raw-links">${baseline ? `<a class="btn-link" href="${esc(baseline.href)}">查看原版 malloc 实验</a>` : ''}${collect}</div>
   </section>`;
 }

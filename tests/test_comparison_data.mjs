@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {demandPairTimeline, demandMetricData, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
+import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 const item = (suite, samples, parameters = {}) => ({suite, data: {samples}, parameters});
 test('sample matching uses phase and process role rather than array index', () => {
   const source = {phase:'fork_shared',role:'child'};
@@ -120,4 +120,45 @@ test('requested size drops to zero when the sampled blocks have been freed', () 
   assert.equal(liveRequestedKib({blocks: [block]}), 256);
   assert.equal(liveRequestedKib({blocks: [{...block, alive: false}]}), 0);
   assert.equal(liveRequestedKib({}), null);
+});
+
+test('repeat review uses eligible pairs in repeat order and gives a reason for exclusions', () => {
+  const phase = 'write_quarter';
+  const thp = (repeat, advice, rows, status = 'passed') => ({
+    ...item('demand512', rows, {repeat, thp_advice: advice}),
+    status: 'completed', validation: {status}
+  });
+  const sample = {phase, count: 32768, mapping_present: true, rss_kib: 131072, action_minor: 32768};
+  const huge = {...sample, action_minor: 64};
+  const cases = [
+    thp(4, 'off', [sample]), thp(4, 'on', [{...huge, count: 0}]),
+    thp(2, 'off', [sample]),
+    thp(3, 'off', [sample]), thp(3, 'on', [huge], 'failed'),
+    thp(1, 'on', [huge]), thp(1, 'off', [sample]),
+    thp(5, 'off', [sample]), thp(5, 'off', [sample]), thp(5, 'on', [huge]),
+    item('demand512', [sample], {repeat: 6})
+  ];
+  const report = {data_origin: 'real_execution', integrity: {status: 'verified'}, cases};
+  const rows = demandRepeatReadings(report, phase);
+  assert.deepEqual(rows.map(row => [row.repeat, row.issue]), [
+    [1, undefined], [2, 'pair'], [3, 'validation'], [4, 'phase'], [5, 'pair']
+  ]);
+  assert.deepEqual(demandRepeatMetric(rows, 'action_minor').summary,
+    {count: 1, median: -32704, min: -32704, max: -32704});
+  assert.deepEqual(demandRepeatReadings({...report, data_origin: 'simulation'}, phase), []);
+  assert.deepEqual(demandRepeatReadings({...report, integrity: {status: 'unverified'}}, phase), []);
+});
+
+test('repeat metrics use paired differences and leave absent mappings blank', () => {
+  const reading = (rss_kib, action_minor, mapping_present = true) => ({rss_kib, action_minor, mapping_present});
+  const rows = [
+    {disabled: reading(32, 8), enabled: reading(40, 2)},
+    {disabled: reading(0, 9, false), enabled: reading(50, 3)},
+    {disabled: reading(20, 7), enabled: reading(21, 3)}
+  ];
+  assert.deepEqual(demandRepeatMetric(rows, 'rss_kib'), {
+    values: [[32, 40], [null, 50], [20, 21]], summary: {count: 2, median: 4.5, min: 1, max: 8}
+  });
+  assert.deepEqual(demandRepeatMetric(rows, 'action_minor').summary, {count: 3, median: -6, min: -6, max: -4});
+  assert.deepEqual(demandRepeatMetric(rows.slice(1, 2), 'rss_kib'), {values: [[null, 50]], summary: null});
 });

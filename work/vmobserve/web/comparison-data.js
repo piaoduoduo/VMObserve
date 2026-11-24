@@ -6,20 +6,56 @@ export function demandPairTimeline(pair) {
   const uniqueOff = new Set(off.map(sample => sample.phase));
   if (byPhase.size !== on.length || uniqueOff.size !== off.length) return [];
   const rows = off.map(disabled => ({phase: disabled.phase, disabled, enabled: byPhase.get(disabled.phase)}));
-  return rows.every(({disabled, enabled}) => enabled?.count === disabled.count) ? rows : [];
+  return rows.every(({disabled, enabled}) => enabled && enabled.count === disabled.count) ? rows : [];
+}
+
+function demandMetricValues({disabled, enabled}, metric) {
+  return [disabled, enabled].map(sample => {
+    if (!sample || (metric !== 'action_minor' && !sample.mapping_present)) return null;
+    const value = sample[metric];
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  });
 }
 
 export function demandMetricData(rows, metric) {
-  const read = sample => {
-    if (metric !== 'action_minor' && !sample.mapping_present) return null;
-    const value = sample[metric];
-    return Number.isFinite(value) && value >= 0 ? value : null;
-  };
-  const readings = rows.map(({phase, disabled, enabled}) => ({
-    phase, values: [read(disabled), read(enabled)]
-  }));
+  const readings = rows.map(row => ({phase: row.phase, values: demandMetricValues(row, metric)}));
   const maximum = Math.max(0, ...readings.flatMap(row => row.values.filter(value => value !== null)));
   return {readings, maximum};
+}
+
+export function demandRepeatReadings(report, phase) {
+  if (report.data_origin !== 'real_execution' || report.integrity?.status !== 'verified') return [];
+  const rounds = new Map();
+  for (const item of report.cases) {
+    const {repeat, thp_advice} = item.parameters || {};
+    if (item.suite !== 'demand512' || !Number.isSafeInteger(repeat) || repeat < 1 ||
+        !['off', 'on'].includes(thp_advice)) continue;
+    if (!rounds.has(repeat)) rounds.set(repeat, {off: [], on: []});
+    rounds.get(repeat)[thp_advice].push(item);
+  }
+
+  return [...rounds].sort(([a], [b]) => a - b).map(([repeat, {off, on}]) => {
+    if (off.length !== 1 || on.length !== 1) return {repeat, issue: 'pair'};
+    const pair = [off[0], on[0]];
+    if (pair.some(item => item.status !== 'completed' || item.validation?.status !== 'passed')) {
+      return {repeat, issue: 'validation'};
+    }
+    const reading = demandPairTimeline(pair).find(row => row.phase === phase);
+    return reading ? {repeat, ...reading} : {repeat, issue: 'phase'};
+  });
+}
+
+export function demandRepeatMetric(rows, metric) {
+  const values = rows.map(row => demandMetricValues(row, metric));
+  const deltas = values.filter(([off, on]) => off !== null && on !== null)
+    .map(([off, on]) => on - off).sort((a, b) => a - b);
+  const count = deltas.length;
+  const middle = Math.floor(count / 2);
+  const summary = count ? {
+    count, median: (deltas[Math.floor((count - 1) / 2)] + deltas[middle]) / 2,
+    min: deltas[0], max: deltas.at(-1)
+  } : null;
+  return {values, summary};
 }
 
 export function liveRequestedKib(sample) {
