@@ -13,7 +13,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .common import execute, read_json, run_id, timestamp, write_json
 from .cow import COW_CHOICES
-from .export import csv_text, demand_pair_csv, html_text
+from .export import csv_text, demand_pair_csv, demand_process_evidence, html_text
 from .replay import load_run, read_evidence, recorded_environment, safe_child
 from .runner import WORK
 from .systems import LABS
@@ -218,6 +218,13 @@ def handler_for(app):
                 if path == "/api/job":
                     with app.lock:
                         return self.send(app.job)
+                if path == "/api/demand-process-comparison":
+                    ids = [query.get(key, [""])[0] for key in ("id", "other")]
+                    repeat = int(query.get("repeat", ["0"])[0])
+                    phase = query.get("phase", [""])[0]
+                    comparison = demand_process_evidence(ids, [load_run(app.directory(id_)) for id_ in ids], repeat, phase)
+                    attachment = "demand-process-evidence.json" if query.get("download") == ["1"] else None
+                    return self.send(comparison, attachment=attachment)
                 if path not in ("/api/report", "/api/evidence", "/api/export"):
                     return self.send({"error": "not found"}, code=404)
                 directory = app.directory(query.get("id", [""])[0])

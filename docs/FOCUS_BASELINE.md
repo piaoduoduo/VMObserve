@@ -18,7 +18,7 @@
 | [解除进程禁用](../examples/20261125T110630.221939Z/report.json) | 0 | 0 | 128 MiB | 128 MiB | 64 |
 | [进程级完全禁用](../examples/20261125T110657.478995Z/report.json) | 1 | 0 | 128 MiB | 0 KiB | 32768 |
 
-两份记录的 Linux 内核均为 `6.6.87.2-microsoft-standard-WSL2`，所列结果在各自三轮中一致。打开任一进程条件的回放后，展开「同阶段比较进程级开关」。页面对齐同一轮次、阶段和 `MADV_HUGEPAGE` 建议，核对环境、探针哈希与实验条件，然后并排显示结果。每列链接可打开该阶段对应案例，到原文区核对 `condition`、策略返回以及 `smaps`。在 Linux 重新采集时，可分别运行 `python3 work/run_all.py --suite demand512-thp --thp-process allow` 与 `python3 work/run_all.py --suite demand512-thp --thp-process disable`。用 `python -B work/verify_submission.py` 复验内置记录。
+两份记录的 Linux 内核均为 `6.6.87.2-microsoft-standard-WSL2`，所列结果在各自三轮中一致。打开任一进程条件的回放后，展开「同阶段比较进程级开关」。页面对齐同一轮次、阶段和 `MADV_HUGEPAGE` 建议，核对环境、探针哈希与实验条件，然后并排显示结果。每列链接可打开该阶段对应案例，到原文区核对 `condition`、策略返回以及 `smaps`。「下载本步对照证据 JSON」会重新核对两份报告，保存页面读数、实验条件、案例与阶段、探针源码哈希，以及 JSONL 和 `smaps` 的路径与哈希。在 Linux 重新采集时，可分别运行 `python3 work/run_all.py --suite demand512-thp --thp-process allow` 与 `python3 work/run_all.py --suite demand512-thp --thp-process disable`。用 `python -B work/verify_submission.py` 复验内置记录。
 
 ## openEuler 双环境复验
 

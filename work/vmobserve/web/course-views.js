@@ -1,7 +1,7 @@
 import { $, state, labels, esc, kib, table, api, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
 
-import { newestReplay, demandEnvironmentReplays, demandProcessCandidates, viewCases } from './curriculum.js';
-import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings, compareDemandProcesses } from './comparison-data.js';
+import { newestReplay, demandEnvironmentReplays, demandProcessCandidates } from './curriculum.js';
+import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings } from './comparison-data.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -398,37 +398,32 @@ function demandProcessPanel() {
   </details>`;
 }
 
-function demandProcessResults(current, other, matched, phase, repeat) {
-  const rows = [matched.allowed, matched.disabled];
-  const runs = [current, other];
-  const entries = rows.map(row => ({...row, run: runs[row.reportIndex]}));
-  const href = ({run, item, step}) => {
-    const index = viewCases(run.report.cases, 'group3', entry => entry.suite).indexOf(item);
-    const hash = new URLSearchParams({run: run.id, topic: 'group3', case: index, step});
+function demandProcessResults(evidence, downloadUrl) {
+  const {phase, repeat, cases} = evidence;
+  const href = row => {
+    const hash = new URLSearchParams({run: row.record_id, topic: 'group3', case: row.case_index, step: row.step_index});
     return '/' + location.search + '#' + hash;
   };
-  const read = (label, measure) => [label, ...rows.map(measure)];
+  const read = (label, key, format = String) => [label, ...cases.map(row => row[key] === null ? '—' : format(row[key]))];
   return `<p class="detail-copy"><strong>${esc(demandActions[phase]?.[0] || phase)} · 第 ${esc(repeat)} 轮 · 两组均使用 MADV_HUGEPAGE</strong></p>
     ${table(['观测指标', '解除进程禁用', '进程级禁用'], [
-      read('进程禁用读回', row => row.condition.process_thp_disabled),
-      read('madvise 返回值', row => row.item.data.policy.result),
-      read('累计写入位置', row => demandMeasurement(row.sample, 'count')),
-      ...demandChartMetrics.map(([key, label, format]) => read(label, row => {
-        const value = demandMeasurement(row.sample, key);
-        return value === null ? '—' : format(value);
-      }))
+      read('进程禁用读回', 'process_thp_disabled'),
+      read('madvise 返回值', 'madvise_result'),
+      read('累计写入位置', 'written_positions'),
+      ...demandChartMetrics.map(([key, label, format]) => read(label, key, format))
     ])}
     <p class="detail-copy">两组目标 VMA 的 RSS 与匿名大页来自 smaps，次缺页为各自进程的本步增量。「—」表示该步没有对应读数。</p>
-    <ul class="demand-process-sources">${entries.map(entry =>
-      `<li><a href="${esc(href(entry))}">${entry.mode === 'allow' ? '解除禁用原文' : '进程禁用原文'} · ${esc(entry.run.report.run_id)}</a></li>`).join('')}</ul>`;
+    <ul class="demand-process-sources">${cases.map(row =>
+      `<li><a href="${esc(href(row))}">${row.process_thp === 'allow' ? '解除禁用原文' : '进程禁用原文'} · ${esc(row.run_id)}</a></li>`).join('')}</ul>
+    <div class="raw-links"><a class="btn-link" href="${esc(downloadUrl)}" download>下载本步对照证据 JSON</a></div>`;
 }
 
 function bindDemandProcessPanel(parameters, phase) {
   const panel = $('.demand-process-comparison');
   if (!panel || !phase) return;
   const repeat = parameters.repeat;
-  const current = {id: state.id, report: state.report};
-  const candidates = demandProcessCandidates(state.runs, current.id, parameters);
+  const id = state.id;
+  const candidates = demandProcessCandidates(state.runs, id, parameters);
   const status = panel.querySelector('[role="status"]');
   const result = panel.querySelector('.demand-process-results');
   let started = false;
@@ -440,26 +435,19 @@ function bindDemandProcessPanel(parameters, phase) {
       return;
     }
     status.textContent = '正在核对对应记录的探针、环境与采样阶段…';
-    const reasons = {
-      source: '探针源码哈希不同或缺失', environment: '运行环境或 THP 设置不同',
-      integrity: '报告来源或完整性未通过', measurement: '案例未通过校验或采样条件不同'
-    };
     const issues = new Set();
+    const endpoint = '/api/demand-process-comparison';
     for (const candidate of candidates) {
+      const params = {id, other: candidate.id, repeat, phase};
       try {
-        const report = await api(url('/api/report', {id: candidate.id}));
+        const evidence = await api(url(endpoint, params));
         if (!panel.isConnected) return;
-        const matched = compareDemandProcesses(current.report, report, repeat, phase);
-        if (matched.issue) {
-          issues.add(reasons[matched.issue]);
-          continue;
-        }
-        result.innerHTML = demandProcessResults(current, {id: candidate.id, report}, matched, phase, repeat);
+        result.innerHTML = demandProcessResults(evidence, url(endpoint, {...params, download: 1}));
         status.textContent = '';
         return;
-      } catch {
+      } catch (error) {
         if (!panel.isConnected) return;
-        issues.add('对应记录读取失败');
+        issues.add(error instanceof TypeError ? '本地服务连接失败' : error.message);
       }
     }
     status.textContent = '无法并排核对，' + [...issues].join('、') + '。';

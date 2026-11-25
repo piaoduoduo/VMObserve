@@ -148,6 +148,22 @@ def verify_process_controls(get):
     for path in ("proj5-course/group3_demand.c", "proj5-course/group3_snapshot.h"):
         require(allow["sources"][path] == disable["sources"][path],
                 f"process controls: probe source differed for {path}")
+    params = {"other": "example--" + PROCESS_PAIRED["disable"], "repeat": 3, "download": 1}
+    for phase in ("write_quarter", "freed"):
+        evidence = json.loads(get("demand-process-comparison", PROCESS_PAIRED["allow"], phase=phase, **params))
+        cases = evidence["cases"]
+        require([row["run_id"] for row in cases] == list(PROCESS_PAIRED.values())
+                and evidence["phase"] == phase and evidence["repeat"] == 3,
+                "process evidence export points to the wrong run or stage")
+        expected = [(131072, 131072), (131072, 0)] if phase == "write_quarter" else [(None, None)] * 2
+        require([(row["rss_kib"], row["huge_kib"]) for row in cases] == expected,
+                "process evidence export disagrees with the replay")
+        for row in cases:
+            require(row["report_sha256"] == REPORT_HASHES[row["run_id"]], "process evidence report hash mismatch")
+            for kind, artifact in row["artifacts"].items():
+                raw = get("evidence", row["run_id"], case=row["case_id"], kind=kind)
+                require(hashlib.sha256(raw).hexdigest() == artifact["sha256"],
+                        f"{row['case_id']}: {kind} hash mismatch in process evidence export")
     return [verify_demand(get, run, mode) for mode, run in PROCESS_PAIRED.items()]
 
 
