@@ -28,6 +28,16 @@ python work/launch.py
 
 参赛主线从首页的地址归属练习进入。完成 3.2 后，在 3.3 记录预测、核对两组原文，再导出可合并两项实验的 HTML 报告。openEuler 与 WSL2 各三轮对照已随仓库提供，可从 3.3 直接切换到另一环境的同轮、同策略和同阶段。见[参赛基线](docs/FOCUS_BASELINE.md)、[技术说明](docs/FOCUS_TECHNICAL_REPORT.md)与[课堂试用任务单](docs/FOCUS_TRIAL.md)。
 
+## 评委复验内置记录
+
+在干净检出的项目目录运行：
+
+```sh
+python -B work/verify_submission.py
+```
+
+这条命令只读核对随仓库交付的三份历史实测记录。它用临时本地端口复核报告和证据哈希，从原始 `smaps` 重算 3.2 的去重 RSS，并把 3.3 两环境各三轮的配对 CSV 与通用 CSV、关键阶段的 JSONL 和 `smaps` 核对。通过后输出 JSON，失败时给出失败位置并返回非零退出码。只需要 Python 3.10 及以上，无需安装编译器或启动 Linux 虚拟机。复验现有样例与重新采集的区别见[参赛基线](docs/FOCUS_BASELINE.md)。
+
 ## 运行自己的实验
 
 Linux 采集需要 GCC；连续分配实验还需要 strace。在项目根目录运行：

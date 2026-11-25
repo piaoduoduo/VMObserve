@@ -402,16 +402,16 @@ function demandPolicyPanel(c, sample, rounds, practice) {
   }
 
   const repeat = c.parameters.repeat;
-  const available = demandPair(state.report.cases, c);
-  const pair = ['off', 'on'].map(advice => available.find(item => item.parameters.thp_advice === advice));
+  const pair = demandPair(state.report.cases, c);
+  const available = pair.length ? pair : [c];
   const phase = sample?.phase || 'before_alloc';
-  const readings = pair.map(item => item?.data?.samples.find(row => row.phase === phase));
-  const policyName = index => index === 0 ? '禁用大页建议' : '使用大页建议';
-  const matched = pair.every(item => item?.validation?.status === 'passed') &&
-    readings.every(Boolean) && readings[0].count === readings[1].count;
-  const observed = readings[1]?.huge_kib;
-  const interpretation = !matched ? '本轮缺少通过校验的配对证据。可查看已有原文和各组状态。'
-    : !readings[0].mapping_present || !readings[1].mapping_present ? '本阶段至少一组缺少目标映射，驻留量无法配对。'
+  const readings = available.map(item => item.data?.samples.find(row => row.phase === phase));
+  const policyName = item => item.parameters.thp_advice === 'off' ? '禁用大页建议' : '使用大页建议';
+  const matched = demandPairTimeline(pair).find(row => row.phase === phase);
+  const observed = matched?.enabled.huge_kib;
+  const interpretation = !pair.length ? '本轮缺组或存在重复策略案例，当前仅展示所选案例。'
+    : !matched ? '本轮缺少通过校验的配对证据。可查看已有原文和各组状态。'
+    : !matched.disabled.mapping_present || !matched.enabled.mapping_present ? '本阶段至少一组缺少目标映射，驻留量无法配对。'
     : observed > 0 ? '使用大页建议组本步采到了匿名大页。对照缺页增量时，注意它是进程级计数。'
     : '使用大页建议组在本步的匿名大页驻留为 0 KiB。可继续查看后续写入阶段。';
   const baseline = newestReplay('3.3', 'group3', 'demand512');
@@ -420,20 +420,20 @@ function demandPolicyPanel(c, sample, rounds, practice) {
     <p>两个独立进程各用一个带保护页的匿名映射。按相同的 4096 字节步长分批写入，仅切换映射的大页建议。</p>
     ${demandEnvironmentNav(c.parameters)}
     <div class="demand-prediction"></div>
-    <details class="secondary-fold demand-evidence"><summary>${practice ? '读原文，核对三项判断' : '查看本步两组原文'}</summary>
-    ${pair.map((item, i) => item ? `<div class="raw-links"><strong>${policyName(i)}</strong>
+    <details class="secondary-fold demand-evidence"><summary>${practice ? '读原文，核对三项判断' : pair.length ? '查看本步两组原文' : '查看当前案例原文'}</summary>
+    ${available.map((item, i) => `<div class="raw-links"><strong>${policyName(item)}</strong>
       ${evidenceButtons(item, practice ? {phase, stepLabel: demandActions[phase]?.[0]} : {recordKind: 'policy'}, ['jsonl'])}
-      ${evidenceButtons(item, {phase, vmaStart: readings[i]?.mapping_header?.split('-')[0]}, ['smaps'])}</div>` : '').join('')}
+      ${evidenceButtons(item, {phase, vmaStart: readings[i]?.mapping_header?.split('-')[0]}, ['smaps'])}</div>`).join('')}
     ${demandEvidencePractice(practice)}
     </details>
-    <details class="secondary-fold demand-result"><summary>查看本步两组采样</summary>
-    ${table(['组别', 'madvise', 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], pair.map((item, i) => {
+    <details class="secondary-fold demand-result"><summary>${pair.length ? '查看本步两组采样' : '查看当前案例采样'}</summary>
+    ${table(['组别', 'madvise', 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], available.map((item, i) => {
       const row = readings[i];
       const policy = item?.data?.policy;
-      return [policyName(i), !policy ? '未采集' : policy.result === 0 ? '成功' : '失败 · errno ' + policy.errno,
+      return [policyName(item), !policy ? '未采集' : policy.result === 0 ? '成功' : '失败 · errno ' + policy.errno,
         row?.vm_flags?.filter(flag => flag === 'hg' || flag === 'nh').join(' ') || '—',
         demandMeasurement(row, 'count'), kib(demandMeasurement(row, 'rss_kib')), kib(demandMeasurement(row, 'huge_kib')),
-        demandMeasurement(row, 'action_minor'), item?.validation?.status === 'passed' ? '通过' : item ? '待核对' : '缺失'];
+        demandMeasurement(row, 'action_minor'), item.validation?.status === 'passed' ? '通过' : '待核对'];
     }))}
     <p>${esc(interpretation)}</p>
     </details>

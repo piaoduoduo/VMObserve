@@ -34,6 +34,7 @@ known_hosts*
 !/work/RUNNER.md
 !/work/run_all.py
 !/work/launch.py
+!/work/verify_submission.py
 !/work/package_sources.py
 !/work/vm.ps1
 !/work/common/

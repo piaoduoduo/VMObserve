@@ -66,10 +66,11 @@ export function stepActions(selected, length, attr = 'data-course-step') {
 
 
 export function demandPair(cases, selected) {
-  if (selected?.suite !== 'demand512' || !selected.parameters.thp_advice) return [];
-  return ['off', 'on'].map(advice => cases.find(item =>
+  if (selected?.suite !== 'demand512' || !['off', 'on'].includes(selected.parameters.thp_advice)) return [];
+  const groups = ['off', 'on'].map(advice => cases.filter(item =>
     item.suite === 'demand512' && item.parameters.repeat === selected.parameters.repeat &&
-    item.parameters.thp_advice === advice)).filter(Boolean);
+    item.parameters.thp_advice === advice));
+  return groups.every(group => group.length === 1) ? groups.flat() : [];
 }
 
 export function stepNavigation(titles, selected, attr = 'data-sequence-step') {

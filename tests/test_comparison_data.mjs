@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 import {groupBlocksIntoRegions, sharedPointerRegion} from '../work/vmobserve/web/sequence-view.js';
 import {learningReport} from '../work/vmobserve/web/learning-report.js';
+import {demandPair} from '../work/vmobserve/web/ui.js';
 const item = (suite, samples, parameters = {}) => ({suite, data: {samples}, parameters});
 test('sample matching uses phase and process role rather than array index', () => {
   const source = {phase:'fork_shared',role:'child'};
@@ -85,13 +86,14 @@ test('demand environment links preserve policy, repeat and phase across distinct
 
 test('demand pair timeline joins by phase and rejects incomplete or mismatched measurements', () => {
   const sample = (phase, count, rss_kib) => ({phase, count, rss_kib});
-  const make = samples => ({validation: {status: 'passed'}, data: {samples}});
+  const make = samples => ({status: 'completed', validation: {status: 'passed'}, data: {samples}});
   const off = make([sample('allocated', 0, 0), sample('write_quarter', 32768, 131072)]);
   const on = make([sample('write_quarter', 32768, 131072), sample('allocated', 0, 0)]);
   assert.deepEqual(demandPairTimeline([off, on]).map(row => [row.phase, row.enabled.rss_kib]),
     [['allocated', 0], ['write_quarter', 131072]]);
   assert.deepEqual(demandPairTimeline([off]), []);
   assert.deepEqual(demandPairTimeline([off, {...on, validation: {status: 'failed'}}]), []);
+  assert.deepEqual(demandPairTimeline([off, {...on, status: 'failed'}]), []);
   on.data.samples[0].count = 1;
   assert.deepEqual(demandPairTimeline([off, on]), []);
 });
@@ -199,6 +201,15 @@ test('learning report keeps released write count and absent VMA measurements bla
   assert.match(html, /<dt>累计写入位置<\/dt><dd>—<\/dd>/);
   assert.match(html, /<dt>目标映射 RSS（KiB）<\/dt><dd>—<\/dd>/);
   assert.match(html, /<dt>进程本步次缺页<\/dt><dd>0<\/dd>/);
+});
+
+test('demand policy pairs require one unique case per strategy in the same repeat', () => {
+  const off = item('demand512', [], {repeat: 1, thp_advice: 'off'});
+  const on = item('demand512', [], {repeat: 1, thp_advice: 'on'});
+  assert.deepEqual(demandPair([on, off], on), [off, on]);
+  assert.deepEqual(demandPair([on], on), []);
+  assert.deepEqual(demandPair([on, off, {...off}], off), []);
+  assert.deepEqual(demandPair([on, {...off, parameters: {...off.parameters, repeat: 2}}], on), []);
 });
 
 test('evidence exercise follows the phase readings and requires a measurable pair', () => {

@@ -20,8 +20,8 @@ function selectedCases() {
     return cases.filter(item => item.parameters.pattern + ':' + item.parameters.repeat === group);
   }
   const selected = cases[state.selected];
-  if (selected?.parameters.thp_advice) return demandPair(cases, selected);
-  return selected ? [selected] : [];
+  const pair = demandPair(cases, selected);
+  return pair.length ? pair : selected ? [selected] : [];
 }
 
 function snapshot(item) {

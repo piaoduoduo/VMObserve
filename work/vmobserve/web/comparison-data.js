@@ -1,5 +1,5 @@
 export function demandPairTimeline(pair) {
-  if (pair.length !== 2 || pair.some(caseItem => caseItem?.validation?.status !== 'passed')) return [];
+  if (pair.length !== 2 || pair.some(item => item?.status !== 'completed' || item.validation?.status !== 'passed')) return [];
   const [off, on] = pair.map(caseItem => caseItem.data?.samples || []);
   if (!off.length || off.length !== on.length) return [];
   const byPhase = new Map(on.map(sample => [sample.phase, sample]));
