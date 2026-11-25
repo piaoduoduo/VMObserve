@@ -1,4 +1,5 @@
-"""Verify the contest's bundled samples through a temporary local workbench."""
+"""Verify bundled samples or recheck a downloaded process comparison offline."""
+import argparse
 import csv
 import hashlib
 from http.server import ThreadingHTTPServer
@@ -13,11 +14,16 @@ from urllib.error import HTTPError
 from urllib.parse import urlencode
 from urllib.request import ProxyHandler, build_opener
 
+from vmobserve.common import digest
+from vmobserve.export import PROCESS_EVIDENCE_SCHEMA, demand_process_evidence
 from vmobserve.group3 import DEMAND_PHASES
+from vmobserve.replay import load_run, safe_child
 from vmobserve.server import Workbench, handler_for
 from vmobserve.smaps import parse_mappings
 
-EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
+WORK = Path(__file__).resolve().parent
+EXAMPLES = WORK.parent / "examples"
+RECORD_ROOTS = (EXAMPLES, WORK / "runs", WORK / "openeuler-vm" / "guest-runs")
 BASELINE = "20261118T013159.221864Z"
 PAIRED = ("20261120T120355.446473Z", "20261120T113225.827429Z")
 PROCESS_PAIRED = {"allow": "20261125T110630.221939Z", "disable": "20261125T110657.478995Z"}
@@ -167,7 +173,72 @@ def verify_process_controls(get):
     return [verify_demand(get, run, mode) for mode, run in PROCESS_PAIRED.items()]
 
 
-def main():
+def unique_json_object(pairs):
+    value = dict(pairs)
+    require(len(value) == len(pairs), "comparison file contains duplicate JSON fields")
+    return value
+
+
+def find_original_report(run, expected, roots):
+    require(isinstance(run, str) and run not in ("", ".", "..") and "/" not in run and "\\" not in run
+            and ":" not in run, "invalid run id in comparison file")
+    failed_integrity = None
+    for root in roots:
+        candidate = safe_child(root, run)
+        path = candidate / "report.json"
+        if not path.is_file() or digest(path) != expected:
+            continue
+        report = load_run(candidate)
+        if report["original_report_sha256"] == expected and report["run_id"] == run:
+            if report["integrity"]["status"] == "verified":
+                return report
+            failures = report["integrity"]["errors"]
+            failed_integrity = failures[0] if failures else "original archive integrity did not pass"
+    reason = failed_integrity or "no matching original report SHA-256 in the record directories"
+    raise ValueError(f"{run}: {reason}")
+
+
+def verify_process_file(path, roots):
+    saved = json.loads(path.read_text(encoding="utf-8-sig"), object_pairs_hook=unique_json_object)
+    require(isinstance(saved, dict) and saved.get("schema_version") == PROCESS_EVIDENCE_SCHEMA,
+            "unsupported process comparison file")
+    cases = saved.get("cases")
+    repeat, phase = saved.get("repeat"), saved.get("phase")
+    require(isinstance(cases, list) and len(cases) == 2 and type(repeat) is int and phase in DEMAND_PHASES,
+            "comparison file must specify two cases, one repeat and one phase")
+    ids, reports = [], []
+    for row in cases:
+        require(isinstance(row, dict) and isinstance(row.get("record_id"), str),
+                "comparison case is missing its record id")
+        name, sep, run = row["record_id"].partition("--")
+        require(name and sep and run == row.get("run_id"), "record id does not match its run id")
+        sha = row.get("report_sha256")
+        require(isinstance(sha, str) and re.fullmatch("[0-9a-f]{64}", sha), "invalid original report SHA-256")
+        ids.append(row["record_id"])
+        reports.append(find_original_report(run, sha, roots))
+    rebuilt = demand_process_evidence(ids, reports, repeat, phase)
+
+    # JSON can be reformatted, but numeric zero and boolean false must stay distinct.
+    def canonical(value):
+        return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+    def changed_fields(left, right):
+        return [key for key in sorted(set(left) | set(right))
+                if key not in left or key not in right or canonical(left[key]) != canonical(right[key])]
+
+    different = changed_fields(saved, rebuilt)
+    if "cases" in different:
+        different.remove("cases")
+        for index, (left, right) in enumerate(zip(saved["cases"], rebuilt["cases"]), 1):
+            different.extend(f"cases[{index}].{key}" for key in changed_fields(left, right))
+    if different:
+        raise ValueError("comparison file differs from the rebuilt evidence: " + ", ".join(different))
+    return {"status": "passed", "mode": "downloaded_evidence", "phase": phase, "repeat": repeat,
+            "runs": [{"run_id": row["run_id"], "case_id": row["case_id"], "report_sha256": row["report_sha256"]}
+                     for row in rebuilt["cases"]]}
+
+
+def verify_bundled():
     handler = handler_for(Workbench("local", {"example": EXAMPLES}))
     handler.log_message = lambda *_: None
     opener = build_opener(ProxyHandler({}))
@@ -196,6 +267,25 @@ def main():
         finally:
             server.shutdown()
             thread.join()
+    print(json.dumps(result, indent=2))
+    return 0
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--process-evidence", type=Path, help="downloaded process comparison JSON to recheck offline")
+    parser.add_argument("--records", type=Path, action="append", default=[],
+                        help="additional directory containing original run folders")
+    args = parser.parse_args(argv)
+    if args.process_evidence is None:
+        if args.records:
+            parser.error("--records is only used with --process-evidence")
+        return verify_bundled()
+    try:
+        result = verify_process_file(args.process_evidence, (*args.records, *RECORD_ROOTS))
+    except (OSError, ValueError, KeyError, TypeError, StopIteration) as exc:
+        print(f"Verification failed: {exc}", file=sys.stderr)
+        return 1
     print(json.dumps(result, indent=2))
     return 0
 

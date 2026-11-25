@@ -21,6 +21,7 @@ from vmobserve import SCHEMA_VERSION
 from vmobserve.common import write_json
 from vmobserve.replay import read_evidence, load_run
 from vmobserve.export import demand_process_evidence
+from verify_submission import verify_process_file
 
 
 class ServerTests(unittest.TestCase):
@@ -39,6 +40,14 @@ class ServerTests(unittest.TestCase):
         cls.server.shutdown()
         cls.server.server_close()
         cls.thread.join()
+
+    def test_classroom_review_page_and_assets_are_available(self):
+        for route, marker in (("/practice-review", "课堂首答复核"),
+                              ("/practice-review.js", "reviewPracticeAttempt"),
+                              ("/practice-data.js", "vmobserve.demand-practice-attempt/v1")):
+            with self.subTest(route=route), urlopen(self.base + route) as response:
+                self.assertEqual(response.status, 200)
+                self.assertIn(marker, response.read().decode("utf-8"))
 
     def test_report_and_all_export_formats(self):
         with urlopen(self.base + "/api/report?id=test--legacy-run") as response:
@@ -133,6 +142,26 @@ class ServerTests(unittest.TestCase):
         self.assertTrue(all(row["rss_kib"] is None and row["huge_kib"] is None
                             and row["written_positions"] is None for row in released))
         self.assertTrue(all(isinstance(row["action_minor"], int) for row in released))
+
+    def test_downloaded_process_file_rebuilds_and_rejects_changed_readings(self):
+        paths = ["20261125T110630.221939Z", "20261125T110657.478995Z"]
+        reports = [load_run(ROOT / "examples" / path) for path in paths]
+        ids = [f"example--{path}" for path in paths]
+        evidence = demand_process_evidence(ids, reports, 1, "write_quarter")
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory) / "process.json"
+            file.write_text(json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8")
+            roots = [ROOT / "examples"]
+            self.assertEqual(verify_process_file(file, roots)["status"], "passed")
+            with self.assertRaisesRegex(ValueError, "no matching original report"):
+                verify_process_file(file, [])
+            evidence["cases"][1]["huge_kib"] = False
+            file.write_text(json.dumps(evidence), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, r"cases\[2\]\.huge_kib"):
+                verify_process_file(file, roots)
+            file.write_text('{"repeat":1,"repeat":2}', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate JSON fields"):
+                verify_process_file(file, roots)
 
     def test_process_evidence_rejects_incompatible_records(self):
         paths = ["20261125T110630.221939Z", "20261125T110657.478995Z"]

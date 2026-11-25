@@ -22,13 +22,13 @@ WEB = Path(__file__).parent / "web"
 
 
 WEB_PAGES = {
-    "/": "index.html", "/lesson": "lesson.html",
+    "/": "index.html", "/lesson": "lesson.html", "/practice-review": "practice-review.html",
     **{"/" + name: name for name in (
         "app.js", "ui.js", "course-views.js", "memory-views.js",
         "sequence-view.js", "evidence-view.js", "curriculum.js",
         "experiment-flow.js", "replay-notes.js", "notes-store.js",
         "notes-library.js", "learning-report.js", "comparison-data.js", "replay-comparison.js",
-        "lesson.js", "style.css",
+        "lesson.js", "practice-data.js", "practice-review.js", "style.css",
     )},
 }
 

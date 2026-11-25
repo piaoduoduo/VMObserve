@@ -11,6 +11,7 @@ from .replay import load_run
 from .smaps import FIELDS
 
 LABELS = {"confirmed": "已确认", "probable": "可能原因", "insufficient_evidence": "证据不足"}
+PROCESS_EVIDENCE_SCHEMA = "vmobserve.demand-process-evidence/v1"
 
 
 def demand_sample_export(sample):
@@ -172,7 +173,7 @@ def demand_process_evidence(record_ids, reports, repeat, phase):
     if designs["allow"] != designs["disable"]:
         raise ValueError("两份记录的映射大小、步长或写入位置数不同")
     size, stride, _ = designs["allow"]
-    return {"schema_version": "vmobserve.demand-process-evidence/v1", "data_origin": "real_execution",
+    return {"schema_version": PROCESS_EVIDENCE_SCHEMA, "data_origin": "real_execution",
             "view_mode": "historical_replay", "phase": phase, "repeat": repeat, "environment": env,
             "condition": {"bytes": size, "stride": stride, "advice": "MADV_HUGEPAGE"},
             "probe_source_sha256": hashes, "cases": [entries["allow"], entries["disable"]]}

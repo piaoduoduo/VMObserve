@@ -1,6 +1,7 @@
 import { $, state, labels, esc, kib, table, api, download, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
 
 import { newestReplay, demandEnvironmentReplays, demandProcessCandidates } from './curriculum.js';
+import { demandPracticeEvidence, practiceAttemptSchema } from './practice-data.js';
 import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings, gradeDemandExercise } from './comparison-data.js';
 
 function renderLayout() {
@@ -409,19 +410,12 @@ function bindDemandEvidencePractice(practice, selected, phase) {
     const result = gradeDemandExercise(practice, answers);
     if (!result) return;
     if (!session.firstAttempt) {
-      const cases = demandPair(report.cases, selected).map(item => ({
-        case_id: item.id, thp_advice: item.parameters.thp_advice, process_thp: item.parameters.process_thp ?? null,
-        artifacts: Object.fromEntries(['jsonl', 'smaps'].map(kind => {
-          const path = item.artifacts?.[kind] ?? null;
-          return [kind, {path, sha256: path ? report.artifacts?.[path] ?? null : null}];
-        }))
-      }));
+      const pair = demandPair(report.cases, selected);
       session.firstAttempt = {
-        schema_version: 'vmobserve.demand-practice-attempt/v1', kind: 'learner_self_check',
+        schema_version: practiceAttemptSchema, kind: 'learner_self_check',
         submitted_at: new Date().toISOString(),
         elapsed_ms_since_evidence_opened: session.openedAt == null ? null : Math.round(performance.now() - session.openedAt),
-        evidence: {run_id: report.run_id, report_sha256: report.original_report_sha256,
-          data_origin: report.data_origin, view_mode: report.view_mode, repeat, phase, cases},
+        evidence: demandPracticeEvidence(report, pair, repeat, phase),
         ...result
       };
     }
