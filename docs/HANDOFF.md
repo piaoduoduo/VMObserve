@@ -1,5 +1,9 @@
 # 接手说明
 
+**2026-11-25 · 团队分支整合（v0.8.3）。** 将 `origin/cdh_version`（`3c2edf2`）与 `origin/feature/environment-doctor`（`fe52ac8`）的新增内容整合到主线最新改动中，保留 11 月 20 日验收修复（共用复做按钮、3.1 `file_stderr`/`readelf_stderr` 原文接口、3.2 结论跟随系统调用证据与单次地址复做）。新增：独立环境自检 `work/doctor.py`（[环境自检说明](ENVIRONMENT_DOCTOR.md)）；3.3 512 MiB 透明大页受控对照（探针、校验、配对 CSV、openEuler/WSL2 环境切换及两份内置实测样例 `20261120T113225.827429Z`、`20261120T120355.446473Z`）；按需单文件证据校验 `read_evidence`；3.2 第 4 步折叠式去重自测；回放页底部跨轮并排对照与步进笔记管理（[学习流程](LEARNING_WORKFLOW.md)）；及模拟评委与参赛基线文档。Python 100 项与 Node 37 项自动化测试通过。
+
+**2026-11-20 · 当前接手入口。** [多人及多 AI 协作说明](COLLABORATION.md)列出作品范围、代码分工和交付缺项；[本轮按钮与实测验收](WORKFLOW_REVIEW_20261120.md)记录 Gemini 界面改动后的复做修复、五份 openEuler 新记录及下一项教学改进。
+
 **2026-11-20 · 3.3 与拓展实验。** 教学页从一份实测开始，末步才提供复做。3.3 保留六步分批写入和原版五次 ps，栈实验可切换三种递归条件。笔记直接引用所看案例。COW 固定区域大小，每次只跑选定的改写比例；透明大页保留两种写法，以及映射、进程两种开关，一次复做只跑一对。历史轮次、详细诊断和校验可在「原始证据」查看。拓展实验各附一份通过校验的 openEuler 样例。
 
 从本机网页发起并取回五份 openEuler 新记录：[512 MiB 分批写入](../work/openeuler-vm/guest-runs/20261119T162555.370119Z/report.json)、[三种栈条件](../work/openeuler-vm/guest-runs/20261119T162642.331592Z/report.json)、[COW 改写四分之一](../examples/20261119T162730.157977Z/report.json)、[透明大页稀疏写](../examples/20261119T162831.720565Z/report.json)、[逐页写与进程开关](../work/openeuler-vm/guest-runs/20261119T162925.849635Z/report.json)。各条件各执行一次。浏览器核对了两次运行的并排读数、当前步骤原文、桌面及 390 px 布局，64 项自动测试通过。下一步仍是请同学独立做一遍，记录他卡在哪一步。

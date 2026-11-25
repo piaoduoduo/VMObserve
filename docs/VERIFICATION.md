@@ -1,5 +1,18 @@
 # 实际验证记录
 
+## 2026-11-25 v0.8.3 三方分支整合验证
+
+合并主线最新改动（含 11 月 20 日复做修复与 3.1 `file_stderr`/`readelf_stderr` 放行）、`origin/cdh_version`（3.3 512 MiB 受控大页对照、openEuler/WSL2 环境切换、配对 CSV 导出、步进学习笔记、跨轮并排对照、3.2 去重自测、按需单文件证据校验 `read_evidence` 与两份新实测样例 `20261120T113225.827429Z` / `20261120T120355.446473Z`）以及 `origin/feature/environment-doctor`（独立环境诊断 `work/doctor.py`）。
+
+- Python 单元测试：`python -B -m unittest discover -s tests -v`，全部 100 项通过（含 `test_doctor`、`test_group3`、`test_server` 新增用例）。
+- Node 前端逻辑测试：`node --test tests/test_notes_store.mjs tests/test_comparison_data.mjs`，全部 37 项通过。
+- 环境自检 CLI：`python work/doctor.py` 正常执行并校验全部内置样例。
+- 浏览器页面回放验证：检查首页、3.2 连续 malloc（含指针联动与第 4 步去重自测）、3.3 原版按需调页、3.3 512 MiB 透明大页对照（含 openEuler ↔ WSL2 切换、六阶段图表与跨轮核对）、3.3 栈增长、COW/THP 复做控件、跨轮并排对照与步进学习笔记，无控制台 JS 错误。
+
+## 2026-11-19 v0.8.3 回放对照与笔记管理（`cdh_version`）
+
+完成笔记列表／搜索／恢复撤销／导入备份和同阶段实验对照。Python 66 项检查、Node 27 项存储与对照逻辑检查通过，另完成四份内置实测报告只读重建核验。开发复验命令见 [学习流程说明](LEARNING_WORKFLOW.md)。
+
 ## 2026-11-16 v0.6 第3组完整实验
 
 WSL `work/runs/20261116T082944.330397Z`和openEuler `work/openeuler-vm/guest-runs/20261116T083150.898289Z`均为24/24完成、校验通过、integrity=verified；后者由浏览器任务 `20261116T083138.463974Z`触发。每环境三次重复，含两种链接、连续malloc、512 MiB按需访问、正常递归及512/2048 KiB溢出、原layout。45项回归检查通过。每轮43源码和102输出哈希验证通过，CSV各135行，真实浏览器CSV一致。缺失trace清单的临时副本测试被正确拒绝，旧两轮33案例可回放，29原材料哈希不变。

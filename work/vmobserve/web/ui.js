@@ -43,12 +43,33 @@ const phases = {
 const esc = (v) => String(v ?? '—').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const kib = (n) => n == null ? '—' : n >= 1024 && n % 1024 === 0 ? `${n / 1024} MiB` : `${n} KiB`;
 const url = (route, params) => route + '?' + new URLSearchParams(params);
+const runTargetLabel = () => state.config?.executor === 'openeuler-vm' ? ' openEuler 虚拟机里' : '当前实验环境里';
 
 async function api(route, options) {
   const res = await fetch(route, options);
   const value = await res.json();
   if (!res.ok) throw new Error(value.error || `HTTP ${res.status}`);
   return value;
+}
+
+export function replayOriginLabel(report) {
+  if (report?.data_origin === 'real_execution') return '历史实测回放';
+  if (report?.data_origin === 'synthetic') return '模拟回放';
+  return '历史记录回放';
+}
+
+export function stepActions(selected, length, attr = 'data-course-step') {
+  return `<div class="seq-step-actions">
+    <button type="button" ${attr}="${selected - 1}" ${selected === 0 ? 'disabled' : ''}>← 上一步</button>
+    <button type="button" class="primary" ${attr}="${selected + 1}" ${selected >= length - 1 ? 'disabled' : ''}>下一步 →</button>
+  </div>`;
+}
+
+export function demandPair(cases, selected) {
+  if (selected?.suite !== 'demand512' || !selected.parameters?.thp_advice) return [];
+  return ['off', 'on'].map(advice => cases.find(item =>
+    item.suite === 'demand512' && item.parameters.repeat === selected.parameters.repeat &&
+    item.parameters.thp_advice === advice)).filter(Boolean);
 }
 
 export function stepNavigation(titles, selected, attr = 'data-sequence-step') {
@@ -90,14 +111,14 @@ export function missingReading() {
   return `<p class="integrity-warning">这一步缺少可核对的实测结果。<a href="/#${new URLSearchParams({run: state.id, topic: 'evidence'})}">查看原始证据和原因</a></p>`;
 }
 
-export function lessonPractice(mode, caption, reading, settings = '') {
+export function lessonPractice(mode, caption, reading, settings = '', hint = '') {
   const trial = state.lessonTrial;
   const before = trial?.from === state.id && trial.index === state.selected;
   const after = trial?.to === state.id && trial.toIndex === state.selected;
   const result = after && reading && trial.reading
     ? table(['哪次运行', '观测结果'], [['之前看的实测', trial.reading], ['刚跑的一次', reading]])
     : '';
-  return `<div class="lesson-practice">${settings}<button data-lesson-run="${mode}" data-reading="${esc(reading || '')}">${caption}</button>
+  return `<div class="lesson-practice">${settings ? `<div class="practice-settings">${settings}</div>` : ''}<div class="practice-action"><button data-lesson-run="${mode}" data-reading="${esc(reading || '')}">${caption}</button>${hint ? `<span class="practice-hint">${esc(hint)}</span>` : ''}</div>
     ${result}<p class="detail-copy" role="status">${before ? esc(trial.message || '') : ''}${before && trial.failedRun ? ` <a href="/#${new URLSearchParams({run:trial.failedRun,topic:'evidence'})}">查看这次的原始证据</a>` : ''}${before && trial.to ? `<a href="/#${new URLSearchParams({run:trial.to,topic:trial.tab,case:trial.toIndex,step:trial.phase})}">查看刚跑的对照 →</a>` : ''}</p></div>`;
 }
 
@@ -250,7 +271,10 @@ function findingFor(cases, rules) {
 }
 
 function evidenceButtons(c, opts = {}, kinds = Object.keys(c.artifacts || {})) {
-  const names = { kernel: '内核记录', syscalls: '系统调用原文', jsonl: '采样数据 JSONL', smaps: '原始映射 smaps', stderr: '程序错误输出' };
+  const names = {
+    kernel: '内核记录', syscalls: '系统调用原文', jsonl: '采样数据 JSONL', smaps: '原始映射 smaps', stderr: '程序错误输出',
+    file: 'file 信息', file_stderr: 'file 错误输出', ldd: 'ldd 依赖', ldd_stderr: 'ldd 错误输出', readelf: 'readelf 段信息', readelf_stderr: 'readelf 错误输出'
+  };
   const attrs = [
     opts.lineStart ? `data-line-start="${esc(opts.lineStart)}"` : '',
     opts.lineEnd ? `data-line-end="${esc(opts.lineEnd)}"` : '',
@@ -263,7 +287,7 @@ function evidenceButtons(c, opts = {}, kinds = Object.keys(c.artifacts || {})) {
     opts.stepLabel ? `data-step-label="${esc(opts.stepLabel)}"` : ''
   ].filter(Boolean).join(' ');
   return kinds.filter(k => c.artifacts?.[k]).map(k =>
-    `<button data-raw="${esc(c.id)}" data-kind="${esc(k)}" ${attrs}>${esc(names[k] || k)}</button>`
+    `<button type="button" data-raw="${esc(c.id)}" data-kind="${esc(k)}" ${attrs}>${esc(names[k] || k)}</button>`
   ).join('');
 }
 
@@ -301,6 +325,6 @@ async function loadOriginalPs(container) {
 }
 
 export {
-  $, state, labels, phases, esc, kib, url, api, table,
+  $, state, labels, phases, esc, kib, url, api, table, runTargetLabel,
   friendlyDistro, friendlyTime, diagnosisHTML, chart, findingFor, evidenceButtons, highlightSyscallLine, loadOriginalPs
 };

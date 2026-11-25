@@ -64,6 +64,8 @@ def source_files():
 
 
 def plan_cases(args):
+    if args.suite == "demand512-thp":
+        return group3.demand_thp_plan(args.repeats)
     if args.suite == "systems":
         return systems.plan(args.repeats, args.lab)
     cases = group3.plan(args.repeats) if args.suite == "group3" else group4.plan(args.repeats, args.group4_task) if args.suite == "group4" else []
@@ -258,7 +260,7 @@ def parser():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--require-openeuler", action="store_true")
     p.add_argument("--output", type=Path, default=WORK / "runs")
-    p.add_argument("--suite", choices=("all", "baseline", "thp", "course", "layout", "group3", "group4", "sequence", "demand512", "stack", "systems"), default="all")
+    p.add_argument("--suite", choices=("all", "baseline", "thp", "course", "layout", "group3", "group4", "sequence", "demand512", "demand512-thp", "stack", "systems"), default="all")
     p.add_argument("--baseline-mib", type=int, choices=(16, 64))
     p.add_argument("--lab", choices=("all", *systems.LABS), default="all")
     p.add_argument("--group4-task", choices=("all", "4.1", "4.2", "4.3", "4.4"), default="all")

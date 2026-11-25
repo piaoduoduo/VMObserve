@@ -1,4 +1,5 @@
 import { $, state, api, esc, url, table, evidenceButtons, friendlyDistro, friendlyTime, labels, loadOriginalPs } from './ui.js';
+import { renderLabFlow } from './experiment-flow.js';
 
 const groups = ['实验环境与工具', '系统调用与容器', '内存管理', '进程与线程', '同步与互斥', '文件系统', '设备与 I/O'];
 // In the order of the current 27-page course guide. Page ranges refer to its PDF.
@@ -39,7 +40,7 @@ const extensions = [
 const replayTasks = {
   '3.1': [['打开 7 类程序地址分布图', 'layout', 'layout'], ['动态链接映射', 'group3', 'link-dynamic'], ['静态链接映射', 'group3', 'link-static']],
   '3.2': [['回放三次申请', 'sequence', 'sequence']],
-  '3.3': [['512 MiB 分批触碰', 'group3', 'demand512'], ['栈增长与溢出', 'group3', 'stack'], ['按需分配逐步对照', 'course', 'course']],
+  '3.3': [['512 MiB 分批触碰', 'group3', 'demand512'], ['512 MiB 透明大页实测对照', 'group3', 'demand512-thp'], ['栈增长与溢出', 'group3', 'stack'], ['按需分配逐步对照', 'course', 'course']],
   '4.1': [['打开父子进程事件回放', 'group4', 'g4-fork']],
   '4.2': [['打开线程与共享变量回放', 'group4', 'g4-pthread']],
   '4.3': [['打开用户级线程调度回放', 'group4', 'g4-uthread']],
@@ -161,13 +162,47 @@ export function currentLab(topic, report, index) {
 }
 
 export function newestReplay(id, topic, suite, preferredId) {
+  const matches = ([key, lab, policy]) => suite === 'demand512-thp'
+    ? key === 'demand512' && Boolean(policy)
+    : key === suite && (topic !== 'systems' || lab === id) && (suite !== 'demand512' || !policy);
   const runs = (state.runs || []).filter(r => r.data_origin === 'real_execution' && !r.environment_issue &&
-    r.status === 'completed' && r.case_keys.some(([s, lab]) => s === suite && (topic !== 'systems' || lab === id)));
+    (r.status === 'completed' || (suite === 'demand512-thp' && r.status === 'completed_with_deviations')) &&
+    (r.case_keys || []).some(matches));
   runs.sort((a, b) => b.run_id.localeCompare(a.run_id) || Number(a.group === 'example') - Number(b.group === 'example'));
   const run = runs.find(r => r.id === preferredId) || runs[0];
   if (!run) return null;
-  const index = viewCases(run.case_keys, topic, x => x[0]).findIndex(([s, lab]) => s === suite && (topic !== 'systems' || lab === id));
+  const index = viewCases(run.case_keys, topic, x => x[0]).findIndex(matches);
   return { run, href: '/#' + new URLSearchParams({ run: run.id, topic, case: index }) };
+}
+
+export function demandEnvironmentReplays(runs, currentId, parameters, step) {
+  const current = runs.find(run => run.id === currentId);
+  if (!current || !Number.isInteger(parameters.repeat) || !['off', 'on'].includes(parameters.thp_advice)) return [];
+  const environmentKey = run => JSON.stringify([
+    run.distribution, run.kernel || null, run.execution_context || null
+  ]);
+  const selected = new Map();
+  const findPair = run => {
+    const cases = viewCases(run.case_keys || [], 'group3', key => key[0]);
+    const indexOf = advice => cases.findIndex(([suite, , policy, repeat]) =>
+      suite === 'demand512' && policy === advice && repeat === parameters.repeat);
+    const index = indexOf(parameters.thp_advice);
+    return index >= 0 && indexOf(parameters.thp_advice === 'on' ? 'off' : 'on') >= 0 ? index : -1;
+  };
+  const toReplay = (run, index) => ({ run, index, step, current: run.id === currentId });
+  const currentIndex = findPair(current);
+  if (currentIndex >= 0) selected.set(environmentKey(current), toReplay(current, currentIndex));
+  const ordered = [...runs].sort((left, right) =>
+    right.run_id.localeCompare(left.run_id) || Number(right.group === 'example') - Number(left.group === 'example'));
+  for (const run of ordered) {
+    if (run.run_id === current.run_id || run.data_origin !== 'real_execution' ||
+        run.status !== 'completed' || run.environment_issue) continue;
+    const key = environmentKey(run);
+    if (key === environmentKey(current) || selected.has(key)) continue;
+    const index = findPair(run);
+    if (index >= 0) selected.set(key, toReplay(run, index));
+  }
+  return [...selected.values()];
 }
 
 const displayValue = value => Array.isArray(value) ? value.join(' · ') : String(value);
@@ -271,6 +306,7 @@ export async function showLab(id, preferredId) {
     <h1>${title}</h1>
     <p>${task}</p>
   </div>
+  ${renderLabFlow(id)}
   <section class="observation lab-observation">
     <h2>${basic ? '历史实测摘录' : focus && replays.length ? '从这里开始' : replays.length ? '实验观测与交互回放' : '实验任务'}</h2>
     <div id="lab-evidence"><p class="muted">${replays.length ? `正在读取 ${esc(friendlyDistro(replays[0].run.distribution))} 的实验回放信息…` : '正在载入本项实验记录…'}</p></div>

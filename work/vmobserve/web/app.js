@@ -1,6 +1,9 @@
 import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine } from './ui.js';
 import { renderEvidence } from './evidence-view.js';
-import { renderSequence, locateSequencePointer, parseMmapCall, groupBlocksIntoRegions } from './sequence-view.js';
+import { attachReplayFlow } from './experiment-flow.js';
+import { renderReplayNotes } from './replay-notes.js';
+import { renderReplayComparison } from './replay-comparison.js';
+import { renderSequence, locateSequencePointer, parseMmapCall, groupBlocksIntoRegions, sharedPointerRegion } from './sequence-view.js';
 import { renderCourse, renderGroup3, renderGroup4, renderLayout } from './course-views.js';
 import { renderBaseline, renderTHP } from './memory-views.js';
 import { directory, currentLab, viewCases, markLab, renderHome, renderTaskDirectory, renderSystems, showLab, newestReplay } from './curriculum.js';
@@ -308,10 +311,16 @@ function render() {
   const lab = currentLab(state.tab, r, state.selected);
   markLab(lab, state.tab);
   document.title = (lab ? '实验 ' + lab : topics[state.tab]) + ' · 重点任务可视化实验台';
-  const singleMode = { sequence: 'sequence', group3: 'group3', course: 'course' }[state.tab];
+  const selected = state.tab === 'group3' ? viewCases(r.cases, state.tab, item => item.suite)[state.selected] : null;
+  const pairedDemand = selected?.suite === 'demand512' && Boolean(selected.parameters.thp_advice);
+  const singleMode = pairedDemand ? 'demand512-thp' : { sequence: 'sequence', group3: 'group3', course: 'course' }[state.tab];
   $('#run').dataset.mode = singleMode || 'complete';
-  $('#run').textContent = singleMode === 'group3' ? '重新采集第 3 组' : singleMode ? '重新采集本项实验' : '采集整套实验';
+  $('#run').textContent = pairedDemand ? '重新采集三轮大页对照'
+    : singleMode === 'group3' ? '重新采集第 3 组' : singleMode ? '重新采集本项实验' : '采集整套实验';
   savePosition();
+  if (!focused) attachReplayFlow();
+  renderReplayComparison();
+  renderReplayNotes();
   evidenceRequest++;
   $('#copy-replay').disabled = false;
   $('#copy-status').textContent = '';
@@ -323,6 +332,7 @@ const runModes = {
   'run-layout': 'layout',
   'run-sequence': 'sequence',
   'run-group3': 'group3',
+  'run-demand-thp': 'demand512-thp',
   'run-group4': 'group4',
 };
 
@@ -331,9 +341,14 @@ $('#content').addEventListener('click', e => {
   if (!b) return;
   if (b.dataset.lessonRun) return runLessonTrial(b);
   if (b.dataset.condition !== undefined) {
+    const resetStep = Boolean(b.dataset.resetStep);
     state.selected = Number(b.dataset.condition);
+    if (resetStep) state.phase = 0;
     render();
-    $('[data-condition][aria-pressed="true"]')?.focus({preventScroll: true});
+    const target = resetStep
+      ? $('[data-condition][data-reset-step][aria-pressed="true"]')
+      : $('[data-condition]:not([data-reset-step])[aria-pressed="true"]') || $('[data-condition][aria-pressed="true"]');
+    target?.focus({preventScroll: true});
     return;
   }
   if (b.dataset.pointer && b.closest('.sequence-tutorial')) return locateSequencePointer(b);
@@ -376,8 +391,13 @@ $('#content').addEventListener('click', e => {
 $('#content').addEventListener('change', ({ target: t }) => {
   if (t.id === 'group4-task') state.group4Task = t.value;
   if (t.id === 'case-select') {
-    state.selected = Number(t.value);
-    state.phase = 0;
+    const position = Number(t.value);
+    const list = viewCases(state.report?.cases || [], state.tab, item => item.suite);
+    const keepDemandStep = state.tab === 'group3'
+      && list[state.selected]?.suite === 'demand512' && list[state.selected]?.parameters?.thp_advice
+      && list[position]?.suite === 'demand512' && list[position]?.parameters?.thp_advice;
+    state.selected = position;
+    if (!keepDemandStep) state.phase = 0;
     render();
   }
 });
@@ -508,8 +528,8 @@ async function compareMerge(caseId) {
     if (!res.ok) throw new Error(smapsText);
     const lines = smapsText.split('\n');
     const s2 = c.data.samples[2], s3 = c.data.samples[3];
-    const r2 = groupBlocksIntoRegions(s2).find(r => r.blocks.some(b => b.num === 2));
-    const r3 = groupBlocksIntoRegions(s3).find(r => r.blocks.some(b => b.num === 2) && r.blocks.some(b => b.num === 3));
+    const r2 = groupBlocksIntoRegions(s2).find(r => r.blocks.some(b => b.num === 2 && b.containsPointer));
+    const r3 = sharedPointerRegion(groupBlocksIntoRegions(s3));
     const mmap2 = parseMmapCall(c.data.actions[1]);
     const mmap3 = parseMmapCall(c.data.actions[2]);
     const sec2 = r2 ? extractSmapsSection(lines, s2.phase, r2.start) : null;
@@ -538,13 +558,17 @@ async function compareMerge(caseId) {
 
 async function raw(caseId, kind, opts = {}) {
   const request = ++evidenceRequest;
-  const kindNames = { syscalls: '系统调用原文 (strace)', smaps: '原始内存映射 (smaps)', jsonl: '采样事件 (JSONL)', kernel: '内核状态记录', stderr: '程序错误输出' };
+  const kindNames = {
+    syscalls: '系统调用原文 (strace)', smaps: '原始内存映射 (smaps)', jsonl: '采样事件 (JSONL)', kernel: '内核状态记录', stderr: '程序错误输出',
+    file: 'file 文件类型信息', file_stderr: 'file 错误输出', ldd: 'ldd 动态库依赖', ldd_stderr: 'ldd 错误输出', readelf: 'readelf 装载段信息', readelf_stderr: 'readelf 错误输出'
+  };
   try {
     const res = await fetch(url('/api/evidence', { id: state.id, case: caseId, kind }));
     const text = await res.text();
     if (request !== evidenceRequest) return;
     if (!res.ok) throw new Error(text);
-    dialog(`${caseId} · ${kindNames[kind] || kind}`, formatHighlightedRaw(text, kind, opts));
+    const body = text.trim() ? formatHighlightedRaw(text, kind, opts) : '<p class="detail-copy">该命令标准错误输出为空（0 字节，未报错）。</p>';
+    dialog(`${caseId} · ${kindNames[kind] || kind}`, body);
     setTimeout(() => {
       const target = $('#raw-focus');
       if (target) target.scrollIntoView({ block: 'center' });
@@ -571,7 +595,7 @@ async function runLessonTrial(button) {
   const fraction = $('#trial-fraction');
   state.lessonTrial = trial;
   button.disabled = true;
-  button.parentElement.querySelector('[role=status]').textContent = trial.message;
+  button.closest('.lesson-practice').querySelector('[role=status]').textContent = trial.message;
   try {
     state.job = await api('/api/run', {method: 'POST', headers: {'Content-Type':'application/json','X-VMObserve-Token':state.config.token},
       body: JSON.stringify({mode, id: trial.from, pattern, cow_fraction: fraction?.value || '1/4', mib: Number(fraction?.dataset.mib || 16)})});
@@ -702,7 +726,7 @@ try {
     [state.config, state.runs] = await Promise.all([api('/api/config'), api('/api/runs')]);
     const originalPs = lab === '3.3' && location.hash === '#original-demand';
     const suite = new URLSearchParams(location.search).get('replay') ?? (lab === '3.2' ? 'sequence' : lab === '3.3' ? (location.hash === '#stack' ? 'stack' : 'demand512') : null);
-    const topic = ({ sequence: 'sequence', demand512: 'group3', stack: 'group3' })[suite];
+    const topic = ({ sequence: 'sequence', demand512: 'group3', 'demand512-thp': 'group3', stack: 'group3' })[suite];
     const entry = topic && newestReplay(lab, topic, suite);
     if (entry) {
       window.history.replaceState(null, '', entry.href);

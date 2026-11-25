@@ -1,4 +1,4 @@
-import { $, state, esc, kib, table, stepNavigation, stepControls } from './ui.js';
+import { $, state, esc, kib, table, stepNavigation, stepControls, runTargetLabel } from './ui.js';
 
 const BLOCK_SIZES = ['1 KiB', '256 KiB', '1 MiB'];
 const PHASES = ['申请前', '申请 1 KiB', '申请 256 KiB', '申请 1 MiB', '全部释放'];
@@ -48,10 +48,16 @@ function groupBlocksIntoRegions(sample) {
           blocks: []
         });
       }
-      map.get(key).blocks.push({ num: idx + 1, size: BLOCK_SIZES[idx], address: b.address, alive: b.alive });
+      const containsPointer = b.mapping?.start === m.start && b.mapping.end === m.end;
+      map.get(key).blocks.push({ num: idx + 1, size: BLOCK_SIZES[idx], address: b.address, alive: b.alive, containsPointer });
     });
   });
   return [...map.values()];
+}
+
+function sharedPointerRegion(regions) {
+  return regions.find(region => [2, 3].every(num =>
+    region.blocks.some(block => block.num === num && block.containsPointer)));
 }
 
 const GOALS = [
@@ -60,12 +66,29 @@ const GOALS = [
   '全部释放后，哪些旧地址还能在映射表里找到？'
 ];
 const GUIDES = [
-  '先看底图。此时程序还没有 p1、p2、p3，Linux 已经记下了哪些地址范围？',
-  '点 p1，看看哪一行的地址范围包含它。行末的 [heap] 表示堆。',
+  '',
+  '点 p1，看看哪一行的地址范围包含它（行末 [heap] 说明它在堆里）；要确认这次 malloc 有没有扩大堆，还要去下方看这一步的 brk 记录。',
   '点 p2，再点 p1。看程序拿到的这两个地址分别落在哪一行。',
   '轮流点 p2 和 p3。看图里哪个块亮了，再看下面高亮的映射行有没有换。',
   '三块都已释放。点一个旧地址，查查原来那一段现在还在不在。'
 ];
+
+function guideText(data, phase) {
+  if (phase !== 0) return GUIDES[phase];
+  const baseline = data.samples[0]?.visual_regions || [];
+  if (!baseline.length) {
+    return '此时程序还没有分配 p1、p2、p3。下面的图按本次实验涉及的地址预留了位置，点下一步看第一块内存出现在哪里。';
+  }
+  const refs = baseline.filter(r => r.pathname !== '[heap]');
+  if (refs.length === 1) {
+    return `为了不干扰视线，下面只截取后面三块内存附近的位置。此时堆还没建，高地址旁有一段程序启动时已有的 ${kib(refs[0].size_kib)} 匿名映射作参照。`;
+  }
+  if (refs.length > 1) {
+    const total = refs.reduce((sum, r) => sum + (r.size_kib || 0), 0);
+    return `为了不干扰视线，下面只截取后面三块内存附近的位置。此时堆还没建，附近已有 ${refs.length} 段程序启动时建好的匿名映射（合计 ${kib(total)}）作参照。`;
+  }
+  return '为了不干扰视线，下面只截取后面三块内存附近的位置。此时还没有申请 p1、p2、p3。';
+}
 
 const hex = value => BigInt('0x' + value);
 const contains = (r, address) => hex(r.start) <= hex(address) && hex(address) < hex(r.end);
@@ -119,8 +142,8 @@ function mappingDiagram(data, phase, join) {
   }
   return `<figure class="address-diagram"><figcaption><strong>指针在地址空间的什么位置？</strong><span>低地址 → 高地址</span></figcaption>
     <div class="addr-grid" style="--slots:${slots.length}">${frames}${gaps.join('')}</div>
-    ${join ? `<p class="addr-boundary">蓝线标出两次 mmap 的共同边界 <code>${ptr(join.seam)}</code>。</p>` : ''}
-    <p>一个外框是一段映射，框顶是地址范围的大小，框底的 RSS 是其中已驻留的物理内存。图按地址顺序排列，宽度不按比例。</p></figure>`;
+    ${join ? `<p class="addr-boundary"><i class="seam-swatch" aria-hidden="true"></i>橙线标出两次 mmap 的共同边界 <code>${ptr(join.seam)}</code>（即使选中右侧块，橙线仍保持可见）。</p>` : ''}
+    <p>每个外框对应 maps 里的一行（一段虚拟映射）：框顶是虚拟地址大小，框底 RSS 是真正在内存条里占用的物理大小；按地址从左到右排列，宽度不按比例。</p></figure>`;
 }
 
 function joinEvidence(data) {
@@ -144,18 +167,46 @@ function heapChange(data, phase) {
 
 function explanation(data, phase, join) {
   const sample = data.samples[phase];
-  if (phase === 0) return 'Linux 按地址范围记录一个进程可以访问的内存。打开 maps，每一行开头的两个十六进制数就是这个范围的起点和终点。接下来用 malloc 返回的指针去找对应行。';
+  if (phase === 0) return 'Linux 按地址范围（VMA）记录进程可访问的每一段内存。打开 maps，每行开头的两个十六进制数就是这段的起点和终点。接下来用 malloc 返回的指针去核对它落在哪一行。';
   if (phase === 4) {
     const covered = sample.blocks.flatMap((b, i) => b.mapping ? [`p${i + 1}`] : []);
+    const gone = sample.blocks.flatMap((b, i) => !b.mapping ? [`p${i + 1}`] : []);
     const removed = data.actions[3].events.filter(e => e.name === 'munmap' && e.success).length;
-    return `free 把三个块交还给分配器，程序从此不能再读写它们。跟踪里有 ${removed} 次成功的 munmap。用三个旧地址再查映射表，${covered.length ? `还能找到 ${covered.join('、')} 所在的区间` : '三个地址都已查不到'}。`;
+    const heapKept = sample.blocks.some(b => b.mapping?.pathname === '[heap]');
+    const why = gone.length && heapKept
+      ? `原因在于回收路径不同：${gone.join('、')} 是通过 mmap 单独申请的大块，free 时 glibc 直接调 munmap 还给内核；${covered.join('、')} 来自堆区 [heap]，free 只还给 glibc 空闲链表留待复用，堆映射并未撤销。`
+      : '';
+    return `free 把三个块交还给分配器，程序从此不能再读写它们。系统调用记录里有 ${removed} 次成功的 munmap。拿三个旧地址再查 maps，${covered.length ? `还能找到 ${covered.join('、')} 所在的区间` : '三个地址都已查不到'}。${why}`;
   }
-  if (join && phase === 3) return `第二次和第三次 malloc 各拿到一个独立的块。两次 mmap 返回的都是可读写的私有匿名区间。第 ${join.low} 次的终点正好是第 ${join.high} 次的起点，中间没有空隙。再看申请后的 smaps，两根指针落在同一行，说明 Linux 用一段映射记录了这片连续空间。`;
-  const source = data.actions[phase - 1].allocation_source;
+  if (join && phase === 3) return `第二次和第三次 malloc 各拿到一个独立的块。两次 mmap 返回的都是可读写的私有匿名区间（rw-p），第 ${join.low} 次的终点正好接上第 ${join.high} 次的起点，中间没有空隙。再看申请后的 smaps，两根指针落在同一行，说明 Linux 把相邻且属性一致的匿名区域合并成了一段映射。`;
+  const action = data.actions[phase - 1];
+  const source = action.allocation_source;
+  let mmapNote = '分配器用 mmap 向 Linux 单独要一片匿名内存，再把可用部分的指针交还给程序。';
+  if (source === 'new_mmap_range') {
+    const mmapCall = parseMmapCall(action);
+    const block = sample.blocks[phase - 1];
+    if (mmapCall && block?.address) {
+      const offset = hex(block.address) - hex(mmapCall.startHex);
+      if (offset > 0n) {
+        mmapNote = `分配器用 mmap 向 Linux 单独要一片页对齐的匿名内存（起点 ${ptr(mmapCall.startHex)}），在开头留出 ${offset} 字节（0x${offset.toString(16)}）作块管理头后，把后面的地址 ${ptr(block.address)} 交还给程序。`;
+      } else if (offset === 0n) {
+        mmapNote = `分配器用 mmap 向 Linux 单独要一片匿名内存，这次返回的指针（${ptr(block.address)}）正好就是这段映射的起点。`;
+      }
+    }
+  }
+  let brkNote = '分配器用 brk 抬高堆顶，再从这片 [heap] 空间里切出程序要求的大小。';
+  if (source === 'new_brk_range') {
+    const brkCall = (action.events || []).find(e => e.name === 'brk');
+    const prevBrk = data.samples[phase - 1]?.program_break;
+    const currBrk = sample.program_break;
+    const callText = brkCall ? `（L${brkCall.line}：${brkCall.text.replace(/\s+/g, ' ').trim()}）` : '';
+    const moveText = prevBrk && currBrk && prevBrk !== currBrk ? `，堆顶从 ${ptr(prevBrk)} 推高到 ${ptr(currBrk)}` : '';
+    brkNote = `仅看指针落在 [heap] 只能说明“这块在堆里”；要确定这次 malloc 扩大了堆，必须对照这一步的 brk 系统调用记录${callText}${moveText}。点下方“看系统调用原文”可直接核对这一行，堆一次扩出的空间会留给后续小块复用。`;
+  }
   return ({
-    new_brk_range: '分配器用 brk 抬高堆顶，再从这片堆空间里取出程序要求的大小。堆一次扩出的空间可以留给后续申请。',
-    new_mmap_range: '分配器用 mmap 向 Linux 要一片匿名内存。Linux 返回整段映射的起点，分配器留出自己的管理空间，再把可用部分的指针交给程序。',
-    no_memory_syscall: '分配器从已有空间取出了这一块。此次调用期间没有看到新的内存映射或堆扩展。'
+    new_brk_range: brkNote,
+    new_mmap_range: mmapNote,
+    no_memory_syscall: '分配器直接从已有堆空间切出了这一块，此次调用期间没有触发新的 brk 或 mmap 系统调用（虽然指针也落在 [heap]，但并未扩大堆）。'
   })[source] || '用返回指针能查出它所在的区间。现有系统调用记录没有指明分配器取得这块空间的方式。';
 }
 
@@ -193,7 +244,61 @@ export function locateSequencePointer(button) {
   panel.querySelector('.pointer-note').textContent = output.dataset.note;
 }
 
-function renderObservation(c, phase) {
+function exerciseRegions(sample) {
+  if (sample?.phase !== 'alloc_1MiB' || sample.blocks.length !== 3 ||
+      sample.blocks.some(block => !block.mapping)) return [];
+  const regions = groupBlocksIntoRegions(sample);
+  if (regions.some(region => !Number.isSafeInteger(region.rss_kib))) return [];
+  return regions.sort((a, b) => BigInt('0x' + a.start) < BigInt('0x' + b.start) ? -1 : 1);
+}
+
+function renderRssExercise(sample, regions) {
+  const label = index => '映射 ' + (index + 1);
+  const options = regions.map((_, i) => `<option value="${i}">${label(i)}</option>`).join('');
+  return `<details class="secondary-fold rss-exercise-fold"><summary>动手自测：自己算一遍三块内存的去重 RSS</summary>
+    <div class="rss-exercise" aria-labelledby="rss-exercise-title">
+      <p id="rss-exercise-title">用「起始地址 ≤ 指针 &lt; 结束地址」判断三个返回指针的归属，再将与三个块相交的各段映射 RSS 各加一次。</p>
+      ${table(['映射', 'smaps 地址区间', '整段 RSS'], regions.map((r, i) =>
+        [label(i), r.start + '–' + r.end, kib(r.rss_kib)]))}
+      <form class="rss-exercise-form">
+        <div class="rss-inputs">${sample.blocks.map((block, i) => `<label>块 ${i + 1} · <code>0x${esc(block.address)}</code>
+          <select name="block-${i}" required><option value="">请选择映射</option>${options}</select></label>`).join('')}
+        <label>去重后的 RSS（KiB）<input name="rss" type="number" min="0" step="1" required></label></div>
+        <button type="submit" class="primary">核对我的答案</button>
+        <div class="rss-feedback" aria-live="polite"></div>
+      </form>
+    </div>
+  </details>`;
+}
+
+function attachRssExercise(sample, regions) {
+  const form = $('.rss-exercise-form');
+  if (!form) return;
+  const expected = sample.blocks.map(block =>
+    regions.findIndex(region => region.start === block.mapping?.start && region.end === block.mapping?.end));
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const answers = new FormData(form);
+    const entered = Number(answers.get('rss'));
+    const wrong = expected.flatMap((index, i) => Number(answers.get('block-' + i)) === index ? [] : [i + 1]);
+    const total = regions.reduce((sum, region) => sum + region.rss_kib, 0);
+    const groups = regions.filter(region => region.blocks.length > 1);
+    const repeated = regions.reduce((sum, region) => sum + region.rss_kib * region.blocks.length, 0);
+    const duplicate = entered !== total && entered === repeated && groups.length;
+    const correct = !wrong.length && entered === total;
+    const matches = expected.map((index, i) => `块 ${i + 1} → 映射 ${index + 1}`).join('，');
+    const equation = regions.map(region => region.rss_kib).join(' + ') + ' = ' + total + ' KiB';
+    const feedback = correct ? '全部正确。' : [
+      wrong.length ? '需重新核对块 ' + wrong.join('、') + ' 的指针归属。' : '三个指针的归属都正确。',
+      entered !== total ? 'RSS 合计需重新核对。' : 'RSS 合计正确。',
+      duplicate ? groups.map(region => '块 ' + region.blocks.map(block => block.num).join('、') +
+        ' 与同一段映射相交，该段 ' + kib(region.rss_kib) + ' 只加一次。').join('') : ''
+    ].join('');
+    form.querySelector('.rss-feedback').textContent = feedback + ' ' + matches + '。RSS 合计 ' + equation + '。';
+  });
+}
+
+function renderObservation(c, phase, exerciseHtml = '') {
   const data = c.data, sample = data.samples[phase];
   const action = phase ? data.actions[phase - 1] : null;
   const join = phase === 3 ? joinEvidence(data) : null;
@@ -210,16 +315,24 @@ function renderObservation(c, phase) {
   const evidence = join ? `<div class="mmap-evidence"><p>第 2 次 mmap　<code>${range({start:ptr(join.second.startHex),end:ptr(join.second.endHex)})}</code></p>
     <p>第 3 次 mmap　<code>${range({start:ptr(join.third.startHex),end:ptr(join.third.endHex)})}</code></p>
     <p>共同边界是 <code>${ptr(join.seam)}</code>。这个地址属于较高的区间。首尾相接的是两次 mmap 的范围，p2 和 p3 各自仍有自己的起点和长度。</p>${sizeChange}</div>` : '';
+  const formulaBar = phase > 0 && phase < 4 && related.length ? `<div class="rss-formula-bar" aria-label="按映射段去重算式">
+    <span class="formula-label">${join ? '去重算式（p2、p3 共用同一段，绝不算两遍）' : '按映射段统计 RSS'}</span>
+    <div class="ledger-formula">${related.map(r => {
+      const holders = r.blocks.map(b => 'p' + b.num).join('、');
+      return `<span class="ledger-pill ${r.pathname === '[heap]' ? 'is-heap' : 'is-mmap'}"><small>${esc(regionName(r))}（${holders}）</small><strong>${kib(r.rss_kib)}</strong></span>`;
+    }).join('<span class="ledger-op">+</span>')}<span class="ledger-op">=</span><span class="ledger-total">${kib(sample.related_rss_kib)}</span></div>
+  </div>` : '';
   return `<section class="seq-panel" id="sequence-result" aria-labelledby="sequence-heading">
     <div class="demand-heading"><div class="phase-heading"><h2 id="sequence-heading">${PHASES[phase]}</h2><code>${esc(C_CODE[phase])}</code></div></div>
-    <p class="phase-note">${GUIDES[phase]}</p>
+    <p class="phase-note">${esc(guideText(data, phase))}</p>
     ${pointerReadout(sample)}${mappingDiagram(data, phase, join)}${mappingLines(sample)}
-    <p class="map-total">程序手中还有 <strong>${sample.count} 块</strong>。${phase === 0 ? '从下一步起，用返回指针找它所在的外框。' : `${phase === 4 ? '按旧地址范围查到' : '这些块涉及'} <strong>${sample.related_vma_count} 段映射</strong>。`}</p>
+    <p class="map-total">程序手中还有 <strong>${sample.count} 块</strong>。${phase === 0 ? '从下一步起，用返回指针找它所在的外框。' : `${phase === 4 ? '按旧地址范围查到' : '这些块共涉及'} <strong>${sample.related_vma_count} 段映射</strong>${phase === 4 ? `（合计 RSS ${kib(sample.related_rss_kib)}）` : ''}。`}</p>${formulaBar}
     <details class="secondary-fold"><summary>${join ? '为什么两个块落在同一段？' : 'Linux 怎么处理这一步？'}</summary>
       <p>${esc(explanation(data, phase, join))}</p><p>${esc(heapChange(data, phase))}</p>
       ${join?.third.kernelChooses ? `<p>为什么 p3 在 p2 ${join.low === 3 ? '前面' : '后面'}？第三次调用的第一个参数是 NULL，分配器请内核挑一块足够大的空地址范围。这一次内核选中了 p2 的${join.low === 3 ? '低' : '高'}地址一侧。再运行一次，可以用两个 mmap 的返回地址检查位置。</p>` : ''}</details>
     <details class="secondary-fold"><summary>查看实测依据与原文</summary>
       ${evidence}${phase ? `<p>按涉及的映射逐段相加，合计 RSS 为 <strong>${sum}${kib(sample.related_rss_kib)}</strong>。</p>` : '<p>采集程序额外保留了这份申请前快照，供后面几步对照。</p>'}${raw}</details>
+    ${exerciseHtml}
     <div class="seq-navigation">${stepControls(phase, 6)}</div></section>`;
 }
 
@@ -272,17 +385,51 @@ function addressTrial(c) {
       `<a class="nav-link" href="/#${new URLSearchParams({ run: current.newId, topic: 'sequence', step: 3 })}">用新地址查看第④步的映射 →</a>`;
   }
   const label = current?.running ? '正在运行…' : before ? '再跑一次，比较地址' : '重新运行一次';
-  return `<div class="address-trial"><button id="run-sequence" class="ghost-action">${label}</button>
+  return `<div class="address-trial"><div class="practice-action"><button id="run-sequence" class="ghost-action">${label}</button><span class="practice-hint">将在${esc(runTargetLabel())}实跑 1 个新进程（约数秒），并在下方列出对比新指针</span></div>
     <div role="status">${current?.error ? `<p>${esc(current.error)} ${current.newId ? `<a href="/#${new URLSearchParams({run: current.newId, topic: 'evidence'})}">查看这次的记录</a>` : ''}</p>` : result}</div></div>`;
+}
+
+function conclusionTakeaways(data) {
+  if (!data?.samples?.[3] || !data?.samples?.[4]) return '';
+  const peak = data.samples[3], freed = data.samples[4];
+  const inHeap = peak.blocks.flatMap((b, i) => b.mapping?.pathname === '[heap]' ? [`p${i + 1}`] : []);
+  const byRange = new Map();
+  peak.blocks.forEach((b, i) => {
+    if (!b.mapping) return;
+    const key = range(b.mapping);
+    byRange.set(key, [...(byRange.get(key) || []), `p${i + 1}`]);
+  });
+  const shared = [...byRange.values()].filter(list => list.length > 1);
+  const kept = freed.blocks.flatMap((b, i) => b.mapping ? [`p${i + 1}`] : []);
+  const gone = freed.blocks.flatMap((b, i) => !b.mapping ? [`p${i + 1}`] : []);
+  const related = groupBlocksIntoRegions(peak);
+  const sum = related.length > 1 ? related.map(r => kib(r.rss_kib)).join(' + ') + ' = ' : '';
+  const brkSteps = peak.blocks.flatMap((b, i) => {
+    if (b.mapping?.pathname !== '[heap]') return [];
+    const act = data.actions?.[i];
+    if (act?.allocation_source !== 'new_brk_range') return [];
+    const ev = (act.events || []).find(e => e.name === 'brk');
+    return [ev ? `p${i + 1} 对应第 ${i + 2} 步 <code>L${ev.line} ${esc(ev.text.replace(/\s+/g, ' ').trim())}</code>` : `p${i + 1}（第 ${i + 2} 步）有新增 brk`];
+  });
+  const heapDesc = inHeap.length
+    ? `${inHeap.join('、')} 落在末列标着 <code>[heap]</code> 的映射行中，证明它位于堆区；${brkSteps.length ? `再核对本步系统调用记录（${brkSteps.join('；')}），确认是那次 <code>malloc</code> 扩大了堆` : '不过对应步骤未抓到新增 <code>brk</code> 扩堆调用（复用了已有堆空间）'}`
+    : '本轮未观测到落在 <code>[heap]</code> 的块';
+  return `<div class="conclusion-summary"><h3>本次实测的三条核心结论</h3><ol>
+    <li><strong>谁落在堆里、是否扩堆：</strong>${heapDesc}。</li>
+    <li><strong>几段映射与去重 RSS：</strong>3 个块共涉及 <strong>${peak.related_vma_count} 段映射</strong>${shared.length ? `（${shared.map(g => g.join('、')).join('；')} 区间起止完全相同、共处一段）` : ''}；按映射段只加一次，合计物理驻留为 <strong>${sum}${kib(peak.related_rss_kib)}</strong>。</li>
+    <li><strong>全部释放之后：</strong>${kept.length ? `${kept.join('、')} 所在区间仍保留（堆内存留给分配器复用）` : '无保留区间'}${gone.length ? `；${gone.join('、')} 的匿名映射已被 <code>munmap</code> 撤销` : ''}。</li>
+  </ol></div>`;
 }
 
 function renderComparison(c, readings) {
   return `<section class="seq-panel seq-comparison" id="sequence-result" aria-labelledby="sequence-heading">
     <div class="demand-heading"><h2 id="sequence-heading">整理结论</h2></div>
-    <p>换成你自己的程序：用它打印的三个地址，在 maps 里找出各自对应的那一行。</p>
-    ${reproduction()}
-    <details class="secondary-fold"><summary>对照示例的五步结果</summary>${readings}</details>
+    ${conclusionTakeaways(c.data)}
+    <p>现在换一份新地址来检验刚学会的方法：点下方按钮拿一组新指针，或开双终端在自己的虚拟机上跑一遍，逐一核对「起点 ≤ 指针 &lt; 终点」。</p>
     ${addressTrial(c)}
+    <details class="secondary-fold"><summary>对照示例的五步完整数据表</summary>${readings}</details>
+    ${reproduction()}
+    <p class="detail-copy">想换另一份历史记录检验判断？<a class="nav-link" href="/#${new URLSearchParams({ run: state.id, topic: 'evidence' })}">去原始证据查看或切换记录 →</a></p>
     <div class="seq-navigation">${stepControls(5, 6, '<a class="btn-link primary" href="/labs/3.3?replay=demand512">继续 3.3 · 第一次写入 →</a>')}</div></section>`;
 }
 
@@ -311,10 +458,13 @@ export function renderSequence() {
   const titles = [...PHASES, '整理结论'];
   state.phase = Math.min(Math.max(0, state.phase), titles.length - 1);
   let step;
+  const sample = state.phase < 5 ? data?.samples?.[state.phase] : null;
+  const regions = c.validation?.status === 'passed' ? exerciseRegions(sample) : [];
+  const exerciseHtml = regions.length ? renderRssExercise(sample, regions) : '';
   if (state.phase === 5) {
     step = renderComparison(c, data ? comparisonReadings(data) : unavailableReading(c, cases));
   } else if (data) {
-    step = renderObservation(c, state.phase);
+    step = renderObservation(c, state.phase, exerciseHtml);
   } else {
     step = `<section class="seq-panel" id="sequence-result" aria-labelledby="sequence-heading">
       <div class="phase-heading"><h2 id="sequence-heading">${PHASES[state.phase]}</h2><code>${esc(C_CODE[state.phase])}</code></div>
@@ -328,5 +478,6 @@ export function renderSequence() {
     ${stepNavigation(titles, state.phase)}
     ${step}
     </section>`;
+  if (regions.length) attachRssExercise(sample, regions);
 }
-export { parseMmapCall, groupBlocksIntoRegions };
+export { parseMmapCall, groupBlocksIntoRegions, sharedPointerRegion };

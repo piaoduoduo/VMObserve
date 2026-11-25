@@ -5,6 +5,7 @@ from .smaps import parse_mappings, FIELDS
 from .sequence import trace_actions, attach_mappings, describe_allocations, allocation_overview
 
 SUITES = ("link-dynamic", "link-static", "sequence", "demand512", "stack")
+DEMAND_PHASES = ("before_alloc", "allocated", "write_quarter", "write_half", "write_all", "freed")
 TITLES = {"link-dynamic": "3.1 动态链接与装入", "link-static": "3.1 静态链接对照",
           "sequence": "3.2 同进程连续 malloc", "demand512": "3.3 原尺寸按需调页", "stack": "3.3 栈增长与溢出"}
 
@@ -18,6 +19,15 @@ def plan(repeats):
             cases.append(dict(id=f"stack-{mode}-{limit}-{repeat}", suite="stack",
                               parameters={"repeat": repeat, "mode": mode, "limit_kib": limit}, arguments=[mode, str(limit)]))
     return cases
+
+
+def demand_thp_plan(repeats):
+    return [
+        dict(id=f"demand512-thp-{policy}-{repeat}", suite="demand512",
+             parameters={"repeat": repeat, "thp_advice": policy}, arguments=[policy])
+        for repeat in range(1, repeats + 1)
+        for policy in (("off", "on") if repeat % 2 else ("on", "off"))
+    ]
 
 
 def prepare(case, folder, binary, execute, timeout):
@@ -54,6 +64,7 @@ def containing(mappings, address):
 
 def parse(records, raw, suite, parameters, folder):
     condition = exactly(records, "condition")
+    controlled = suite == "demand512" and "thp_advice" in parameters
     source = [r for r in records if r["kind"] == "sample"]
     blocks = re.findall(r"BEGIN phase=(\S+) pid=(\d+)\n(.*?)\nEND(?:\n|$)", raw, re.S)
     if not source or len(source) != len(blocks):
@@ -65,13 +76,15 @@ def parse(records, raw, suite, parameters, folder):
         for key in ("count", "action_minor", "action_major", "total_minor", "total_major"):
             if type(row[key]) is not int or row[key] < 0:
                 raise ValueError("invalid sample count " + key)
-        maps = parse_mappings(body)
+        maps = parse_mappings(body, include_flags=controlled)
         mappings.append(maps)
         mapping = containing(maps, row["address"])
         sample = {**row, "role": "child" if suite == "stack" else "parent",
                   "scope": "address_containing_vma", "mapping_present": mapping is not None,
                   "pathname": mapping["pathname"] if mapping else "", "mapping_header": mapping["header"] if mapping else ""}
         sample.update({key: mapping[key] if mapping else 0 for key in FIELDS})
+        if controlled and mapping:
+            sample["vm_flags"] = mapping["vm_flags"]
         sample["process_rss_kib"] = sum(m["rss_kib"] for m in maps)
         sample["process_size_kib"] = sum(m["size_kib"] for m in maps)
         samples.append(sample)
@@ -129,7 +142,7 @@ def parse(records, raw, suite, parameters, folder):
         result["actions"] = trace_actions(trace)
         describe_allocations(result["actions"], samples, addresses, condition["sizes"])
     elif suite == "demand512":
-        if phases != ["before_alloc", "allocated", "write_quarter", "write_half", "write_all", "freed"]:
+        if tuple(phases) != DEMAND_PHASES:
             raise ValueError("demand phases missing")
         allocated_address = samples[1]["address"]
         if (condition["mode"] != "demand512" or int(allocated_address, 16) == 0
@@ -141,6 +154,27 @@ def parse(records, raw, suite, parameters, folder):
         if [s["count"] for s in samples] != [0,0,32768,65536,131072,0]:
             raise ValueError("original demand write counts changed")
         result["values"] = exactly(records, "values")
+        if controlled:
+            policy = exactly(records, "policy")
+            if (policy["policy"] not in ("on", "off") or policy["policy"] != parameters["thp_advice"]
+                    or policy["pid"] != condition["pid"] or policy["address"] != allocated_address
+                    or policy["bytes"] != condition["bytes"]
+                    or type(policy["result"]) is not int or policy["result"] not in (0, -1)
+                    or type(policy["errno"]) is not int
+                    or (policy["errno"] != 0 if policy["result"] == 0 else policy["errno"] <= 0)):
+                raise ValueError("THP advice record does not match the planned allocation")
+            address = int(allocated_address, 16)
+            if address % (2 * 1024 * 1024):
+                raise ValueError("controlled mapping is not aligned to 2 MiB")
+            for maps in mappings[1:5]:
+                mapping = containing(maps, allocated_address)
+                if (int(mapping["start"], 16) != address
+                        or int(mapping["end"], 16) != address + condition["bytes"]
+                        or mapping["permissions"] != "rw-p" or mapping["pathname"]):
+                    raise ValueError("controlled snapshot does not describe the exact private anonymous allocation")
+            result["policy"] = policy
+        elif any(row["kind"] == "policy" for row in records):
+            raise ValueError("unplanned THP advice in original demand run")
     elif suite == "stack":
         if condition["mode"] != parameters["mode"] or condition["limit_kib"] != parameters["limit_kib"]:
             raise ValueError("stack conditions differ from plan")
@@ -177,6 +211,15 @@ def validate(suite, data):
         check("original_values", data["values"], {"kind":"values","checked":131072,"mismatches":0})
         check("resident_growth", s[1]["rss_kib"] < s[2]["rss_kib"] <= s[3]["rss_kib"] <= s[4]["rss_kib"], True)
         check("full_residency", s[4]["rss_kib"] >= 512*1024, True)
+        if "policy" in data:
+            policy = data["policy"]
+            wanted, opposite = ("hg", "nh") if policy["policy"] == "on" else ("nh", "hg")
+            check("thp_advice_result", policy["result"], 0)
+            check("thp_vma_flags", all(wanted in row["vm_flags"] and opposite not in row["vm_flags"]
+                                       for row in s[1:5]), True)
+            check("controlled_region_released", s[-1]["mapping_present"], False)
+            if policy["policy"] == "off":
+                check("thp_disabled_observation", [row["huge_kib"] for row in s[1:5]], [0] * 4)
     elif suite == "stack":
         o=data["outcome"]; overflow=data["condition"]["mode"]=="overflow"
         check("termination_signal", o["signal"], 11 if overflow else 0)

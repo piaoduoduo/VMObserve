@@ -3,6 +3,7 @@ import argparse
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
+import platform
 from pathlib import Path
 import secrets
 import subprocess
@@ -12,17 +13,24 @@ from urllib.parse import parse_qs, urlparse
 
 from .common import execute, read_json, run_id, timestamp, write_json
 from .cow import COW_CHOICES
-from .export import csv_text, html_text
-from .replay import load_run, recorded_environment, safe_child
+from .export import csv_text, demand_pair_csv, html_text
+from .replay import load_run, read_evidence, recorded_environment, safe_child
 from .runner import WORK
 from .systems import LABS
 
 WEB = Path(__file__).parent / "web"
 
 
-WEB_PAGES = {"/": "index.html", "/lesson": "lesson.html", "/favicon.svg": "favicon.svg",
-             **{"/" + name: name for name in ("app.js", "ui.js", "course-views.js", "memory-views.js",
-                                                 "sequence-view.js", "evidence-view.js", "curriculum.js", "lesson.js", "style.css")}}
+WEB_PAGES = {
+    "/": "index.html", "/lesson": "lesson.html", "/favicon.svg": "favicon.svg",
+    **{"/" + name: name for name in (
+        "app.js", "ui.js", "course-views.js", "memory-views.js",
+        "sequence-view.js", "evidence-view.js", "curriculum.js",
+        "experiment-flow.js", "replay-notes.js", "notes-store.js",
+        "notes-library.js", "learning-report.js", "comparison-data.js", "replay-comparison.js",
+        "lesson.js", "style.css",
+    )},
+}
 
 
 def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all", mib=16):
@@ -47,6 +55,7 @@ def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all
         "student": ["--suite", "course", "--course-code", "student"],
         "cow": ["--suite", "baseline", "--cow-fraction", cow_fraction],
         "group3": ["--suite", "group3", "--timeout", "120"],
+        "demand512-thp": ["--suite", "demand512-thp", "--timeout", "120"],
         "group4": ["--suite", "group4", "--group4-task", group4_task, "--timeout", "120"],
         "lesson-thp": ["--suite", "thp", "--pattern", pattern, "--repeats", "1"],
         "policy": ["--suite", "thp", "--thp", "on", "--thp-process", "pair", "--pattern", pattern, "--repeats", "1"],
@@ -77,10 +86,15 @@ class Workbench:
                     items.append({"id": f"{group}--{path.parent.name}", "run_id": path.parent.name,
                                   "group": group, "kernel": env.get("kernel", "unknown"),
                                   "distribution": env.get("distribution", {}).get("PRETTY_NAME") or env.get("system") or "环境未核验",
+                                  "execution_context": env.get("execution_context"),
                                   "environment_issue": issue,
                                   "status": data.get("status", "completed" if data.get("completed") else "failed"),
                                   "count": len(data["cases"]) if "cases" in data else 18,
-                                  "case_keys": [[c["suite"], c.get("parameters", {}).get("lab")] for c in data.get("cases", [])],
+                                  "case_keys": [
+                                      [c["suite"], c.get("parameters", {}).get("lab"),
+                                       c.get("parameters", {}).get("thp_advice"), c.get("parameters", {}).get("repeat")]
+                                      for c in data.get("cases", [])
+                                  ],
                                   "suites": sorted({c["suite"] for c in data["cases"]}) if "cases" in data else ["baseline", "thp"],
                                   "data_origin": data.get("data_origin", "real_execution"),
                                   "legacy": "schema_version" not in data})
@@ -204,7 +218,7 @@ def handler_for(app):
                                       "reference": (WORK / "proj5-course/access_pattern.h").read_text(encoding="utf-8"),
                                       "worksheet": (WORK / "lessons/demand/WORKSHEET.md").read_text(encoding="utf-8")})
                 if path == "/api/config":
-                    return self.send({"token": app.token, "executor": app.executor})
+                    return self.send({"token": app.token, "executor": app.executor, "host_system": platform.system()})
                 if path == "/api/runs":
                     return self.send(app.catalog())
                 if path == "/api/job":
@@ -213,23 +227,20 @@ def handler_for(app):
                 if path not in ("/api/report", "/api/evidence", "/api/export"):
                     return self.send({"error": "not found"}, code=404)
                 directory = app.directory(query.get("id", [""])[0])
+                if path == "/api/evidence":
+                    payload = read_evidence(directory, query.get("case", [""])[0], query.get("kind", ["jsonl"])[0])
+                    return self.send(payload, "text/plain; charset=utf-8")
                 report = load_run(directory)
                 if path == "/api/report":
                     return self.send(report)
-                if path == "/api/evidence":
-                    case = next(c for c in report["cases"] if c["id"] == query.get("case", [""])[0])
-                    kind = query.get("kind", ["jsonl"])[0]
-                    if kind not in ("jsonl", "smaps", "syscalls", "file", "ldd", "readelf", "ldd_stderr", "kernel", "stderr"):
-                        raise ValueError("invalid evidence type")
-                    raw = safe_child(directory, case["artifacts"][kind])
-                    if raw.stat().st_size > 2 * 1024 * 1024:
-                        raise ValueError("evidence exceeds viewer size limit")
-                    return self.send(raw.read_bytes(), "text/plain; charset=utf-8")
                 format_ = query.get("format", ["html"])[0]
                 if format_ == "html":
                     return self.send(html_text(report), "text/html; charset=utf-8", attachment="memory-report.html")
                 if format_ == "csv":
                     return self.send("\ufeff" + csv_text(report), "text/csv; charset=utf-8", attachment="memory-samples.csv")
+                if format_ == "demand-pair-csv":
+                    paired = demand_pair_csv(report, query.get("case", [""])[0])
+                    return self.send("\ufeff" + paired, "text/csv; charset=utf-8", attachment="demand-pair-samples.csv")
                 if format_ == "json":
                     return self.send(report, attachment="memory-report.json")
                 raise ValueError("unsupported export format")
