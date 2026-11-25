@@ -1562,6 +1562,8 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
 .demand-exercise-fields select { width: 100%; padding: 7px; border: 1px solid var(--line-strong); border-radius: 8px; font: inherit; }
 .demand-exercise-feedback:not(:empty) { margin-top: 12px; padding: 12px; border-radius: 10px; background: var(--accent-soft); font-size: 14px; }
 .demand-exercise-feedback ol { margin: 6px 0 0; padding-left: 1.4em; }
+.demand-first-attempt { margin-top: 10px; }
+.demand-first-attempt p { margin: 0 0 6px; }
 .notes-report { margin: 14px 0; }
 
 

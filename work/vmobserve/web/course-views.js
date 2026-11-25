@@ -1,7 +1,7 @@
-import { $, state, labels, esc, kib, table, api, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
+import { $, state, labels, esc, kib, table, api, download, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
 
 import { newestReplay, demandEnvironmentReplays, demandProcessCandidates } from './curriculum.js';
-import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings } from './comparison-data.js';
+import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings, gradeDemandExercise } from './comparison-data.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -350,6 +350,8 @@ function demandRepeatReview(rows, activePhase, currentRepeat) {
   </details>`;
 }
 
+const demandPracticeSessions = new Map();
+
 function demandEvidencePractice(practice) {
   if (!practice) return '';
   return `<form class="demand-evidence-exercise">
@@ -367,24 +369,70 @@ function demandEvidencePractice(practice) {
     </div>
     <button class="primary" type="submit">核对三项判断</button>
     <div class="demand-exercise-feedback" role="status"></div>
+    <div class="demand-first-attempt" hidden>
+      <p class="detail-copy"></p>
+      <button type="button">下载本步首次作答</button>
+    </div>
   </form>`;
 }
 
-function bindDemandEvidencePractice(practice) {
+function bindDemandEvidencePractice(practice, selected, phase) {
   const form = $('.demand-evidence-exercise');
   if (!form || !practice) return;
+  const report = state.report;
+  const repeat = selected.parameters.repeat;
+  const key = JSON.stringify([report.original_report_sha256, repeat, phase]);
+  if (!demandPracticeSessions.has(key)) demandPracticeSessions.set(key, {});
+  const session = demandPracticeSessions.get(key);
+  const evidence = form.closest('.demand-evidence');
+  const first = form.querySelector('.demand-first-attempt');
+  const feedback = form.querySelector('.demand-exercise-feedback');
+  const markOpened = () => {
+    if (evidence.isConnected && evidence.open) session.openedAt ??= performance.now();
+  };
+  const showFirst = () => {
+    if (!session.firstAttempt) return;
+    const {score, total} = session.firstAttempt;
+    first.querySelector('p').textContent = `本页首次作答 ${score} / ${total} 项。重答后仍可下载首答，刷新会清除这份记录。`;
+    first.hidden = false;
+  };
+  evidence.addEventListener('toggle', markOpened);
+  markOpened();
+  showFirst();
+  first.querySelector('button').addEventListener('click', () => {
+    if (session.firstAttempt) download(session.firstAttempt, `vmobserve-3.3-${report.run_id}-r${repeat}-${phase}-first.json`);
+  });
   form.addEventListener('submit', event => {
     event.preventDefault();
-    const answers = new FormData(form);
-    const checks = [
-      [answers.get('rss') === String(practice.rss), `禁用组 RSS ${kib(practice.disabledRss)}，使用组 RSS ${kib(practice.enabledRss)}。依据是两组目标 VMA 的 Rss。`],
-      [answers.get('huge') === practice.huge, `使用组 AnonHugePages 为 ${kib(practice.enabledHuge)}。实际驻留量由这一项读出，madvise 的返回值用于判断建议调用是否成功。`],
-      [answers.get('scope') === 'process', '次缺页取自各组进程本步的 getrusage 增量，统计范围覆盖整个进程。']
-    ];
-    const correct = checks.filter(([passed]) => passed).length;
-    form.querySelector('.demand-exercise-feedback').innerHTML =
-      `<strong>答对 ${correct} / ${checks.length} 项</strong><ol>${checks.map(([passed, explanation]) =>
-        `<li>${passed ? '正确' : '再核对'} · ${esc(explanation)}</li>`).join('')}</ol>`;
+    const data = new FormData(form);
+    const answers = Object.fromEntries(['rss', 'huge', 'scope'].map(name => [name, data.get(name)]));
+    const result = gradeDemandExercise(practice, answers);
+    if (!result) return;
+    if (!session.firstAttempt) {
+      const cases = demandPair(report.cases, selected).map(item => ({
+        case_id: item.id, thp_advice: item.parameters.thp_advice, process_thp: item.parameters.process_thp ?? null,
+        artifacts: Object.fromEntries(['jsonl', 'smaps'].map(kind => {
+          const path = item.artifacts?.[kind] ?? null;
+          return [kind, {path, sha256: path ? report.artifacts?.[path] ?? null : null}];
+        }))
+      }));
+      session.firstAttempt = {
+        schema_version: 'vmobserve.demand-practice-attempt/v1', kind: 'learner_self_check',
+        submitted_at: new Date().toISOString(),
+        elapsed_ms_since_evidence_opened: session.openedAt == null ? null : Math.round(performance.now() - session.openedAt),
+        evidence: {run_id: report.run_id, report_sha256: report.original_report_sha256,
+          data_origin: report.data_origin, view_mode: report.view_mode, repeat, phase, cases},
+        ...result
+      };
+    }
+    const hints = {
+      rss: `禁用组 RSS ${kib(practice.disabledRss)}，使用组 RSS ${kib(practice.enabledRss)}。依据是两组目标 VMA 的 Rss。`,
+      huge: `使用组 AnonHugePages 为 ${kib(practice.enabledHuge)}。实际驻留量由这一项读出，madvise 的返回值用于判断建议调用是否成功。`,
+      scope: '次缺页取自各组进程本步的 getrusage 增量，统计范围覆盖整个进程。'
+    };
+    feedback.innerHTML = `<strong>本次答对 ${result.score} / ${result.total} 项</strong><ol>${result.responses.map(row =>
+      `<li>${row.correct ? '正确' : '再核对'} · ${esc(hints[row.question])}</li>`).join('')}</ol>`;
+    showFirst();
   });
 }
 
@@ -577,7 +625,7 @@ function renderMemorySteps(c, cases) {
   </section>`;
   if (demand) {
     bindDemandTimeline();
-    bindDemandEvidencePractice(practice);
+    bindDemandEvidencePractice(practice, c, sample?.phase);
     bindDemandProcessPanel(c.parameters, sample?.phase);
     loadOriginalPs($('#demand-original-ps'));
   }

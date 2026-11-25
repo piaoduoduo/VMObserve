@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
+import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, gradeDemandExercise, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 import {groupBlocksIntoRegions, sharedPointerRegion} from '../work/vmobserve/web/sequence-view.js';
 import {learningReport} from '../work/vmobserve/web/learning-report.js';
 import {demandPair} from '../work/vmobserve/web/ui.js';
@@ -238,4 +238,19 @@ test('process comparison candidates keep the other mode in the same recorded set
     run('04', 'allow', 1), run('05', 'disable', 2), run('06', 'allow', 2, {data_origin:'synthetic'})];
   assert.deepEqual(demandProcessCandidates(candidates, current.id, {process_thp: 'disable', repeat: 2})
     .map(candidate => candidate.id), ['02']);
+});
+
+test('demand practice grades three answers and rejects missing or invalid choices', () => {
+  const practice = {rss: 0, huge: 'zero'};
+  assert.equal(gradeDemandExercise(practice, {rss: '', huge: 'zero', scope: 'process'}), null);
+  assert.equal(gradeDemandExercise(practice, {rss: '0', huge: 'zero', scope: 'VMA'}), null);
+  const graded = gradeDemandExercise(practice, {rss: '0', huge: 'present', scope: 'process'});
+  assert.deepEqual(graded, {
+    responses: [
+      {question: 'rss', answer: '0', expected: '0', correct: true},
+      {question: 'huge', answer: 'present', expected: 'zero', correct: false},
+      {question: 'scope', answer: 'process', expected: 'process', correct: true}
+    ],
+    score: 2, total: 3
+  });
 });

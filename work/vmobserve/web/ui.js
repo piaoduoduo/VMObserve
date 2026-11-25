@@ -51,6 +51,14 @@ async function api(route, options) {
   return value;
 }
 
+export function download(value, filename, type = 'application/json') {
+  const data = type === 'text/html' ? value : JSON.stringify(value, null, 2);
+  const url = URL.createObjectURL(new Blob([data], {type}));
+  const link = document.createElement('a');
+  link.href = url; link.download = filename; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function replayOriginLabel(report) {
   if (report.data_origin === 'real_execution') return '历史实测回放';
   if (report.data_origin === 'synthetic') return '模拟回放';

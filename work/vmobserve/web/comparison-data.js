@@ -64,6 +64,19 @@ export function demandExerciseReadings(row) {
   };
 }
 
+export function gradeDemandExercise(practice, answers) {
+  const questions = [
+    ['rss', ['-1', '0', '1'], String(practice.rss)],
+    ['huge', ['present', 'zero'], practice.huge],
+    ['scope', ['mapping', 'process'], 'process']
+  ];
+  if (!questions.every(([key, options]) => options.includes(answers[key]))) return null;
+  const responses = questions.map(([key, , expected]) => ({
+    question: key, answer: answers[key], expected, correct: answers[key] === expected
+  }));
+  return {responses, score: responses.filter(row => row.correct).length, total: responses.length};
+}
+
 export function demandRepeatMetric(rows, metric) {
   const values = rows.map(row => demandMetricValues(row, metric));
   const deltas = values.filter(([off, on]) => off !== null && on !== null)
