@@ -19,6 +19,10 @@ function rowsFor(caseRecord) {
     ['匿名大页（KiB）', demandMeasurement(sample, 'huge_kib')],
     ['进程本步次缺页', demandMeasurement(sample, 'action_minor')],
     ['大页建议及返回值', caseRecord.policy && caseRecord.policy.policy + ' / ' + caseRecord.policy.result],
+    ...(caseRecord.condition?.process_thp ? [
+      ['进程级大页设置', caseRecord.condition.process_thp],
+      ['进程级禁用读回', caseRecord.condition.process_thp_disabled]
+    ] : []),
     ['VmFlags', sample.vm_flags?.join(' ')]
   ].map(([name, value]) => '<dt>' + esc(name) + '</dt><dd>' + esc(value ?? '—') + '</dd>').join('') + '</dl>';
 }

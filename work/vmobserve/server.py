@@ -48,6 +48,8 @@ def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all
         "cow": ["--suite", "baseline", "--cow-fraction", cow_fraction],
         "group3": ["--suite", "group3", "--timeout", "120"],
         "demand512-thp": ["--suite", "demand512-thp", "--timeout", "120"],
+        "demand512-thp-allow": ["--suite", "demand512-thp", "--thp-process", "allow", "--timeout", "120"],
+        "demand512-thp-disable": ["--suite", "demand512-thp", "--thp-process", "disable", "--timeout", "120"],
         "group4": ["--suite", "group4", "--group4-task", group4_task, "--timeout", "120"],
         "policy": ["--suite", "thp", "--thp", "on", "--thp-process", "pair", "--pattern", pattern],
         "recheck": ["--pattern", pattern],
@@ -83,7 +85,8 @@ class Workbench:
                                   "count": len(data["cases"]) if "cases" in data else 18,
                                   "case_keys": [
                                       [c["suite"], c.get("parameters", {}).get("lab"),
-                                       c.get("parameters", {}).get("thp_advice"), c.get("parameters", {}).get("repeat")]
+                                       c.get("parameters", {}).get("thp_advice"), c.get("parameters", {}).get("repeat"),
+                                     c.get("parameters", {}).get("process_thp")]
                                       for c in data.get("cases", [])
                                   ],
                                   "suites": sorted({c["suite"] for c in data["cases"]}) if "cases" in data else ["baseline", "thp"],

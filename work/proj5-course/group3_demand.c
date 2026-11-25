@@ -2,19 +2,32 @@
 #include "group3_snapshot.h"
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/prctl.h>
 /* Preserves the supplied lab's 512 MiB, 4096-byte stride and A/B/C writes.
  * Interactive pauses are replaced by complete snapshots at the same stages. */
 int main(int argc, char **argv) {
-    const char *policy = argc == 2 ? argv[1] : NULL;
-    if (argc > 2 || (policy && strcmp(policy, "off") && strcmp(policy, "on"))) {
-        fputs("Usage: demand512 [off|on]\n", stderr);
+    const char *policy = argc >= 2 ? argv[1] : NULL;
+    const char *process_mode = argc == 3 ? argv[2] : NULL;
+    if (argc > 3 || (policy && strcmp(policy, "off") && strcmp(policy, "on"))
+            || (process_mode && strcmp(process_mode, "allow") && strcmp(process_mode, "disable"))) {
+        fputs("Usage: demand512 [off|on [allow|disable]]\n", stderr);
         return 2;
     }
     setup();
+    int process_disabled = -1;
+    if (process_mode) {
+        long disabled = !strcmp(process_mode, "disable") ? 1L : 0L;
+        if (prctl(PR_SET_THP_DISABLE, disabled, 0L, 0L, 0L)) fail("PR_SET_THP_DISABLE");
+        process_disabled = prctl(PR_GET_THP_DISABLE, 0L, 0L, 0L, 0L);
+        if (process_disabled < 0) fail("PR_GET_THP_DISABLE");
+    }
     const size_t bytes=512UL*1024*1024, stride=4096, positions=bytes/stride;
     printf("{\"kind\":\"condition\",\"mode\":\"demand512\",\"pid\":%ld,"
-           "\"bytes\":%zu,\"stride\":%zu,\"page_bytes\":%ld}\n",
+           "\"bytes\":%zu,\"stride\":%zu,\"page_bytes\":%ld",
            (long)getpid(),bytes,stride,sysconf(_SC_PAGESIZE));
+    if (process_mode)
+        printf(",\"process_thp\":\"%s\",\"process_thp_disabled\":%d", process_mode, process_disabled);
+    puts("}");
     snapshot("before_alloc",0,0,usage());
     struct rusage before=usage();
     volatile unsigned char *p;

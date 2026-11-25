@@ -36,8 +36,11 @@ def csv_text(report):
     writer.writeheader()
     for c in report["cases"]:
         cow = (c.get("data") or {}).get("cow", {})
-        condition = (c.get("data") or {}).get("condition", {})
+        data = c.get("data") or {}
+        condition = data.get("condition", {})
         extra = {k: condition.get(k) for k in ("course_code", "process_thp", "process_thp_disabled", "status_thp_enabled", "madvise_result")}
+        if c["suite"] == "demand512" and "policy" in data:
+            extra["madvise_result"] = data["policy"]["result"]
         # A failed case without samples still needs a status row, not silent omission.
         for s in (c.get("data") or {}).get("samples") or [{}]:
             if c["suite"] == "demand512":
@@ -74,6 +77,8 @@ def demand_pair_csv(report, case_id):
         cases[advice] = case
     if len(cases) != 2:
         raise ValueError("The selected repeat needs both THP policies")
+    if cases["off"]["parameters"].get("process_thp") != cases["on"]["parameters"].get("process_thp"):
+        raise ValueError("Paired CSV requires the same process THP setting for both policies")
 
     samples = {policy: {s["phase"]: s for s in case["data"]["samples"]} for policy, case in cases.items()}
     environment = report["environment"]
@@ -84,7 +89,8 @@ def demand_pair_csv(report, case_id):
     writer = csv.writer(out)
     writer.writerow(["run_id", "report_sha256", "repeat", "distribution", "kernel", "execution_context", "page_bytes",
                      "system_thp", "phase", "thp_advice", "case_id", "written_positions", "mapping_present", "rss_kib",
-                     "anon_huge_kib", "process_minor_delta", "smaps_path", "smaps_sha256"])
+                     "anon_huge_kib", "process_minor_delta", "smaps_path", "smaps_sha256",
+                     "process_thp", "process_thp_disabled"])
     for phase in DEMAND_PHASES:
         for policy in ("off", "on"):
             case = cases[policy]
@@ -93,7 +99,8 @@ def demand_pair_csv(report, case_id):
             smaps = case["artifacts"]["smaps"]
             row = [*common, phase, policy, case["id"], sample["written_positions"],
                    int(present), sample["rss_kib"], sample["huge_kib"],
-                   sample["action_minor"], smaps, report["artifacts"][smaps]]
+                   sample["action_minor"], smaps, report["artifacts"][smaps],
+                   case["data"]["condition"].get("process_thp"), case["data"]["condition"].get("process_thp_disabled")]
             # Quoting a CSV field alone does not neutralize a spreadsheet formula.
             writer.writerow(["'" + cell if isinstance(cell, str)
                              and (cell.lstrip()[:1] in ("=", "+", "-", "@") or cell[:1] in ("\t", "\r", "\n"))
@@ -135,9 +142,11 @@ def html_text(report):
     policy_rows = []
     task_rows = []
     for case in report["cases"]:
-        c = (case.get("data") or {}).get("condition", {})
+        data = case.get("data") or {}
+        c = data.get("condition", {})
         if "process_thp" in c:
-            cells = [case["id"], c["process_thp"], c["process_thp_disabled"], c["status_thp_enabled"], c["madvise_result"]]
+            cells = [case["id"], c["process_thp"], c["process_thp_disabled"], c.get("status_thp_enabled"),
+                     c.get("madvise_result", data.get("policy", {}).get("result"))]
             policy_rows.append("<tr>" + "".join(f"<td>{esc(v)}</td>" for v in cells) + "</tr>")
         if case["suite"] == "course":
             task_rows.append(f"<li>{esc(case['id'])} · {esc(c.get('course_code', 'legacy_reference'))} · {esc(case['validation']['status'])}<pre>{esc(json.dumps(case['validation']['checks'],ensure_ascii=False,indent=2))}</pre></li>")

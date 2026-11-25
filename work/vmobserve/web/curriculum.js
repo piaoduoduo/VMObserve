@@ -35,7 +35,7 @@ const byId = Object.fromEntries(labs.map(row => [row[0], row]));
 const replayTasks = {
   '3.1': [['打开 7 类程序地址分布图', 'layout', 'layout'], ['动态链接映射', 'group3', 'link-dynamic'], ['静态链接映射', 'group3', 'link-static']],
   '3.2': [['回放三次申请', 'sequence', 'sequence']],
-  '3.3': [['512 MiB 分批触碰', 'group3', 'demand512'], ['512 MiB 透明大页实测对照', 'group3', 'demand512-thp'], ['栈增长与溢出', 'group3', 'stack'], ['按需分配逐步对照', 'course', 'course']],
+  '3.3': [['512 MiB 分批触碰', 'group3', 'demand512'], ['512 MiB 透明大页实测对照', 'group3', 'demand512-thp'], ['大页建议成功但未驻留的实测', 'group3', 'demand512-thp-disable'], ['栈增长与溢出', 'group3', 'stack'], ['按需分配逐步对照', 'course', 'course']],
   '4.1': [['打开父子进程事件回放', 'group4', 'g4-fork']],
   '4.2': [['打开线程与共享变量回放', 'group4', 'g4-pthread']],
   '4.3': [['打开用户级线程调度回放', 'group4', 'g4-uthread']],
@@ -112,11 +112,12 @@ export function currentLab(topic, report, index) {
 }
 
 export function newestReplay(id, topic, suite, preferredId) {
-  const matches = ([key, lab, policy]) => suite === 'demand512-thp'
-    ? key === 'demand512' && Boolean(policy)
+  const process = {'demand512-thp': null, 'demand512-thp-disable': 'disable', 'demand512-thp-allow': 'allow'}[suite];
+  const matches = ([key, lab, policy, , mode]) => process !== undefined
+    ? key === 'demand512' && Boolean(policy) && (mode ?? null) === process
     : key === suite && (topic !== 'systems' || lab === id) && (suite !== 'demand512' || !policy);
   const runs = (state.runs || []).filter(r => r.data_origin === 'real_execution' && !r.environment_issue &&
-    (r.status === 'completed' || (suite === 'demand512-thp' && r.status === 'completed_with_deviations')) &&
+    (r.status === 'completed' || (process !== undefined && r.status === 'completed_with_deviations')) &&
     r.case_keys.some(matches));
   runs.sort((a, b) => b.run_id.localeCompare(a.run_id) || Number(a.group === 'example') - Number(b.group === 'example'));
   const run = runs.find(r => r.id === preferredId) || runs[0];
@@ -135,8 +136,9 @@ export function demandEnvironmentReplays(runs, currentId, parameters, step) {
   const selected = new Map();
   const findPair = run => {
     const cases = viewCases(run.case_keys || [], 'group3', key => key[0]);
-    const indexOf = advice => cases.findIndex(([suite, , policy, repeat]) =>
-      suite === 'demand512' && policy === advice && repeat === parameters.repeat);
+    const indexOf = advice => cases.findIndex(([suite, , policy, repeat, process]) =>
+      suite === 'demand512' && policy === advice && repeat === parameters.repeat &&
+      (process ?? null) === (parameters.process_thp ?? null));
     const index = indexOf(parameters.thp_advice);
     return index >= 0 && indexOf(parameters.thp_advice === 'on' ? 'off' : 'on') >= 0 ? index : -1;
   };

@@ -303,9 +303,11 @@ function render() {
   document.title = (lab ? '实验 ' + lab : topics[state.tab]) + ' · 重点任务可视化实验台';
   const selected = state.tab === 'group3' ? viewCases(r.cases, state.tab, item => item.suite)[state.selected] : null;
   const pairedDemand = selected?.suite === 'demand512' && Boolean(selected.parameters.thp_advice);
-  const singleMode = pairedDemand ? 'demand512-thp' : {sequence: 'sequence', group3: 'group3', course: 'course'}[state.tab];
+  const process = pairedDemand ? selected.parameters.process_thp : null;
+  const singleMode = pairedDemand ? (process ? 'demand512-thp-' + process : 'demand512-thp')
+    : {sequence: 'sequence', group3: 'group3', course: 'course'}[state.tab];
   $('#run').dataset.mode = singleMode || 'complete';
-  $('#run').textContent = pairedDemand ? '重新采集三轮大页对照'
+  $('#run').textContent = pairedDemand ? (process === 'disable' ? '重新采集进程禁用对照' : '重新采集三轮大页对照')
     : singleMode === 'group3' ? '重新采集第 3 组' : singleMode ? '重新采集本项实验' : '采集整套实验';
   savePosition();
   renderReplayComparison();
@@ -633,7 +635,8 @@ try {
     $('#content').textContent = '正在读取实验记录…';
     [state.config, state.runs] = await Promise.all([api('/api/config'), api('/api/runs')]);
     const suite = new URLSearchParams(location.search).get('replay');
-    const topic = ({ sequence: 'sequence', demand512: 'group3', 'demand512-thp': 'group3', stack: 'group3' })[suite];
+    const topic = ({sequence: 'sequence', demand512: 'group3', 'demand512-thp': 'group3',
+      'demand512-thp-allow': 'group3', 'demand512-thp-disable': 'group3', stack: 'group3'})[suite];
     const entry = topic && newestReplay(lab, topic, suite);
     if (entry) {
       window.history.replaceState(null, '', entry.href);

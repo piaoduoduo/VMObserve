@@ -44,6 +44,12 @@ class Group3Tests(unittest.TestCase):
                          [(1, "off"), (1, "on"), (2, "on"), (2, "off"), (3, "off"), (3, "on")])
         self.assertTrue(all(case["suite"] == "demand512" for case in cases))
 
+    def test_process_demand_mode_persists_control_condition(self):
+        args = parser().parse_args(experiment_args("demand512-thp-disable"))
+        cases = plan_cases(args)
+        self.assertTrue(all(case["parameters"]["process_thp"] == "disable" for case in cases))
+        self.assertEqual(cases[1]["arguments"], ["on", "disable"])
+
     def test_demand_thp_checks_advice_separately_from_huge_page_observation(self):
         data = {
             "samples": [{"rss_kib": n, "huge_kib": 0, "vm_flags": ["hg"],
@@ -53,6 +59,11 @@ class Group3Tests(unittest.TestCase):
             "policy": {"policy": "on", "result": 0},
         }
         self.assertEqual(validate("demand512", data)["status"], "passed")
+        blocked = copy.deepcopy(data)
+        blocked["condition"] = {"process_thp": "disable", "process_thp_disabled": 1}
+        self.assertEqual(validate("demand512", blocked)["status"], "passed")
+        blocked["condition"]["process_thp_disabled"] = 0
+        self.assertEqual(validate("demand512", blocked)["status"], "failed")
         for field, value in (("result", -1), ("policy", "off")):
             failed = copy.deepcopy(data)
             failed["policy"][field] = value

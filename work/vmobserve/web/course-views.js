@@ -325,6 +325,7 @@ function demandRepeatReview(rows, activePhase, currentRepeat) {
   const issues = {
     pair: '两组未唯一配对',
     validation: '案例未完成或未通过校验',
+    condition: '两组进程级大页设置不同',
     phase: '阶段或写入量不一致'
   };
   const metrics = demandChartMetrics.map(([key, label, format]) => ({
@@ -409,16 +410,24 @@ function demandPolicyPanel(c, sample, rounds, practice) {
   const policyName = item => item.parameters.thp_advice === 'off' ? '禁用大页建议' : '使用大页建议';
   const matched = demandPairTimeline(pair).find(row => row.phase === phase);
   const observed = matched?.enabled.huge_kib;
+  const process = c.parameters.process_thp;
+  const blocked = pair[1]?.data?.condition?.process_thp_disabled === 1 && pair[1]?.data?.policy?.result === 0;
   const interpretation = !pair.length ? '本轮缺组或存在重复策略案例，当前仅展示所选案例。'
     : !matched ? '本轮缺少通过校验的配对证据。可查看已有原文和各组状态。'
     : !matched.disabled.mapping_present || !matched.enabled.mapping_present ? '本阶段至少一组缺少目标映射，驻留量无法配对。'
     : observed > 0 ? '使用大页建议组本步采到了匿名大页。对照缺页增量时，注意它是进程级计数。'
+    : blocked ? '映射建议调用成功，进程级禁用读回为 1。本步的 AnonHugePages 实测为 0 KiB。'
     : '使用大页建议组在本步的匿名大页驻留为 0 KiB。可继续查看后续写入阶段。';
+  const counterpart = newestReplay('3.3', 'group3', process === 'disable' ? 'demand512-thp-allow' : 'demand512-thp-disable');
+  const processLink = counterpart ? `<p class="detail-copy"><a href="${esc(counterpart.href)}&amp;step=2">${process === 'disable'
+    ? '查看解除进程级禁用时的四分之一写入' : '查看进程级禁用时的四分之一写入反例'}</a></p>` : '';
   const baseline = newestReplay('3.3', 'group3', 'demand512');
   return `<section class="seq-panel demand-policy" aria-labelledby="policy-title">
     <h2 id="policy-title">512 MiB 透明大页对照 · 第 ${esc(repeat)} 轮</h2>
     <p>两个独立进程各用一个带保护页的匿名映射。按相同的 4096 字节步长分批写入，仅切换映射的大页建议。</p>
     ${demandEnvironmentNav(c.parameters)}
+    ${process ? `<p class="detail-copy">本轮两组进程条件均为${process === 'disable' ? '「禁用透明大页」' : '「解除透明大页禁用」'}。</p>` : ''}
+    ${processLink}
     <div class="demand-prediction"></div>
     <details class="secondary-fold demand-evidence"><summary>${practice ? '读原文，核对三项判断' : pair.length ? '查看本步两组原文' : '查看当前案例原文'}</summary>
     ${available.map((item, i) => `<div class="raw-links"><strong>${policyName(item)}</strong>
@@ -427,10 +436,11 @@ function demandPolicyPanel(c, sample, rounds, practice) {
     ${demandEvidencePractice(practice)}
     </details>
     <details class="secondary-fold demand-result"><summary>${pair.length ? '查看本步两组采样' : '查看当前案例采样'}</summary>
-    ${table(['组别', 'madvise', 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], available.map((item, i) => {
+    ${table(['组别', 'madvise', ...(process ? ['进程禁用读回'] : []), 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], available.map((item, i) => {
       const row = readings[i];
       const policy = item?.data?.policy;
       return [policyName(item), !policy ? '未采集' : policy.result === 0 ? '成功' : '失败 · errno ' + policy.errno,
+        ...(process ? [item.data?.condition?.process_thp_disabled] : []),
         row?.vm_flags?.filter(flag => flag === 'hg' || flag === 'nh').join(' ') || '—',
         demandMeasurement(row, 'count'), kib(demandMeasurement(row, 'rss_kib')), kib(demandMeasurement(row, 'huge_kib')),
         demandMeasurement(row, 'action_minor'), item.validation?.status === 'passed' ? '通过' : '待核对'];

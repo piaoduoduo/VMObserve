@@ -94,6 +94,7 @@ test('demand pair timeline joins by phase and rejects incomplete or mismatched m
   assert.deepEqual(demandPairTimeline([off]), []);
   assert.deepEqual(demandPairTimeline([off, {...on, validation: {status: 'failed'}}]), []);
   assert.deepEqual(demandPairTimeline([off, {...on, status: 'failed'}]), []);
+  assert.deepEqual(demandPairTimeline([off, {...on, parameters: {process_thp: 'disable'}}]), []);
   on.data.samples[0].count = 1;
   assert.deepEqual(demandPairTimeline([off, on]), []);
 });

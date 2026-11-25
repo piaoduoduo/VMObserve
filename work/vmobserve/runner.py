@@ -65,7 +65,7 @@ def source_files():
 
 def plan_cases(args):
     if args.suite == "demand512-thp":
-        return group3.demand_thp_plan(args.repeats)
+        return group3.demand_thp_plan(args.repeats, args.thp_process)
     if args.suite == "systems":
         return systems.plan(args.repeats, args.lab)
     cases = group3.plan(args.repeats) if args.suite == "group3" else group4.plan(args.repeats, args.group4_task) if args.suite == "group4" else []
@@ -281,5 +281,7 @@ def main(argv=None):
     args = p.parse_args(argv)
     if not 0 < args.timeout <= 120:
         p.error("timeout must be > 0 and <= 120 seconds")
+    if args.suite == "demand512-thp" and args.thp_process == "pair":
+        p.error("use --thp-process allow or disable for separate demand512-thp records")
     code, _ = run(args)
     return code

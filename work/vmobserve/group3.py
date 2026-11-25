@@ -21,10 +21,12 @@ def plan(repeats):
     return cases
 
 
-def demand_thp_plan(repeats):
+def demand_thp_plan(repeats, process="inherit"):
+    extra = {} if process == "inherit" else {"process_thp": process}
     return [
         dict(id=f"demand512-thp-{policy}-{repeat}", suite="demand512",
-             parameters={"repeat": repeat, "thp_advice": policy}, arguments=[policy])
+             parameters={"repeat": repeat, "thp_advice": policy, **extra},
+             arguments=[policy, *extra.values()])
         for repeat in range(1, repeats + 1)
         for policy in (("off", "on") if repeat % 2 else ("on", "off"))
     ]
@@ -144,6 +146,15 @@ def parse(records, raw, suite, parameters, folder):
         if [s["count"] for s in samples] != [0,0,32768,65536,131072,0]:
             raise ValueError("original demand write counts changed")
         result["values"] = exactly(records, "values")
+        process = parameters.get("process_thp")
+        recorded_process = condition.get("process_thp")
+        disabled = condition.get("process_thp_disabled")
+        if process is not None:
+            if (not controlled or process not in ("allow", "disable") or recorded_process != process
+                    or type(disabled) is not int or disabled not in (0, 1)):
+                raise ValueError("process THP setting does not match the demand experiment plan")
+        elif recorded_process is not None or disabled is not None:
+            raise ValueError("unexpected process THP setting in demand snapshot")
         if controlled:
             policy = exactly(records, "policy")
             if (policy["policy"] not in ("on", "off") or policy["policy"] != parameters["thp_advice"]
@@ -208,7 +219,10 @@ def validate(suite, data):
             check("thp_vma_flags", all(wanted in row["vm_flags"] and opposite not in row["vm_flags"]
                                        for row in s[1:5]), True)
             check("controlled_region_released", s[-1]["mapping_present"], False)
-            if policy["policy"] == "off":
+            process = data["condition"].get("process_thp") if "condition" in data else None
+            if process:
+                check("thp_process_readback", data["condition"]["process_thp_disabled"], int(process == "disable"))
+            if policy["policy"] == "off" or process == "disable":
                 check("thp_disabled_observation", [row["huge_kib"] for row in s[1:5]], [0] * 4)
     elif suite == "stack":
         o=data["outcome"]; overflow=data["condition"]["mode"]=="overflow"

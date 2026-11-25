@@ -1,5 +1,6 @@
 export function demandPairTimeline(pair) {
   if (pair.length !== 2 || pair.some(item => item?.status !== 'completed' || item.validation?.status !== 'passed')) return [];
+  if (pair[0].parameters?.process_thp !== pair[1].parameters?.process_thp) return [];
   const [off, on] = pair.map(caseItem => caseItem.data?.samples || []);
   if (!off.length || off.length !== on.length) return [];
   const byPhase = new Map(on.map(sample => [sample.phase, sample]));
@@ -44,6 +45,7 @@ export function demandRepeatReadings(report, phase) {
     if (pair.some(item => item.status !== 'completed' || item.validation?.status !== 'passed')) {
       return {repeat, issue: 'validation'};
     }
+    if (off[0].parameters.process_thp !== on[0].parameters.process_thp) return {repeat, issue: 'condition'};
     const reading = demandPairTimeline(pair).find(row => row.phase === phase);
     return reading ? {repeat, ...reading} : {repeat, issue: 'phase'};
   });

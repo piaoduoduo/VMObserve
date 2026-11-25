@@ -36,7 +36,7 @@ python work/launch.py
 python -B work/verify_submission.py
 ```
 
-这条命令只读核对随仓库交付的三份历史实测记录。它用临时本地端口复核报告和证据哈希，从原始 `smaps` 重算 3.2 的去重 RSS，并把 3.3 两环境各三轮的配对 CSV 与通用 CSV、关键阶段的 JSONL 和 `smaps` 核对。通过后输出 JSON，失败时给出失败位置并返回非零退出码。只需要 Python 3.10 及以上，无需安装编译器或启动 Linux 虚拟机。复验现有样例与重新采集的区别见[参赛基线](docs/FOCUS_BASELINE.md)。
+这条命令只读核对随仓库交付的五份历史实测记录，包括进程级禁用下建议成功、写入后无匿名大页的反例。它用临时本地端口复核报告和证据哈希，从原始 `smaps` 重算 3.2 的去重 RSS，并核对 3.3 两环境的建议对照、WSL2 的进程级对照及其 CSV、JSONL 和 `smaps`。通过后输出 JSON，失败时给出失败位置并返回非零退出码。只需要 Python 3.10 及以上，无需安装编译器或启动 Linux 虚拟机。复验现有样例与重新采集的区别见[参赛基线](docs/FOCUS_BASELINE.md)。
 
 ## 运行自己的实验
 

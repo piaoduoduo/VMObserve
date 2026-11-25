@@ -20,10 +20,13 @@ from vmobserve.smaps import parse_mappings
 EXAMPLES = Path(__file__).resolve().parents[1] / "examples"
 BASELINE = "20261118T013159.221864Z"
 PAIRED = ("20261120T120355.446473Z", "20261120T113225.827429Z")
+PROCESS_PAIRED = {"allow": "20261125T110630.221939Z", "disable": "20261125T110657.478995Z"}
 REPORT_HASHES = {
     BASELINE: "7471631ce89130bfcf0caef4bacb0ef6de291ce11405d17279d76ac922c880a8",
     PAIRED[0]: "53118ce1664fbc55b7884aac42794065de71a22cee14cd39649b319ec4f9fea0",
     PAIRED[1]: "9d7aa036cd908c7bbd110dc8f4755a594486e0a07d4073a2be3d43bcd5f9110e",
+    PROCESS_PAIRED["allow"]: "b36c7e88bfa7f64e7c7013c26f5a3c9961e476a36cb0d90f2a60b942bea5c525",
+    PROCESS_PAIRED["disable"]: "7ece2455ac84c941f6a8eb2ae8b1b4c4c3635060987c8e1570cb2737202123ff",
 }
 
 
@@ -76,7 +79,7 @@ def csv_rows(payload):
     return list(csv.DictReader(io.StringIO(payload.decode("utf-8-sig"))))
 
 
-def verify_demand(get, run):
+def verify_demand(get, run, process=None):
     report = report_for(get, run)
     general = {(r["case_id"], r["phase"]): r for r in csv_rows(get("export", run, format="csv"))}
     expected_order = [(phase, advice) for phase in DEMAND_PHASES for advice in ("off", "on")]
@@ -110,20 +113,42 @@ def verify_demand(get, run):
             require(hashlib.sha256(raw).hexdigest() == row["smaps_sha256"],
                     f"{label}: original smaps hash differs from CSV")
             events = [json.loads(line) for line in get("evidence", run, case=case_id, kind="jsonl").splitlines()]
+            policy = next(event for event in events if event["kind"] == "policy")
+            require(policy["result"] == 0, f"{label}: madvise did not succeed")
+            if process:
+                condition = next(event for event in events if event["kind"] == "condition")
+                disabled = int(process == "disable")
+                require(condition["process_thp"] == process and condition["process_thp_disabled"] == disabled
+                        and row["process_thp"] == process and row["process_thp_disabled"] == str(disabled),
+                        f"{label}: process THP readback differs from the expected setting")
             sample = next(event for event in events if event["kind"] == "sample" and event["phase"] == quarter)
             address = int(sample["address"], 16)
             vma = next(m for m in raw_mappings(raw, quarter) if int(m["start"], 16) <= address < int(m["end"], 16))
             observed = sample["count"], vma["rss_kib"], vma["huge_kib"], sample["action_minor"]
-            expected = (32768, 131072, 0, 32768) if advice == "off" else (32768, 131072, 131072, 64)
+            uses_huge_pages = advice == "on" and process != "disable"
+            expected = (32768, 131072, 131072, 64) if uses_huge_pages else (32768, 131072, 0, 32768)
             exported = tuple(int(row[key]) for key in
                              ("written_positions", "rss_kib", "anon_huge_kib", "process_minor_delta"))
             require(observed == expected == exported, f"{label}: raw observations and CSV disagree")
         count += len(rows)
     return {"run_id": run, "report_sha256": REPORT_HASHES[run],
             "execution_context": report["environment"]["execution_context"], "paired_rows_checked": count,
-            "phase_checked_against_raw": quarter,
+            "phase_checked_against_raw": quarter, "process_thp": process, "madvise_result": 0,
             "off": {"rss_kib": 131072, "anon_huge_kib": 0, "process_minor_delta": 32768},
-            "on": {"rss_kib": 131072, "anon_huge_kib": 131072, "process_minor_delta": 64}}
+            "on": {"rss_kib": 131072, "anon_huge_kib": 0 if process == "disable" else 131072,
+                   "process_minor_delta": 32768 if process == "disable" else 64}}
+
+
+def verify_process_controls(get):
+    allow, disable = [report_for(get, run) for run in PROCESS_PAIRED.values()]
+    for key in ("kernel", "machine", "execution_context", "page_bytes", "thp_enabled", "thp_defrag",
+                "thp_sizes", "pmd_size", "allocator_environment"):
+        require(allow["environment"].get(key) == disable["environment"].get(key),
+                f"process controls: environment differed for {key}")
+    for path in ("proj5-course/group3_demand.c", "proj5-course/group3_snapshot.h"):
+        require(allow["sources"][path] == disable["sources"][path],
+                f"process controls: probe source differed for {path}")
+    return [verify_demand(get, run, mode) for mode, run in PROCESS_PAIRED.items()]
 
 
 def main():
@@ -147,7 +172,8 @@ def main():
         try:
             result = {"status": "passed", "mode": "historical_replay", "host": platform.system(),
                       "python": platform.python_version(), "sequence": verify_sequence(get),
-                      "demand": [verify_demand(get, run) for run in PAIRED]}
+                      "demand": [verify_demand(get, run) for run in PAIRED],
+                      "process_demand": verify_process_controls(get)}
         except (OSError, ValueError, KeyError, StopIteration) as exc:
             print(f"Verification failed: {exc}", file=sys.stderr)
             return 1
