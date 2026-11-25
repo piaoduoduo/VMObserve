@@ -141,3 +141,45 @@ export function environmentDifferences(current, other) {
     .map(key => ({key, current: current?.[key] ?? null, other: other?.[key] ?? null}));
 }
 export function sameSources(current, other) { return canonical(current) === canonical(other); }
+
+const demandProbeFiles = ['proj5-course/group3_demand.c', 'proj5-course/group3_snapshot.h'];
+
+export function compareDemandProcesses(current, other, repeat, phase) {
+  const reports = [current, other];
+  if (reports.some(report => report?.data_origin !== 'real_execution' || report.integrity?.status !== 'verified')) {
+    return {issue: 'integrity'};
+  }
+  if (demandProbeFiles.some(path => !current.sources?.[path] || current.sources[path] !== other.sources?.[path])) {
+    return {issue: 'source'};
+  }
+  const left = current.environment, right = other.environment;
+  if (!left?.kernel || !left?.distribution?.PRETTY_NAME || environmentDifferences(left, right).length ||
+      left.distribution.PRETTY_NAME !== right?.distribution?.PRETTY_NAME ||
+      canonical(left.thp_sizes) !== canonical(right.thp_sizes)) {
+    return {issue: 'environment'};
+  }
+  const readings = reports.map((report, reportIndex) => {
+    const matches = report.cases.filter(item => item.suite === 'demand512' &&
+      item.parameters.repeat === repeat && item.parameters.thp_advice === 'on');
+    if (matches.length !== 1) return null;
+    const item = matches[0];
+    const mode = item.parameters.process_thp;
+    const condition = item.data?.condition;
+    const samples = item.data?.samples || [];
+    const sample = matchingSample(item, {phase, role: 'parent'});
+    if (item.status !== 'completed' || item.validation?.status !== 'passed' ||
+        !['allow', 'disable'].includes(mode) || condition?.process_thp !== mode ||
+        condition.process_thp_disabled !== Number(mode === 'disable') ||
+        !Number.isSafeInteger(condition.bytes) || condition.bytes <= 0 ||
+        !Number.isSafeInteger(condition.stride) || condition.stride <= 0 ||
+        item.data.policy?.result !== 0 || !sample) return null;
+    return {mode, item, condition, sample, step: samples.indexOf(sample), reportIndex};
+  });
+  const allowed = readings.find(row => row?.mode === 'allow');
+  const disabled = readings.find(row => row?.mode === 'disable');
+  if (!allowed || !disabled || allowed.condition.bytes !== disabled.condition.bytes ||
+      allowed.condition.stride !== disabled.condition.stride || allowed.sample.count !== disabled.sample.count) {
+    return {issue: 'measurement'};
+  }
+  return {allowed, disabled};
+}

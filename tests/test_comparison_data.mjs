@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
+import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, compareDemandProcesses, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 import {groupBlocksIntoRegions, sharedPointerRegion} from '../work/vmobserve/web/sequence-view.js';
 import {learningReport} from '../work/vmobserve/web/learning-report.js';
 import {demandPair} from '../work/vmobserve/web/ui.js';
@@ -61,7 +61,7 @@ test('source manifests compare by file and hash instead of JSON property order',
   assert.equal(sameSources({a:'1'},{a:'2'}), false);
 });
 
-import {demandEnvironmentReplays} from '../work/vmobserve/web/curriculum.js';
+import {demandEnvironmentReplays, demandProcessCandidates} from '../work/vmobserve/web/curriculum.js';
 
 test('demand environment links preserve policy, repeat and phase across distinct case ordering', () => {
   const run = (id, distribution, case_keys) => ({
@@ -227,4 +227,46 @@ test('evidence exercise follows the phase readings and requires a measurable pai
   assert.equal(demandExerciseReadings({disabled, enabled: reading(0, 0, false)}), null);
   assert.equal(demandExerciseReadings({disabled, enabled: {...enabled, action_minor: null}}), null);
   assert.equal(demandExerciseReadings({repeat: 2, issue: 'validation'}), null);
+});
+
+test('cross-process comparison accepts only matched, verified on-advice cases', () => {
+  const environment = {system: 'Linux', kernel: '6.6.87', distribution: {PRETTY_NAME: 'Ubuntu'},
+    execution_context: 'wsl2', page_bytes: 4096, thp_enabled: 'always [madvise] never'};
+  const sources = {'proj5-course/group3_demand.c': 'probe', 'proj5-course/group3_snapshot.h': 'snapshot'};
+  const make = mode => {
+    const blocked = mode === 'disable';
+    const sample = {phase: 'write_quarter', role: 'parent', count: 32768, mapping_present: true,
+      rss_kib: 131072, huge_kib: blocked ? 0 : 131072, action_minor: blocked ? 32768 : 64};
+    const example = item('demand512', [sample], {repeat: 2, thp_advice: 'on', process_thp: mode});
+    example.status = 'completed';
+    example.validation = {status: 'passed'};
+    Object.assign(example.data, {condition: {bytes: 2 ** 29, stride: 4096,
+      process_thp: mode, process_thp_disabled: Number(blocked)}, policy: {result: 0}});
+    return {data_origin: 'real_execution', integrity: {status: 'verified'}, environment, sources, cases: [example]};
+  };
+  const allowed = make('allow'), disabled = make('disable');
+  const result = compareDemandProcesses(disabled, allowed, 2, 'write_quarter');
+  assert.deepEqual([result.allowed.sample.huge_kib, result.disabled.sample.huge_kib], [131072, 0]);
+  assert.deepEqual([result.allowed.reportIndex, result.disabled.reportIndex], [1, 0]);
+  assert.equal(compareDemandProcesses({...allowed, integrity: {status: 'failed'}}, disabled, 2, 'write_quarter').issue, 'integrity');
+  assert.equal(compareDemandProcesses({...allowed, sources: {}}, disabled, 2, 'write_quarter').issue, 'source');
+  assert.equal(compareDemandProcesses({...allowed, environment: {...environment, thp_sizes: {'hugepages-2048kB':'never'}}},
+    disabled, 2, 'write_quarter').issue, 'environment');
+  assert.equal(compareDemandProcesses(allowed, disabled, 1, 'write_quarter').issue, 'measurement');
+  assert.equal(compareDemandProcesses(allowed, disabled, 2, 'write_half').issue, 'measurement');
+  const duplicate = {...allowed, cases: [allowed.cases[0], allowed.cases[0]]};
+  assert.equal(compareDemandProcesses(duplicate, disabled, 2, 'write_quarter').issue, 'measurement');
+  disabled.cases[0].data.condition.stride = 8192;
+  assert.equal(compareDemandProcesses(allowed, disabled, 2, 'write_quarter').issue, 'measurement');
+});
+
+test('process comparison candidates keep the other mode in the same recorded setting and repeat', () => {
+  const run = (id, mode, repeat, overrides = {}) => ({id, run_id: id, data_origin: 'real_execution',
+    distribution: 'Ubuntu', execution_context: 'wsl2', kernel: '6.6', status: 'completed',
+    case_keys: [['demand512', null, 'on', repeat, mode]], ...overrides});
+  const current = run('01', 'disable', 2);
+  const candidates = [current, run('02', 'allow', 2), run('03', 'allow', 2, {kernel: '6.8'}),
+    run('04', 'allow', 1), run('05', 'disable', 2), run('06', 'allow', 2, {data_origin:'synthetic'})];
+  assert.deepEqual(demandProcessCandidates(candidates, current.id, {process_thp: 'disable', repeat: 2})
+    .map(candidate => candidate.id), ['02']);
 });

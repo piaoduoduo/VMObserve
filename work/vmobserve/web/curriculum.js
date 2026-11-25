@@ -127,6 +127,20 @@ export function newestReplay(id, topic, suite, preferredId) {
 }
 
 
+export function demandProcessCandidates(runs, currentId, parameters) {
+  const current = runs.find(run => run.id === currentId);
+  if (!current || !['allow', 'disable'].includes(parameters.process_thp)) return [];
+  const mode = parameters.process_thp === 'allow' ? 'disable' : 'allow';
+  return runs.filter(run =>
+    run.id !== currentId && run.run_id !== current.run_id && run.data_origin === 'real_execution' &&
+    run.status === 'completed' && !run.environment_issue &&
+    run.kernel === current.kernel && run.execution_context === current.execution_context &&
+    run.distribution === current.distribution &&
+    (run.case_keys || []).filter(([suite, , policy, repeat, process]) =>
+      suite === 'demand512' && policy === 'on' && repeat === parameters.repeat && process === mode).length === 1
+  ).sort((a, b) => b.run_id.localeCompare(a.run_id));
+}
+
 export function demandEnvironmentReplays(runs, currentId, parameters, step) {
   const current = runs.find(run => run.id === currentId);
   if (!current || !Number.isInteger(parameters.repeat) || !['off', 'on'].includes(parameters.thp_advice)) return [];

@@ -1,7 +1,7 @@
-import { $, state, labels, esc, kib, table, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
+import { $, state, labels, esc, kib, table, api, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
 
-import { newestReplay, demandEnvironmentReplays } from './curriculum.js';
-import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings } from './comparison-data.js';
+import { newestReplay, demandEnvironmentReplays, demandProcessCandidates, viewCases } from './curriculum.js';
+import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings, compareDemandProcesses } from './comparison-data.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -388,6 +388,87 @@ function bindDemandEvidencePractice(practice) {
   });
 }
 
+function demandProcessPanel() {
+  const previous = $('.demand-process-comparison');
+  const open = previous?.dataset.run === state.id && previous.open;
+  return `<details class="secondary-fold demand-process-comparison" data-run="${esc(state.id)}"${open ? ' open' : ''}>
+    <summary>同阶段比较进程级开关</summary>
+    <p class="detail-copy" role="status"></p>
+    <div class="demand-process-results"></div>
+  </details>`;
+}
+
+function demandProcessResults(current, other, matched, phase, repeat) {
+  const rows = [matched.allowed, matched.disabled];
+  const runs = [current, other];
+  const entries = rows.map(row => ({...row, run: runs[row.reportIndex]}));
+  const href = ({run, item, step}) => {
+    const index = viewCases(run.report.cases, 'group3', entry => entry.suite).indexOf(item);
+    const hash = new URLSearchParams({run: run.id, topic: 'group3', case: index, step});
+    return '/' + location.search + '#' + hash;
+  };
+  const read = (label, measure) => [label, ...rows.map(measure)];
+  return `<p class="detail-copy"><strong>${esc(demandActions[phase]?.[0] || phase)} · 第 ${esc(repeat)} 轮 · 两组均使用 MADV_HUGEPAGE</strong></p>
+    ${table(['观测指标', '解除进程禁用', '进程级禁用'], [
+      read('进程禁用读回', row => row.condition.process_thp_disabled),
+      read('madvise 返回值', row => row.item.data.policy.result),
+      read('累计写入位置', row => demandMeasurement(row.sample, 'count')),
+      ...demandChartMetrics.map(([key, label, format]) => read(label, row => {
+        const value = demandMeasurement(row.sample, key);
+        return value === null ? '—' : format(value);
+      }))
+    ])}
+    <p class="detail-copy">两组目标 VMA 的 RSS 与匿名大页来自 smaps，次缺页为各自进程的本步增量。「—」表示该步没有对应读数。</p>
+    <ul class="demand-process-sources">${entries.map(entry =>
+      `<li><a href="${esc(href(entry))}">${entry.mode === 'allow' ? '解除禁用原文' : '进程禁用原文'} · ${esc(entry.run.report.run_id)}</a></li>`).join('')}</ul>`;
+}
+
+function bindDemandProcessPanel(parameters, phase) {
+  const panel = $('.demand-process-comparison');
+  if (!panel || !phase) return;
+  const repeat = parameters.repeat;
+  const current = {id: state.id, report: state.report};
+  const candidates = demandProcessCandidates(state.runs, current.id, parameters);
+  const status = panel.querySelector('[role="status"]');
+  const result = panel.querySelector('.demand-process-results');
+  let started = false;
+  const load = async () => {
+    if (!panel.open || started) return;
+    started = true;
+    if (!candidates.length) {
+      status.textContent = '当前目录没有同一环境和轮次的另一进程条件记录。';
+      return;
+    }
+    status.textContent = '正在核对对应记录的探针、环境与采样阶段…';
+    const reasons = {
+      source: '探针源码哈希不同或缺失', environment: '运行环境或 THP 设置不同',
+      integrity: '报告来源或完整性未通过', measurement: '案例未通过校验或采样条件不同'
+    };
+    const issues = new Set();
+    for (const candidate of candidates) {
+      try {
+        const report = await api(url('/api/report', {id: candidate.id}));
+        if (!panel.isConnected) return;
+        const matched = compareDemandProcesses(current.report, report, repeat, phase);
+        if (matched.issue) {
+          issues.add(reasons[matched.issue]);
+          continue;
+        }
+        result.innerHTML = demandProcessResults(current, {id: candidate.id, report}, matched, phase, repeat);
+        status.textContent = '';
+        return;
+      } catch {
+        if (!panel.isConnected) return;
+        issues.add('对应记录读取失败');
+      }
+    }
+    status.textContent = '无法并排核对，' + [...issues].join('、') + '。';
+    started = false;
+  };
+  panel.addEventListener('toggle', load);
+  if (panel.open) load();
+}
+
 function demandPolicyPanel(c, sample, rounds, practice) {
   const recipe = c.parameters.thp_advice;
   if (!recipe) {
@@ -418,9 +499,8 @@ function demandPolicyPanel(c, sample, rounds, practice) {
     : observed > 0 ? '使用大页建议组本步采到了匿名大页。对照缺页增量时，注意它是进程级计数。'
     : blocked ? '映射建议调用成功，进程级禁用读回为 1。本步的 AnonHugePages 实测为 0 KiB。'
     : '使用大页建议组在本步的匿名大页驻留为 0 KiB。可继续查看后续写入阶段。';
-  const counterpart = newestReplay('3.3', 'group3', process === 'disable' ? 'demand512-thp-allow' : 'demand512-thp-disable');
-  const processLink = counterpart ? `<p class="detail-copy"><a href="${esc(counterpart.href)}&amp;step=2">${process === 'disable'
-    ? '查看解除进程级禁用时的四分之一写入' : '查看进程级禁用时的四分之一写入反例'}</a></p>` : '';
+  const counterexample = process ? null : newestReplay('3.3', 'group3', 'demand512-thp-disable');
+  const processLink = counterexample ? `<p class="detail-copy"><a href="${esc(counterexample.href)}&amp;step=2">查看进程级禁用时的四分之一写入反例</a></p>` : '';
   const baseline = newestReplay('3.3', 'group3', 'demand512');
   return `<section class="seq-panel demand-policy" aria-labelledby="policy-title">
     <h2 id="policy-title">512 MiB 透明大页对照 · 第 ${esc(repeat)} 轮</h2>
@@ -447,6 +527,7 @@ function demandPolicyPanel(c, sample, rounds, practice) {
     }))}
     <p>${esc(interpretation)}</p>
     </details>
+    ${process && sample ? demandProcessPanel() : ''}
     ${demandTimeline(c, pair, phase)}
     ${demandRepeatReview(rounds, phase, repeat)}
     ${baseline ? `<p class="detail-copy"><a href="${esc(baseline.href)}">返回原版 malloc 实验</a></p>` : ''}
@@ -509,6 +590,7 @@ function renderMemorySteps(c, cases) {
   if (demand) {
     bindDemandTimeline();
     bindDemandEvidencePractice(practice);
+    bindDemandProcessPanel(c.parameters, sample?.phase);
     loadOriginalPs($('#demand-original-ps'));
   }
 }
