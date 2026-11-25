@@ -223,6 +223,7 @@ a.rail-group-title:hover {
   border-color: var(--line-strong);
   color: var(--ink-secondary);
 }
+.rail-availability { margin: 0; color: var(--muted); font-size: 12px; }
 .rail-btn:hover:not(:disabled) { background: #f8fafc; border-color: #94a3b8; }
 .rail-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .rail-btn.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
@@ -1566,7 +1567,7 @@ dialog::backdrop { background: rgba(15, 23, 42, .48); }
 .demand-first-attempt p { margin: 0 0 6px; }
 .practice-review-page input[type="file"] { max-width: 100%; }
 .practice-review-page [role="status"]:empty { display: none; }
-.practice-review-page td:first-child { overflow-wrap: anywhere; }
+.practice-review-page #practice-review-table td:nth-child(2) { overflow-wrap: anywhere; }
 .practice-review-page td:last-child { min-width: 14em; }
 .notes-report { margin: 14px 0; }
 

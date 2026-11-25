@@ -1,4 +1,4 @@
-import { $, state, phases, esc, kib, table, recheckTarget, diagnosisHTML, findingFor, evidenceButtons, stepNavigation, stepExplanation, stepActions } from './ui.js';
+import { $, state, phases, esc, kib, table, recheckTarget, diagnosisHTML, findingFor, evidenceButtons, stepNavigation, stepExplanation, stepActions, canCollect } from './ui.js';
 
 function policyHTML() {
   const cases = state.report.cases.filter(c => c.suite === 'thp' && ['allow', 'disable'].includes(c.parameters.process_thp));
@@ -9,11 +9,10 @@ function policyHTML() {
     <small class="question-kicker">实验进阶 · 进程开关对照</small>
     <h2>为什么代码请求了大页，实际还是没分配？</h2>
     <p>做一个受控对比：两组代码都调用 <code>madvise</code> 请求大页，系统全局设置保持不变，只把其中一个进程的“允许大页”开关关掉，看看大页驻留（AnonHugePages）怎么变。</p>
-    <div class="sequence-controls">
+    ${canCollect(state.config) ? `<div class="sequence-controls">
       <button id="run-policy">运行进程开关对照</button>
       ${canRecheck ? `<button id="policy-recheck">按当前记录条件再跑一次</button><span class="picker-hint">${recheckTarget()}</span>` : ''}
-    </div>
-    <p class="detail-copy">下表显示的是当前选中的历史数据；点上方按钮运行后会自动生成一份独立的新记录。</p>
+    </div>` : ''}
     ${cases.length
       ? table(['写入方式 / 轮次', '进程开关', '内核 THP_enabled', '大页驻留', 'madvise 调用', '检查结果'],
           cases.map(c => {
@@ -27,7 +26,7 @@ function policyHTML() {
               c.validation?.status === 'passed' ? '通过' : (c.validation?.status || '未完成')
             ];
           }))
-      : '<p class="empty-note">当前这份记录里还没有“进程开关对照”实验，可以点上方按钮跑一轮。</p>'}
+      : '<p class="empty-note">这份记录里没有进程开关对照。可切换其他记录查看。</p>'}
     ${paired.map(c => `<div class="explanation-box"><span class="explain-tag">${c.pattern === 'sparse' ? '稀疏写' : '逐页写'} · 第 ${c.repeat} 次结论</span><p>${c.control_valid ? '条件一致：禁止组大页驻留为 0，允许组成功分到了大页，说明确实是进程级开关拦住了透明大页。' : '这两组还不足以归因为进程开关。对照上表的开关状态、大页驻留和检查结果。'}</p></div>`).join('')}
     <div class="raw-links">${cases.filter(c => c.artifacts).map(c => `<button data-raw="${esc(c.id)}" data-kind="smaps">${esc(c.id)} · 原始状态</button>`).join('')}</div>
     ${findings.length ? `<details class="secondary-fold"><summary>展开本组详细判断与依据</summary>${diagnosisHTML(findings)}</details>` : ''}
@@ -105,6 +104,7 @@ function renderTHP() {
 }
 
 function cowControls() {
+  if (!canCollect(state.config)) return '';
   const options = [['all', '五组全跑：0、1/8、1/4、1/2、全部改写'], ['0', '子进程不改写 (0)'], ['1/8', '改写 1/8'], ['1/4', '改写 1/4'], ['1/2', '改写 1/2'], ['1', '全部改写 (1)']];
   return `<div class="cow-controls">
     <label for="cow-fraction">重新采集设置：子进程改写比例</label>

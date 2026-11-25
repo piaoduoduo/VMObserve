@@ -1,5 +1,6 @@
 """The only execution pipeline: plan -> snapshot -> compile -> collect -> diagnose."""
 import argparse
+import json
 import os
 from pathlib import Path
 import platform
@@ -115,6 +116,39 @@ def compare_thp_environment(parent, current):
     return {"status": status, "checked": list(keys), "differences": changes, "missing": missing}
 
 
+def collection_environment_issue(env, require_openeuler):
+    if env["system"] != "Linux":
+        return "Experiments require Linux; Windows supports replay/export only."
+    if require_openeuler and (env["distribution"].get("ID", "").lower() != "openeuler" or "microsoft" in env["kernel"].lower()):
+        return "Target mismatch: real openEuler userland and kernel required."
+    if read_optional("/proc/self/smaps") is None:
+        return "Current process smaps is not readable."
+    return None
+
+
+def check_collection(args):
+    env = environment()
+    issue = collection_environment_issue(env, args.require_openeuler)
+    suites = {"thp"} if args.recheck_from else {case["suite"] for case in plan_cases(args)}
+    tool_names = []
+    if suites - {"io"}:
+        tool_names.append(args.compiler)
+    if "sequence" in suites:
+        tool_names.append("strace")
+    if suites & {"link-static", "link-dynamic"}:
+        tool_names.extend(name for name, _ in group3.LINK_INSPECTORS)
+    tools = {name: shutil.which(name) for name in tool_names}
+    missing = [name for name, path in tools.items() if path is None]
+    issues = [issue] if issue else []
+    if "thp" in suites and env["system"] == "Linux" and env["pmd_size"] is None:
+        issues.append("PMD THP size unavailable.")
+    return {
+        "status": "blocked" if issues or missing else "ready", "mode": "collection_preflight",
+        "system": env["system"], "kernel": env["kernel"], "suite": args.suite,
+        "planned_suites": sorted(suites), "tools": tools, "missing_tools": missing, "issues": issues,
+    }
+
+
 def run(args):
     out = args.output.resolve() / run_id()
     out.mkdir(parents=True, exist_ok=False)
@@ -149,13 +183,7 @@ def run(args):
             report["sources"][relative.as_posix()] = digest(target)
         write_json(out / "environment.json", report["environment"])
         env = report["environment"]
-        reason = None
-        if env["system"] != "Linux":
-            reason = "Experiments require Linux; Windows supports replay/export only."
-        elif args.require_openeuler and (env["distribution"].get("ID", "").lower() != "openeuler" or "microsoft" in env["kernel"].lower()):
-            reason = "Target mismatch: real openEuler userland and kernel required."
-        elif read_optional("/proc/self/smaps") is None:
-            reason = "Current process smaps is not readable."
+        reason = collection_environment_issue(env, args.require_openeuler)
         if reason:
             report.update(status="unsupported", error={"code": "preflight_failed", "message": reason})
             return 2, out
@@ -272,6 +300,7 @@ def parser():
     p.add_argument("--recheck-kind", choices=("advice", "process"), default="advice")
     p.add_argument("--timeout", type=float, default=20)
     p.add_argument("--compiler", default="gcc")
+    p.add_argument("--check-tools", action="store_true", help="report collection tool paths and environment without running experiments")
     p.add_argument("--recheck-from", type=Path, help="v1 real run directory; execute a new sparse THP off/on control")
     return p
 
@@ -283,5 +312,9 @@ def main(argv=None):
         p.error("timeout must be > 0 and <= 120 seconds")
     if args.suite == "demand512-thp" and args.thp_process == "pair":
         p.error("use --thp-process allow or disable for separate demand512-thp records")
+    if args.check_tools:
+        result = check_collection(args)
+        print(json.dumps(result, indent=2))
+        return 0 if result["status"] == "ready" else 2
     code, _ = run(args)
     return code

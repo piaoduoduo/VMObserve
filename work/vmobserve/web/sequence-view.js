@@ -1,4 +1,4 @@
-import { $, state, esc, kib, table, evidenceButtons, stepNavigation, stepExplanation, replayOriginLabel } from './ui.js';
+import { $, state, esc, kib, table, evidenceButtons, stepNavigation, stepExplanation, replayOriginLabel, canCollect } from './ui.js';
 import { liveRequestedKib } from './comparison-data.js';
 
 const BLOCK_SIZES = ['1 KiB', '256 KiB', '1 MiB'];
@@ -258,7 +258,8 @@ export function renderSequence() {
   const cases = state.report.cases.filter(c => c.suite === 'sequence');
   const content = $('#content');
   if (!cases.length) {
-    content.innerHTML = '<h2>连续三次 malloc</h2><p>这份记录里没有连续分配实验。可在顶部更换记录，或从侧栏重新采集本项实验。</p>';
+    content.innerHTML = '<h2>连续三次 malloc</h2><p>这份记录里没有连续分配实验。可在顶部更换记录。' +
+      (canCollect(state.config) ? '也可以从侧栏重新采集本项实验。' : '') + '</p>';
     return;
   }
 

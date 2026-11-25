@@ -1,4 +1,4 @@
-import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine } from './ui.js';
+import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine, canCollect } from './ui.js';
 import { renderEvidence } from './evidence-view.js';
 import { attachReplayFlow } from './experiment-flow.js';
 import { renderReplayNotes } from './replay-notes.js';
@@ -150,7 +150,8 @@ async function refresh() {
     || state.runs.find(r => supports(r, 'sequence') && r.status === 'completed')
     || state.runs[0];
   if (preferred) return select(preferred.id, true);
-  $('#content').innerHTML = '<p class="empty">还没有实验记录。点左下角“采集新实验数据”即可跑出第一份真实记录。</p>';
+  $('#content').innerHTML = '<p class="empty">' + (canCollect(state.config)
+    ? '还没有实验记录。可以从侧栏采集新数据。' : '还没有实验记录。可在 Linux 采集后，把完整运行目录交给本机回放。') + '</p>';
 }
 
 let selectionRequest = 0, evidenceRequest = 0;
@@ -202,6 +203,7 @@ function ensureReplayChrome() {
   if (!replayStarted) {
     replayStarted = true;
     $('#run').title = `采集目标：${state.config?.executor || '默认环境'}`;
+    jobUI();
     api('/api/job').then(j => { state.job = j; jobUI(); }).catch(() => {});
     setInterval(async () => {
       if (document.body.classList.contains('course-reading')) return;
@@ -573,6 +575,7 @@ async function raw(caseId, kind, opts = {}) {
 let activeJobId = null;
 
 async function run(mode) {
+  if (!canCollect(state.config)) return;
   stop();
   error('');
   try {
@@ -591,9 +594,21 @@ async function run(mode) {
 
 function jobUI() {
   const job = state.job;
-  $('#run').disabled = job?.status === 'running';
-  for (const id of [...Object.keys(runModes), 'cow-fraction', 'group4-task']) {
-    if ($('#' + id)) $('#' + id).disabled = job?.status === 'running';
+  const available = canCollect(state.config);
+  const running = job?.status === 'running';
+  $('#run').hidden = !available;
+  $('#run').disabled = !available || running;
+  $('#collection-mode').hidden = available;
+  for (const id of Object.keys(runModes)) {
+    const button = $('#' + id);
+    if (button) {
+      button.hidden = !available;
+      button.disabled = !available || running;
+    }
+  }
+  for (const id of ['cow-fraction', 'group4-task']) {
+    const filter = $('#' + id);
+    if (filter) filter.disabled = running;
   }
   const showBanner = job && job.id === activeJobId;
   $('#job').hidden = !showBanner;

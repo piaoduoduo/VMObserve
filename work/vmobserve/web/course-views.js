@@ -1,4 +1,4 @@
-import { $, state, labels, esc, kib, table, api, download, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
+import { $, state, labels, esc, kib, table, api, download, canCollect, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, demandPair, url, replayOriginLabel } from './ui.js';
 
 import { newestReplay, demandEnvironmentReplays, demandProcessCandidates } from './curriculum.js';
 import { demandPracticeEvidence, practiceAttemptSchema } from './practice-data.js';
@@ -16,7 +16,7 @@ function renderLayout() {
   </div>`;
   const cases = state.report.cases.filter(c => c.suite === 'layout');
   if (!cases.length) {
-    $('#content').innerHTML = intro + '<p class="empty">当前记录里没有“程序地址”实验，请点顶部“切换记录”选一条“程序地址”记录或点击上方按钮采集。</p>';
+    $('#content').innerHTML = intro + '<p class="empty">这份记录里没有「程序地址」实验。可在顶部切换到包含该实验的记录。</p>';
     return;
   }
   state.selected = Math.min(state.selected, cases.length - 1);
@@ -101,7 +101,7 @@ function renderCourse() {
   </div>`;
   const cases = state.report.cases.filter(c => c.suite === 'course').sort((a, b) => b.parameters.requested_kib - a.parameters.requested_kib || a.parameters.repeat - b.parameters.repeat);
   if (!cases.length) {
-    $('#content').innerHTML = intro + '<p class="empty">当前记录里没有按需分配实验，请点顶部“切换记录”选一条“按需分配”记录或点击上方按钮采集。</p>';
+    $('#content').innerHTML = intro + '<p class="empty">这份记录里没有按需分配实验。可在顶部切换到包含该实验的记录。</p>';
     return;
   }
   state.selected = Math.min(state.selected, cases.length - 1);
@@ -503,7 +503,7 @@ function demandPolicyPanel(c, sample, rounds, practice) {
   const recipe = c.parameters.thp_advice;
   if (!recipe) {
     const next = newestReplay('3.3', 'group3', 'demand512-thp');
-    const collect = state.config?.executor === 'openeuler-vm' || state.config?.host_system === 'Linux'
+    const collect = canCollect(state.config)
       ? '<button id="run-demand-thp">采集三轮策略对照</button>' : '';
     return `<section class="seq-panel demand-policy">
       <h2>同样写入 512 MiB，改一个条件再试</h2>
@@ -636,7 +636,8 @@ function renderGroup3() {
   </div>`;
   const cases = state.report.cases.filter(c => suites.includes(c.suite));
   if (!cases.length) {
-    $('#content').innerHTML = intro + '<p class="empty">这份记录里没有第 3 组实验。可在顶部更换记录，或从侧栏重新采集第 3 组。</p>';
+    $('#content').innerHTML = intro + '<p class="empty">这份记录里没有第 3 组实验。可在顶部更换记录。' +
+      (canCollect(state.config) ? '也可以从侧栏重新采集第 3 组。' : '') + '</p>';
     return;
   }
   state.selected = Math.min(state.selected, cases.length - 1);
@@ -674,7 +675,7 @@ function renderGroup4() {
   </div>`;
   const cases = state.report.cases.filter(c => c.suite.startsWith('g4-'));
   if (!cases.length) {
-    $('#content').innerHTML = intro + '<p class="empty">当前记录里没有第 4 组实验，请点顶部“切换记录”选一条“进程与线程”记录或点击上方按钮采集。</p>';
+    $('#content').innerHTML = intro + '<p class="empty">这份记录里没有第 4 组实验。可在顶部切换到「进程与线程」记录。</p>';
     return;
   }
   state.selected = Math.min(state.selected, cases.length - 1);

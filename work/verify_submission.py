@@ -185,7 +185,7 @@ def find_original_report(run, expected, roots):
     failed_integrity = None
     for root in roots:
         candidate = safe_child(root, run)
-        path = candidate / "report.json"
+        path = safe_child(candidate, "report.json")
         if not path.is_file() or digest(path) != expected:
             continue
         report = load_run(candidate)

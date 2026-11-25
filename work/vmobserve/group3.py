@@ -6,6 +6,7 @@ from .sequence import trace_actions, attach_mappings, describe_allocations, allo
 
 SUITES = ("link-dynamic", "link-static", "sequence", "demand512", "stack")
 DEMAND_PHASES = ("before_alloc", "allocated", "write_quarter", "write_half", "write_all", "freed")
+LINK_INSPECTORS = (("file", ()), ("ldd", ()), ("readelf", ("-W", "-h", "-l", "-d")))
 TITLES = {"link-dynamic": "3.1 动态链接与装入", "link-static": "3.1 静态链接对照",
           "sequence": "3.2 同进程连续 malloc", "demand512": "3.3 原尺寸按需调页", "stack": "3.3 栈增长与溢出"}
 
@@ -41,7 +42,7 @@ def prepare(case, folder, binary, execute, timeout):
                    "-o", str(folder / "syscalls.txt"), *command]
     if case["suite"].startswith("link-"):
         case["inspection"] = {}
-        for name, options in (("file", []), ("ldd", []), ("readelf", ["-W", "-h", "-l", "-d"])):
+        for name, options in LINK_INSPECTORS:
             stdout, stderr = folder / (name + ".txt"), folder / (name + ".stderr.txt")
             result = execute([name, *options, str(binary)], stdout, stderr, timeout)
             case["inspection"][name] = result

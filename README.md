@@ -42,7 +42,7 @@ python -B work/verify_submission.py
 
 ## 运行自己的实验
 
-Linux 采集需要 GCC；连续分配实验还需要 strace。在项目根目录运行：
+Linux 采集需要 GCC；连续分配实验还需要 strace。用 `python3 -B work/run_all.py --suite sequence --check-tools` 核对当前 Linux 会话的依赖。检查只报告工具路径和采集环境，不编译、不生成实验记录。确认后在项目根目录运行：
 
 ```sh
 python3 work/run_all.py --suite sequence

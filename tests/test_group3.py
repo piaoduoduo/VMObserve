@@ -5,7 +5,8 @@ import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'work'))
 from vmobserve.group3 import validate
-from vmobserve.runner import parser, plan_cases
+from unittest.mock import patch
+from vmobserve.runner import check_collection, parser, plan_cases
 from vmobserve.server import experiment_args, Workbench
 
 
@@ -17,6 +18,24 @@ class Group3Tests(unittest.TestCase):
         command=experiment_args("group3")
         self.assertEqual(command[command.index('--suite')+1],'group3')
         self.assertEqual(command[command.index('--timeout')+1],'120')
+
+    def test_preflight_checks_only_tools_for_the_planned_suite(self):
+        env = {"system": "Linux", "kernel": "6.6", "distribution": {"ID": "ubuntu"}, "pmd_size": "2097152"}
+        with patch("vmobserve.runner.environment", return_value=env), \
+                patch("vmobserve.runner.read_optional", return_value="smaps"), \
+                patch("vmobserve.runner.shutil.which", side_effect=lambda name: None if name == "strace" else "/usr/bin/" + name):
+            sequence = check_collection(parser().parse_args(["--suite", "sequence", "--check-tools"]))
+            self.assertEqual(sequence["missing_tools"], ["strace"])
+            self.assertEqual(sequence["status"], "blocked")
+            demand = check_collection(parser().parse_args(["--suite", "demand512-thp", "--check-tools"]))
+            self.assertEqual(demand["status"], "ready")
+            self.assertNotIn("strace", demand["tools"])
+            group3 = check_collection(parser().parse_args(["--suite", "group3", "--check-tools"]))
+            self.assertEqual(set(group3["tools"]), {"gcc", "strace", "file", "ldd", "readelf"})
+            io = check_collection(parser().parse_args(["--suite", "systems", "--lab", "6.1", "--check-tools"]))
+            self.assertEqual(io["tools"], {})
+            os_check = check_collection(parser().parse_args(["--suite", "sequence", "--require-openeuler", "--check-tools"]))
+            self.assertTrue(any("openEuler" in issue for issue in os_check["issues"]))
 
     def test_overflow_requires_sigsegv_and_normal_return_is_distinct(self):
         data={'condition':{'mode':'overflow'},'samples':[{'size_kib':132},{'size_kib':480}],

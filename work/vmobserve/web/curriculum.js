@@ -1,4 +1,4 @@
-import { $, state, api, esc, url, table, evidenceButtons, friendlyDistro, friendlyTime, labels, loadOriginalPs } from './ui.js';
+import { $, state, api, esc, url, table, evidenceButtons, friendlyDistro, friendlyTime, labels, loadOriginalPs, canCollect } from './ui.js';
 
 import { renderLabFlow } from './experiment-flow.js';
 
@@ -261,6 +261,7 @@ export async function showLab(id, preferredId) {
   const neighbour = (n, label) => n ? `<a class="nav-link" href="/labs/${n[0]}">${label} · ${n[0]} ${n[1]}</a>` : '';
   const runMode = systems ? 'lab-' + id : id.startsWith('4.') ? 'group4' : ({ '3.1': 'group3', '3.2': 'sequence', '3.3': 'group3' })[id];
 
+  const canRunLab = Boolean(runMode) && canCollect(state.config);
   const focus = id === '3.2' || id === '3.3';
   const replayButtons = replays.map((x, idx) =>
     `<a class="btn-link${idx === 0 ? ' primary' : ''}" href="${esc(x.href)}${id === '3.2' ? '&amp;step=0' : ''}">${esc(x.label)} →</a>`
@@ -280,7 +281,7 @@ export async function showLab(id, preferredId) {
     ${id === '3.3' && location.hash === '#stack' ? `<p class="phase-note">当前定位到「栈增长与溢出」对照：请点击上方<strong>栈增长与溢出</strong>按钮查看不同栈限额下的正常返回与 <code>SIGSEGV</code>（段错误）终止。</p>` : ''}
     ${id === '3.3' ? `<details class="secondary-fold" id="original-demand"><summary>对照指导书 3.3：原版 512 MiB 程序的五次 ps 记录</summary><div id="lab-original-ps"><p class="muted">正在载入五次 ps 原始输出…</p></div></details>` : ''}
     <div class="lab-actions">
-      ${runMode ? `<button id="collect-lab" class="ghost-action" data-mode="${runMode}" data-group4="${id.startsWith('4.') ? id : 'all'}">采集${runMode === 'group3' ? '第 3 组' : '本项'}新数据</button>` : ''}
+      ${canRunLab ? `<button id="collect-lab" class="ghost-action" data-mode="${runMode}" data-group4="${id.startsWith('4.') ? id : 'all'}">采集${runMode === 'group3' ? '第 3 组' : '本项'}新数据</button>` : ''}
     </div>
     <p id="lab-job" role="status"></p>
   </section>
@@ -312,7 +313,7 @@ export async function showLab(id, preferredId) {
       (c?.data && c.validation.status === 'passed' ? table(['操作', '实测结果'], c.data.samples.map(s => [s.phase, displayValue(s.observed)])) :
         `<p>${esc(c?.error?.message || '本次观测未通过核对，请查看完整记录。')}</p>`);
   } else if (!replays.length) {
-    panel.textContent = runMode ? '这里还没有本项回放，可以在当前实验环境采集一份。' :
+    panel.textContent = canRunLab ? '这里还没有本项回放，可以在当前实验环境采集一份。' :
       '本项尚无实测记录。按上面的步骤在课程虚拟机操作，保留命令输出和对应的内核事件。';
   }
 

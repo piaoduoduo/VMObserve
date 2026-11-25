@@ -41,7 +41,7 @@ python3 work/launch.py --executor local
 
 地址实验默认三个独立进程，各保存七类地址、完整 smaps 和加载后的 ELF 段。malloc 课程实验为 1/256/1024/16384 KiB 独立申请，各 3 次；基础实验默认 16/64 MiB 各 3 次、子进程写 1/4；THP 四条件各 3 次。参数：suite=all/layout/course/baseline/thp/group3/sequence，pattern=all/sparse/full，thp=both/on/off，repeats=1..5，timeout=(0,120] 秒。`--cow-fraction` 可选 `0`、`1/8`、`1/4`、`1/2`、`1`、`all`。默认每次程序 20 秒、编译 30 秒。THP 开关顺序交替。
 
-`sequence` 在同一进程连续申请 1/256/1024 KiB，默认独立重复三次；需要 strace，保存版本及原始调用。页面入口“连续 malloc 与调用”。缺少跟踪器时案例 unsupported、检查证据不足，整轮失败；不退化为猜测调用。`group3` 含连续分配、链接、512 MiB 按需调页、栈及地址课例，默认 24 案例，另需 file/ldd/readelf 和静态 libc 开发文件。现有 WSL/openEuler 依赖已可用，普通运行不安装依赖。两者均不改变默认 all 的 33 案例计划。
+`sequence` 在同一进程连续申请 1/256/1024 KiB，默认独立重复三次；需要 strace，保存版本及原始调用。页面入口“连续 malloc 与调用”。缺少跟踪器时案例 unsupported、检查证据不足，整轮失败；不退化为猜测调用。`group3` 含连续分配、链接、512 MiB 按需调页、栈及地址课例，默认 24 案例，另需 file/ldd/readelf 和静态 libc 开发文件。不同 WSL 发行版的工具可能不同。运行 `python3 -B work/run_all.py --suite sequence --check-tools` 可检查当前会话，退出码 0 表示已找到本项工具且采集环境初检通过，2 表示环境或工具不齐。检查不执行编译，也不验证静态链接库、跟踪权限或运行时压力。普通运行不安装依赖。两者均不改变默认 all 的 33 案例计划。
 
 `--cow-fraction all` 遍历五种比例，默认重复次数下为 30 项基础案例；suite=all 时另执行 3 项地址、12 项课程和 12 项 THP，共 57 项。没有指定该参数时共 33 项。Windows 传输入口同样接受该参数，如 `./work/vm.ps1 retest --cow-fraction all`。旧版 18/30/42/54 项历史记录保持原样。
 

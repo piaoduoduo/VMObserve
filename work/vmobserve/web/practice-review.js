@@ -58,11 +58,11 @@ function render(rows) {
       [phaseNames[row.phase] || row.phase, processNames[row.process_thp] || '原有进程设置',
         row.checked, row.correct.rss, row.correct.huge, row.correct.scope])) : '';
   $('#practice-review-table').innerHTML = `<h3>文件明细</h3>` + table(
-    ['文件', '运行编号', '阶段', '文件内得分', '复算得分', '自报经过时间', '核对结果'],
-    rows.map(({file, attempt, recalculated, status: outcome, message}) => {
+    ['序号', '文件', '运行编号', '阶段', '文件内得分', '复算得分', '自报经过时间', '核对结果'],
+    rows.map(({file, attempt, recalculated, status: outcome, message}, index) => {
       const evidence = attempt?.evidence;
       const elapsed = attempt?.elapsed_ms_since_evidence_opened;
-      return [file, evidence?.run_id,
+      return [index + 1, file, evidence?.run_id,
         evidence ? `第 ${evidence.repeat} 轮 · ${phaseNames[evidence.phase] || evidence.phase}` : null,
         attempt ? `${attempt.score} / ${attempt.total}` : null,
         recalculated ? `${recalculated.score} / ${recalculated.total}` : null,

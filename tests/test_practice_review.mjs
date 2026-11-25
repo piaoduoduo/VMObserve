@@ -1,5 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {canCollect} from '../work/vmobserve/web/ui.js';
 import {gradeDemandExercise} from '../work/vmobserve/web/comparison-data.js';
 import {
   demandPracticeEvidence, parsePracticeAttempt, practiceAttemptKey, practiceAttemptSchema, reviewPracticeAttempt, summarizePracticeReviews
@@ -30,6 +31,13 @@ const makeAttempt = report => ({
   submitted_at: '2026-11-25T12:00:00.000Z', elapsed_ms_since_evidence_opened: 13000,
   evidence: demandPracticeEvidence(report, report.cases, 1, 'write_quarter'),
   ...gradeDemandExercise({rss: 0, huge: 'present'}, {rss: '0', huge: 'zero', scope: 'process'})
+});
+
+test('only Linux or a configured VM expose collection actions', () => {
+  assert.equal(canCollect({executor: 'local', host_system: 'Windows'}), false);
+  assert.equal(canCollect({executor: 'local', host_system: 'Linux'}), true);
+  assert.equal(canCollect({executor: 'openeuler-vm', host_system: 'Windows'}), true);
+  assert.equal(canCollect(null), false);
 });
 
 test('review recomputes the score from the paired evidence and picks up modified feedback', () => {

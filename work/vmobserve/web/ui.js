@@ -59,6 +59,10 @@ export function download(value, filename, type = 'application/json') {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+export function canCollect(config) {
+  return config?.executor === 'openeuler-vm' || config?.host_system === 'Linux';
+}
+
 export function replayOriginLabel(report) {
   if (report.data_origin === 'real_execution') return '历史实测回放';
   if (report.data_origin === 'synthetic') return '模拟回放';
@@ -237,7 +241,7 @@ function diagnosisHTML(findings, recheck = false) {
   return `<aside class="diagnostic">
     <h2>助教划重点</h2>
     ${items.join('') || '<p class="empty-note">当前记录缺少可判断的数据，去“原始记录”翻翻日志看看。</p>'}
-    ${recheck ? `<div class="recheck-box"><p>${recheckTarget()}</p><button id="recheck">重新跑一轮开/关对照</button></div>` : ''}
+    ${recheck && canCollect(state.config) ? `<div class="recheck-box"><p>${recheckTarget()}</p><button id="recheck">重新跑一轮开/关对照</button></div>` : ''}
   </aside>`;
 }
 
