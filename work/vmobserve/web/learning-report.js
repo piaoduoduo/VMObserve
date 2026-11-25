@@ -1,17 +1,22 @@
-import {esc} from './ui.js';
+import {esc, kib} from './ui.js';
 import {demandMeasurement} from './comparison-data.js';
+import {groupBlocksIntoRegions, sequenceRssEquation} from './sequence-view.js';
+
+function sequenceReading(sample, label) {
+  const regions = groupBlocksIntoRegions(sample);
+  const addresses = regions.map(region => esc(region.start) + '–' + esc(region.end) + '：' + esc(kib(region.rss_kib)));
+  return '<p>' + label + '，按映射去重的 RSS 为 ' + esc(sequenceRssEquation(sample, regions)) + '。' +
+    (addresses.length ? '各段读数（地址范围）：' + addresses.join('，') + '。' : '') + '</p>';
+}
 
 function rowsFor(caseRecord) {
   const sample = caseRecord.samples?.[0];
   if (!sample) return '';
   if (caseRecord.suite === 'sequence') {
-    const regions = new Map();
-    for (const block of sample.blocks || []) {
-      for (const map of block.mappings || []) regions.set(map.start + '–' + map.end, map.rss_kib);
-    }
-    return '<p>相关映射逐段 RSS（KiB）：' +
-      [...regions].map(([range, rss]) => esc(range) + '＝' + esc(rss)).join('，') +
-      '。去重合计 ' + esc(sample.related_rss_kib) + ' KiB。</p>';
+    if (caseRecord.stage !== 'comparison') return sequenceReading(sample, '本步采样');
+    return caseRecord.samples.filter(row => row.phase === 'alloc_1MiB' || row.phase === 'freed')
+      .map(row => sequenceReading(row, row.phase === 'freed' ? '全部释放后，按旧地址查找' : '第三次申请后'))
+      .join('');
   }
   return '<dl>' + [
     ['采样阶段', sample.phase], ['累计写入位置', demandMeasurement(sample, 'count')],

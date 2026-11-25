@@ -1,6 +1,22 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createNotesStore} from '../work/vmobserve/web/notes-store.js';
+import {noteReplayPosition} from '../work/vmobserve/web/notes-library.js';
+
+test('3.3 saved notes reopen the selected policy, repeat and step in either run order', () => {
+  const cases = [[1, 'off'], [1, 'on'], [2, 'on'], [2, 'off']].map(([repeat, policy]) => ({
+    suite: 'demand512', id: 'demand512-thp-' + policy + '-' + repeat, parameters: {repeat, thp_advice: policy}
+  }));
+  for (const [index, selected] of cases.entries()) {
+    const repeat = selected.parameters.repeat;
+    const evidence = {topic: 'group3', selected_record: 'example--archive', case_index: index,
+      case_ids: ['off', 'on'].map(policy => 'demand512-thp-' + policy + '-' + repeat), step_index: index + 1};
+    const target = noteReplayPosition(cases, evidence);
+    assert.deepEqual(Object.fromEntries(target), {run: 'example--archive', topic: 'group3',
+      case: String(index), step: String(index + 1)});
+    assert.throws(() => noteReplayPosition(cases, {...evidence, case_index: (index + 2) % 4}), /找不到/);
+  }
+});
 class Storage {
   data = new Map(); failAfter = Infinity;
   get length() { return this.data.size; }

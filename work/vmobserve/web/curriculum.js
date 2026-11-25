@@ -57,10 +57,10 @@ export function directory(active) {
       </div>
     </a>
 
-    <button class="mobile-menu" id="toggle-directory" aria-controls="rail-navigation" aria-expanded="false">实验台目录</button>
+    <button class="mobile-menu" id="toggle-directory" aria-controls="rail-navigation" aria-expanded="false">目录</button>
     <nav class="rail-nav" id="rail-navigation" aria-labelledby="rail-directory-title">
       <div class="rail-directory-head">
-        <h2 id="rail-directory-title">实验台目录</h2>
+        <h2 id="rail-directory-title">目录</h2>
         <select id="mobile-directory" aria-labelledby="rail-directory-title"></select>
       </div>
       <a class="rail-link rail-home" data-nav="home" href="/">实验台首页</a>
@@ -236,7 +236,7 @@ export function renderHome() {
       </header>
       <a class="btn-link primary" href="/labs/3.2?replay=sequence">开始 3.2 · 连续三次 malloc →</a>
       <section class="overview-guide"><h2>怎么看懂一次实验</h2>
-        <dl><div><dt>看程序做了什么</dt><dd>从实验台目录选一个实验，点顶上的步骤按钮，停在某一次申请、写入或释放后。</dd></div>
+        <dl><div><dt>看程序做了什么</dt><dd>从目录选一个实验，点顶上的步骤按钮，停在某一次申请、写入或释放后。</dd></div>
         <div><dt>看 Linux 做了什么</dt><dd>对照这一步前后的变化：虚拟内存映射有没有新增或合并、真正占用的物理内存（RSS）涨了多少、又触发了几次缺页。</dd></div>
         <div><dt>拿原始记录核对</dt><dd>想找实据写进实验报告，直接点旁边的记录按钮，就能定位到对应的 <code>/proc/self/smaps</code> 快照行，或 <code>strace</code> 抓到的系统调用。</dd></div></dl>
       </section>

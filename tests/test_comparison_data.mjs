@@ -3,6 +3,25 @@ import assert from 'node:assert/strict';
 import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 import {groupBlocksIntoRegions, sharedPointerRegion} from '../work/vmobserve/web/sequence-view.js';
 import {learningReport} from '../work/vmobserve/web/learning-report.js';
+
+test('3.2 conclusion exports the third allocation and the released addresses separately', () => {
+  const heap = {start: '1000', end: '4000', rss_kib: 8};
+  const shared = {start: '5000', end: '9000', rss_kib: 20};
+  const sample = (phase, rss, mappings) => ({
+    phase, related_rss_kib: rss, blocks: mappings.map(mapping => ({mapping, mappings: [mapping]}))
+  });
+  const samples = [sample('before_alloc', 0, []), sample('alloc_1KiB', 8, [heap]),
+    sample('alloc_256KiB', 12, [heap, {...shared, rss_kib: 4}]),
+    sample('alloc_1MiB', 28, [heap, shared, shared]), sample('freed', 8, [heap])];
+  const report = (stage, samples, step) => learningReport([{evidence: {topic: 'sequence',
+    step_index: step, cases: [{case_id: 'sequence-1', suite: 'sequence', stage, samples}]}}]);
+  const summary = report('comparison', samples, 5);
+  assert.match(summary, /第三次申请后[^<]*8 KiB \+ 20 KiB = 28 KiB/);
+  assert.match(summary, /全部释放后[^<]*8 KiB/);
+  const before = report('sample', [samples[0]], 0);
+  assert.match(before, /0 KiB/);
+  assert.doesNotMatch(before, /28 KiB/);
+});
 const item = (suite, samples, parameters = {}) => ({suite, data: {samples}, parameters});
 test('sample matching uses phase and process role rather than array index', () => {
   const source = {phase:'fork_shared',role:'child'};

@@ -13,7 +13,14 @@ async function replayURL(record) {
   if (report.original_report_sha256 !== binding.report_sha256) {
     throw new Error('这份实测报告与笔记保存时的哈希不同，请先核对原始记录。');
   }
-  let cases = viewCases(report.cases, binding.topic, item => item.suite);
+  const target = new URL('/', location.origin);
+  if (new URLSearchParams(location.search).get('verification') === '1') target.searchParams.set('verification', '1');
+  target.hash = noteReplayPosition(report.cases, binding).toString();
+  return target.href;
+}
+
+export function noteReplayPosition(reportCases, binding) {
+  let cases = viewCases(reportCases, binding.topic, item => item.suite);
   if (binding.topic === 'course') cases.sort((a, b) =>
     b.parameters.requested_kib - a.parameters.requested_kib || a.parameters.repeat - b.parameters.repeat);
   let selected = cases.findIndex(item => item.id === binding.case_ids[0]);
@@ -26,15 +33,13 @@ async function replayURL(record) {
     const pair = cases.filter(item => item.parameters.pattern + ':' + item.parameters.repeat === groups[selected]);
     if (JSON.stringify(pair.map(item => item.id)) !== JSON.stringify(binding.case_ids)) selected = -1;
   } else if (binding.case_ids.length !== 1) {
+    selected = binding.case_index;
     const pair = demandPair(cases, cases[selected]);
     if (JSON.stringify(pair.map(item => item.id)) !== JSON.stringify(binding.case_ids)) selected = -1;
   }
   if (selected < 0) throw new Error('报告中找不到笔记对应的案例，请保留笔记并核对记录。');
-  const target = new URL('/', location.origin);
-  if (new URLSearchParams(location.search).get('verification') === '1') target.searchParams.set('verification', '1');
-  target.hash = new URLSearchParams({run: binding.selected_record, topic: binding.topic,
-    case: selected, step: binding.step_index}).toString();
-  return target.href;
+  return new URLSearchParams({run: binding.selected_record, topic: binding.topic,
+    case: selected, step: binding.step_index});
 }
 
 export function renderNoteLibrary(host, binding, store, restore, status) {

@@ -55,6 +55,11 @@ function groupBlocksIntoRegions(sample) {
   return [...map.values()];
 }
 
+export function sequenceRssEquation(sample, regions) {
+  const total = kib(sample.related_rss_kib);
+  return regions.length > 1 ? regions.map(region => kib(region.rss_kib)).join(' + ') + ' = ' + total : total;
+}
+
 function sharedPointerRegion(regions) {
   return regions.find(region => [2, 3].every(num =>
     region.blocks.some(block => block.num === num && block.containsPointer)));
@@ -307,7 +312,6 @@ function renderObservation(c, phase, exerciseHtml = '') {
   const raw = `<div class="raw-links"><button data-raw="${esc(c.id)}" data-kind="smaps" data-phase="${esc(sample.phase)}" data-vma-starts="${esc(starts.join(','))}" data-step-label="${esc(PHASES[phase])}">定位 smaps 原行</button>
     <button data-raw="${esc(c.id)}" data-kind="syscalls" ${action ? `data-line-start="${esc(action.begin_line)}" data-line-end="${esc(action.end_line)}"` : ''} data-step-label="${esc(PHASES[phase])}">看系统调用原文</button>
     ${join ? `<button data-compare-merge="${esc(c.id)}">对照第三次申请前后</button>` : ''}</div>`;
-  const sum = related.length > 1 ? related.map(r => kib(r.rss_kib)).join(' + ') + ' = ' : '';
   const current = sample.blocks[phase - 1];
   const previousArea = join && data.samples[2].blocks[1].mapping;
   const sizeChange = previousArea && current.mapping.size_kib === previousArea.size_kib + join.third.sizeKib
@@ -331,7 +335,7 @@ function renderObservation(c, phase, exerciseHtml = '') {
       <p>${esc(explanation(data, phase, join))}</p><p>${esc(heapChange(data, phase))}</p>
       ${join?.third.kernelChooses ? `<p>为什么 p3 在 p2 ${join.low === 3 ? '前面' : '后面'}？第三次调用的第一个参数是 NULL，分配器请内核挑一块足够大的空地址范围。这一次内核选中了 p2 的${join.low === 3 ? '低' : '高'}地址一侧。再运行一次，可以用两个 mmap 的返回地址检查位置。</p>` : ''}</details>
     <details class="secondary-fold"><summary>查看实测依据与原文</summary>
-      ${evidence}${phase ? `<p>按涉及的映射逐段相加，合计 RSS 为 <strong>${sum}${kib(sample.related_rss_kib)}</strong>。</p>` : '<p>采集程序额外保留了这份申请前快照，供后面几步对照。</p>'}${raw}</details>
+      ${evidence}${phase ? `<p>按涉及的映射逐段相加，合计 RSS 为 <strong>${esc(sequenceRssEquation(sample, related))}</strong>。</p>` : '<p>采集程序额外保留了这份申请前快照，供后面几步对照。</p>'}${raw}</details>
     ${exerciseHtml}
     <div class="seq-navigation">${stepControls(phase, 6)}</div></section>`;
 }
@@ -403,7 +407,6 @@ function conclusionTakeaways(data) {
   const kept = freed.blocks.flatMap((b, i) => b.mapping ? [`p${i + 1}`] : []);
   const gone = freed.blocks.flatMap((b, i) => !b.mapping ? [`p${i + 1}`] : []);
   const related = groupBlocksIntoRegions(peak);
-  const sum = related.length > 1 ? related.map(r => kib(r.rss_kib)).join(' + ') + ' = ' : '';
   const brkSteps = peak.blocks.flatMap((b, i) => {
     if (b.mapping?.pathname !== '[heap]') return [];
     const act = data.actions?.[i];
@@ -416,7 +419,7 @@ function conclusionTakeaways(data) {
     : '本轮未观测到落在 <code>[heap]</code> 的块';
   return `<div class="conclusion-summary"><h3>本次实测的三条核心结论</h3><ol>
     <li><strong>谁落在堆里、是否扩堆：</strong>${heapDesc}。</li>
-    <li><strong>几段映射与去重 RSS：</strong>3 个块共涉及 <strong>${peak.related_vma_count} 段映射</strong>${shared.length ? `（${shared.map(g => g.join('、')).join('；')} 区间起止完全相同、共处一段）` : ''}；按映射段只加一次，合计物理驻留为 <strong>${sum}${kib(peak.related_rss_kib)}</strong>。</li>
+    <li><strong>几段映射与去重 RSS：</strong>3 个块共涉及 <strong>${peak.related_vma_count} 段映射</strong>${shared.length ? `（${shared.map(g => g.join('、')).join('；')} 区间起止完全相同、共处一段）` : ''}；按映射段只加一次，合计物理驻留为 <strong>${esc(sequenceRssEquation(peak, related))}</strong>。</li>
     <li><strong>全部释放之后：</strong>${kept.length ? `${kept.join('、')} 所在区间仍保留（堆内存留给分配器复用）` : '无保留区间'}${gone.length ? `；${gone.join('、')} 的匿名映射已被 <code>munmap</code> 撤销` : ''}。</li>
   </ol></div>`;
 }
