@@ -6,11 +6,12 @@ import json
 from pathlib import Path
 
 from .common import write_json
-from .group3 import DEMAND_PHASES
+from .group3 import DEMAND_PHASES, SUITES as GROUP3_SUITES
 from .replay import load_run
 from .smaps import FIELDS
 
 LABELS = {"confirmed": "已确认", "probable": "可能原因", "insufficient_evidence": "证据不足"}
+PROCESS_EVIDENCE_SCHEMA = "vmobserve.demand-process-evidence/v1"
 
 
 def demand_sample_export(sample):
@@ -36,8 +37,11 @@ def csv_text(report):
     writer.writeheader()
     for c in report["cases"]:
         cow = (c.get("data") or {}).get("cow", {})
-        condition = (c.get("data") or {}).get("condition", {})
+        data = c.get("data") or {}
+        condition = data.get("condition", {})
         extra = {k: condition.get(k) for k in ("course_code", "process_thp", "process_thp_disabled", "status_thp_enabled", "madvise_result")}
+        if c["suite"] == "demand512" and "policy" in data:
+            extra["madvise_result"] = data["policy"]["result"]
         # A failed case without samples still needs a status row, not silent omission.
         for s in (c.get("data") or {}).get("samples") or [{}]:
             if c["suite"] == "demand512":
@@ -74,6 +78,8 @@ def demand_pair_csv(report, case_id):
         cases[advice] = case
     if len(cases) != 2:
         raise ValueError("The selected repeat needs both THP policies")
+    if cases["off"]["parameters"].get("process_thp") != cases["on"]["parameters"].get("process_thp"):
+        raise ValueError("Paired CSV requires the same process THP setting for both policies")
 
     samples = {policy: {s["phase"]: s for s in case["data"]["samples"]} for policy, case in cases.items()}
     environment = report["environment"]
@@ -84,7 +90,8 @@ def demand_pair_csv(report, case_id):
     writer = csv.writer(out)
     writer.writerow(["run_id", "report_sha256", "repeat", "distribution", "kernel", "execution_context", "page_bytes",
                      "system_thp", "phase", "thp_advice", "case_id", "written_positions", "mapping_present", "rss_kib",
-                     "anon_huge_kib", "process_minor_delta", "smaps_path", "smaps_sha256"])
+                     "anon_huge_kib", "process_minor_delta", "smaps_path", "smaps_sha256",
+                     "process_thp", "process_thp_disabled"])
     for phase in DEMAND_PHASES:
         for policy in ("off", "on"):
             case = cases[policy]
@@ -93,12 +100,83 @@ def demand_pair_csv(report, case_id):
             smaps = case["artifacts"]["smaps"]
             row = [*common, phase, policy, case["id"], sample["written_positions"],
                    int(present), sample["rss_kib"], sample["huge_kib"],
-                   sample["action_minor"], smaps, report["artifacts"][smaps]]
+                   sample["action_minor"], smaps, report["artifacts"][smaps],
+                   case["data"]["condition"].get("process_thp"), case["data"]["condition"].get("process_thp_disabled")]
             # Quoting a CSV field alone does not neutralize a spreadsheet formula.
             writer.writerow(["'" + cell if isinstance(cell, str)
                              and (cell.lstrip()[:1] in ("=", "+", "-", "@") or cell[:1] in ("\t", "\r", "\n"))
                              else cell for cell in row])
     return out.getvalue()
+
+
+def demand_process_evidence(record_ids, reports, repeat, phase):
+    """Build the same verified stage table for replay and evidence download."""
+    if repeat < 1 or phase not in DEMAND_PHASES:
+        raise ValueError("轮次或采样阶段无效")
+    current, other = reports
+    if any(r.get("data_origin") != "real_execution" or r["integrity"]["status"] != "verified" for r in reports):
+        raise ValueError("报告来源或完整性未通过核验")
+    if current["original_report_sha256"] == other["original_report_sha256"]:
+        raise ValueError("请选择不同的进程条件记录")
+
+    probe_files = ("proj5-course/group3_demand.c", "proj5-course/group3_snapshot.h")
+    hashes = {path: current["sources"].get(path) for path in probe_files}
+    if any(not sha or sha != other["sources"].get(path) for path, sha in hashes.items()):
+        raise ValueError("探针源码哈希不同或缺失")
+    environment_fields = ("system", "kernel", "machine", "libc", "execution_context", "page_bytes",
+                          "thp_enabled", "thp_sizes", "thp_defrag", "pmd_size", "allocator_environment")
+
+    def environment(report):
+        env = report["environment"]
+        return {**{key: env.get(key) for key in environment_fields},
+                "distribution": env.get("distribution", {}).get("PRETTY_NAME")}
+
+    env = environment(current)
+    if not env["distribution"] or not env["kernel"] or env != environment(other):
+        raise ValueError("记录的运行环境或透明大页设置不同")
+
+    entries, designs = {}, {}
+    for record, report in zip(record_ids, reports):
+        cases = [case for case in report["cases"] if case["suite"] in GROUP3_SUITES]
+        selected = [(index, case) for index, case in enumerate(cases) if case["suite"] == "demand512"
+                    and case["parameters"].get("thp_advice") == "on" and case["parameters"].get("repeat") == repeat]
+        if len(selected) != 1:
+            raise ValueError("该轮缺少唯一的使用大页建议案例")
+        index, case = selected[0]
+        mode = case["parameters"].get("process_thp")
+        if mode not in ("allow", "disable") or mode in entries:
+            raise ValueError("请选择一份解除禁用和一份进程级禁用记录")
+        if case["status"] != "completed" or case["validation"]["status"] != "passed":
+            raise ValueError("该轮使用大页建议案例未通过校验")
+        data = case["data"]
+        condition, policy = data["condition"], data["policy"]
+        if (condition.get("process_thp") != mode or condition.get("process_thp_disabled") != int(mode == "disable")
+                or policy["result"] != 0):
+            raise ValueError("进程禁用读回或大页建议调用未通过")
+        samples = [(step, sample) for step, sample in enumerate(data["samples"])
+                   if sample["phase"] == phase and sample["role"] == "parent"]
+        if len(samples) != 1:
+            raise ValueError("该轮缺少唯一匹配的阶段采样")
+        step, sample = samples[0]
+        reading = demand_sample_export(sample)
+        artifacts = {kind: {"path": case["artifacts"][kind], "sha256": report["artifacts"][case["artifacts"][kind]]}
+                     for kind in ("jsonl", "smaps")}
+        designs[mode] = (condition["bytes"], condition["stride"], sample["count"])
+        entries[mode] = {
+            "record_id": record, "run_id": report["run_id"], "report_sha256": report["original_report_sha256"],
+            "case_id": case["id"], "case_index": index, "step_index": step, "process_thp": mode,
+            "process_thp_disabled": condition["process_thp_disabled"], "madvise_result": policy["result"],
+            "written_positions": reading["written_positions"], "mapping_present": reading["mapping_present"],
+            "rss_kib": reading["rss_kib"], "huge_kib": reading["huge_kib"], "action_minor": reading["action_minor"],
+            "artifacts": artifacts,
+        }
+    if designs["allow"] != designs["disable"]:
+        raise ValueError("两份记录的映射大小、步长或写入位置数不同")
+    size, stride, _ = designs["allow"]
+    return {"schema_version": PROCESS_EVIDENCE_SCHEMA, "data_origin": "real_execution",
+            "view_mode": "historical_replay", "phase": phase, "repeat": repeat, "environment": env,
+            "condition": {"bytes": size, "stride": stride, "advice": "MADV_HUGEPAGE"},
+            "probe_source_sha256": hashes, "cases": [entries["allow"], entries["disable"]]}
 
 
 def html_text(report):
@@ -135,9 +213,11 @@ def html_text(report):
     policy_rows = []
     task_rows = []
     for case in report["cases"]:
-        c = (case.get("data") or {}).get("condition", {})
+        data = case.get("data") or {}
+        c = data.get("condition", {})
         if "process_thp" in c:
-            cells = [case["id"], c["process_thp"], c["process_thp_disabled"], c["status_thp_enabled"], c["madvise_result"]]
+            cells = [case["id"], c["process_thp"], c["process_thp_disabled"], c.get("status_thp_enabled"),
+                     c.get("madvise_result", data.get("policy", {}).get("result"))]
             policy_rows.append("<tr>" + "".join(f"<td>{esc(v)}</td>" for v in cells) + "</tr>")
         if case["suite"] == "course":
             task_rows.append(f"<li>{esc(case['id'])} · {esc(c.get('course_code', 'legacy_reference'))} · {esc(case['validation']['status'])}<pre>{esc(json.dumps(case['validation']['checks'],ensure_ascii=False,indent=2))}</pre></li>")

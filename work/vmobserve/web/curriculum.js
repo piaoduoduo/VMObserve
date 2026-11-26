@@ -1,4 +1,4 @@
-import { $, state, api, esc, url, table, evidenceButtons, friendlyDistro, friendlyTime, labels, loadOriginalPs } from './ui.js';
+import { $, state, api, esc, url, table, evidenceButtons, friendlyDistro, friendlyTime, labels, loadOriginalPs, canCollect } from './ui.js';
 import { renderLabFlow } from './experiment-flow.js';
 
 const groups = ['实验环境与工具', '系统调用与容器', '内存管理', '进程与线程', '同步与互斥', '文件系统', '设备与 I/O'];
@@ -40,7 +40,7 @@ const extensions = [
 const replayTasks = {
   '3.1': [['打开 7 类程序地址分布图', 'layout', 'layout'], ['动态链接映射', 'group3', 'link-dynamic'], ['静态链接映射', 'group3', 'link-static']],
   '3.2': [['回放三次申请', 'sequence', 'sequence']],
-  '3.3': [['512 MiB 分批触碰', 'group3', 'demand512'], ['512 MiB 透明大页实测对照', 'group3', 'demand512-thp'], ['栈增长与溢出', 'group3', 'stack'], ['按需分配逐步对照', 'course', 'course']],
+  '3.3': [['512 MiB 分批触碰', 'group3', 'demand512'], ['512 MiB 透明大页实测对照', 'group3', 'demand512-thp'], ['大页建议成功但未驻留的实测', 'group3', 'demand512-thp-disable'], ['栈增长与溢出', 'group3', 'stack'], ['按需分配逐步对照', 'course', 'course']],
   '4.1': [['打开父子进程事件回放', 'group4', 'g4-fork']],
   '4.2': [['打开线程与共享变量回放', 'group4', 'g4-pthread']],
   '4.3': [['打开用户级线程调度回放', 'group4', 'g4-uthread']],
@@ -162,17 +162,32 @@ export function currentLab(topic, report, index) {
 }
 
 export function newestReplay(id, topic, suite, preferredId) {
-  const matches = ([key, lab, policy]) => suite === 'demand512-thp'
-    ? key === 'demand512' && Boolean(policy)
+  const process = {'demand512-thp': null, 'demand512-thp-disable': 'disable', 'demand512-thp-allow': 'allow'}[suite];
+  const matches = ([key, lab, policy, , mode]) => process !== undefined
+    ? key === 'demand512' && Boolean(policy) && (mode ?? null) === process
     : key === suite && (topic !== 'systems' || lab === id) && (suite !== 'demand512' || !policy);
   const runs = (state.runs || []).filter(r => r.data_origin === 'real_execution' && !r.environment_issue &&
-    (r.status === 'completed' || (suite === 'demand512-thp' && r.status === 'completed_with_deviations')) &&
+    (r.status === 'completed' || (process !== undefined && r.status === 'completed_with_deviations')) &&
     (r.case_keys || []).some(matches));
   runs.sort((a, b) => b.run_id.localeCompare(a.run_id) || Number(a.group === 'example') - Number(b.group === 'example'));
   const run = runs.find(r => r.id === preferredId) || runs[0];
   if (!run) return null;
   const index = viewCases(run.case_keys, topic, x => x[0]).findIndex(matches);
   return { run, href: '/#' + new URLSearchParams({ run: run.id, topic, case: index }) };
+}
+
+export function demandProcessCandidates(runs, currentId, parameters) {
+  const current = runs.find(run => run.id === currentId);
+  if (!current || !['allow', 'disable'].includes(parameters.process_thp)) return [];
+  const mode = parameters.process_thp === 'allow' ? 'disable' : 'allow';
+  return runs.filter(run =>
+    run.id !== currentId && run.run_id !== current.run_id && run.data_origin === 'real_execution' &&
+    run.status === 'completed' && !run.environment_issue &&
+    run.kernel === current.kernel && run.execution_context === current.execution_context &&
+    run.distribution === current.distribution &&
+    (run.case_keys || []).filter(([suite, , policy, repeat, process]) =>
+      suite === 'demand512' && policy === 'on' && repeat === parameters.repeat && process === mode).length === 1
+  ).sort((a, b) => b.run_id.localeCompare(a.run_id));
 }
 
 export function demandEnvironmentReplays(runs, currentId, parameters, step) {
@@ -184,8 +199,9 @@ export function demandEnvironmentReplays(runs, currentId, parameters, step) {
   const selected = new Map();
   const findPair = run => {
     const cases = viewCases(run.case_keys || [], 'group3', key => key[0]);
-    const indexOf = advice => cases.findIndex(([suite, , policy, repeat]) =>
-      suite === 'demand512' && policy === advice && repeat === parameters.repeat);
+    const indexOf = advice => cases.findIndex(([suite, , policy, repeat, process]) =>
+      suite === 'demand512' && policy === advice && repeat === parameters.repeat &&
+      (process ?? null) === (parameters.process_thp ?? null));
     const index = indexOf(parameters.thp_advice);
     return index >= 0 && indexOf(parameters.thp_advice === 'on' ? 'off' : 'on') >= 0 ? index : -1;
   };
@@ -293,7 +309,8 @@ export async function showLab(id, preferredId) {
   const replays = options.map(([label, topic, suite]) => ({ label, ...newestReplay(id, topic, suite, preferredId) })).filter(x => x.run);
   const pos = labs.indexOf(row);
   const neighbour = (n, label) => n ? `<a class="nav-link" href="/labs/${n[0]}">${label} · ${n[0]} ${n[1]}</a>` : '';
-  const runMode = systems ? 'lab-' + id : id.startsWith('4.') ? 'group4' : ({ '3.1': 'group3', '3.2': 'sequence' })[id];
+  const runMode = systems ? 'lab-' + id : id.startsWith('4.') ? 'group4' : ({ '3.1': 'group3', '3.2': 'sequence', '3.3': 'group3' })[id];
+  const canRunLab = Boolean(runMode) && canCollect(state.config);
 
   const focus = id === '3.2' || id === '3.3';
   const replayButtons = replays.map((x, idx) =>
@@ -314,7 +331,7 @@ export async function showLab(id, preferredId) {
     ${id === '3.3' && location.hash === '#stack' ? `<p class="phase-note">当前定位到「栈增长与溢出」对照：请点击上方<strong>栈增长与溢出</strong>按钮查看不同栈限额下的正常返回与 <code>SIGSEGV</code>（段错误）终止。</p>` : ''}
     ${id === '3.3' ? `<details class="secondary-fold" id="original-demand"><summary>对照指导书 3.3：原版 512 MiB 程序的五次 ps 记录</summary><div id="lab-original-ps"><p class="muted">正在载入五次 ps 原始输出…</p></div></details>` : ''}
     <div class="lab-actions">
-      ${runMode ? `<button id="collect-lab" class="ghost-action" data-mode="${runMode}" data-group4="${id.startsWith('4.') ? id : 'all'}">采集${runMode === 'group3' ? '第 3 组' : '本项'}新数据</button>` : ''}
+      ${canRunLab ? `<button id="collect-lab" class="ghost-action" data-mode="${runMode}" data-group4="${id.startsWith('4.') ? id : 'all'}">采集${runMode === 'group3' ? '第 3 组' : '本项'}新数据</button>` : ''}
     </div>
     <p id="lab-job" role="status"></p>
   </section>
@@ -346,7 +363,7 @@ export async function showLab(id, preferredId) {
       (c?.data && c.validation.status === 'passed' ? table(['操作', '实测结果'], c.data.samples.map(s => [s.phase, displayValue(s.observed)])) :
         `<p>${esc(c?.error?.message || '本次观测未通过核对，请查看完整记录。')}</p>`);
   } else if (!replays.length) {
-    panel.textContent = runMode ? '这里还没有本项回放，可以在当前实验环境采集一份。' :
+    panel.textContent = canRunLab ? '这里还没有本项回放，可以在当前实验环境采集一份。' :
       '本项尚无实测记录。按上面的步骤在课程虚拟机操作，保留命令输出和对应的内核事件。';
   }
 

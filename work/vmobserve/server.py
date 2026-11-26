@@ -13,7 +13,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .common import execute, read_json, run_id, timestamp, write_json
 from .cow import COW_CHOICES
-from .export import csv_text, demand_pair_csv, html_text
+from .export import csv_text, demand_pair_csv, demand_process_evidence, html_text
 from .replay import load_run, read_evidence, recorded_environment, safe_child
 from .runner import WORK
 from .systems import LABS
@@ -22,13 +22,13 @@ WEB = Path(__file__).parent / "web"
 
 
 WEB_PAGES = {
-    "/": "index.html", "/lesson": "lesson.html", "/favicon.svg": "favicon.svg",
+    "/": "index.html", "/lesson": "lesson.html", "/practice-review": "practice-review.html", "/favicon.svg": "favicon.svg",
     **{"/" + name: name for name in (
         "app.js", "ui.js", "course-views.js", "memory-views.js",
         "sequence-view.js", "evidence-view.js", "curriculum.js",
         "experiment-flow.js", "replay-notes.js", "notes-store.js",
         "notes-library.js", "learning-report.js", "comparison-data.js", "replay-comparison.js",
-        "lesson.js", "style.css",
+        "lesson.js", "practice-data.js", "practice-review.js", "style.css",
     )},
 }
 
@@ -56,6 +56,8 @@ def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all
         "cow": ["--suite", "baseline", "--cow-fraction", cow_fraction],
         "group3": ["--suite", "group3", "--timeout", "120"],
         "demand512-thp": ["--suite", "demand512-thp", "--timeout", "120"],
+        "demand512-thp-allow": ["--suite", "demand512-thp", "--thp-process", "allow", "--timeout", "120"],
+        "demand512-thp-disable": ["--suite", "demand512-thp", "--thp-process", "disable", "--timeout", "120"],
         "group4": ["--suite", "group4", "--group4-task", group4_task, "--timeout", "120"],
         "lesson-thp": ["--suite", "thp", "--pattern", pattern, "--repeats", "1"],
         "policy": ["--suite", "thp", "--thp", "on", "--thp-process", "pair", "--pattern", pattern, "--repeats", "1"],
@@ -92,7 +94,8 @@ class Workbench:
                                   "count": len(data["cases"]) if "cases" in data else 18,
                                   "case_keys": [
                                       [c["suite"], c.get("parameters", {}).get("lab"),
-                                       c.get("parameters", {}).get("thp_advice"), c.get("parameters", {}).get("repeat")]
+                                       c.get("parameters", {}).get("thp_advice"), c.get("parameters", {}).get("repeat"),
+                                       c.get("parameters", {}).get("process_thp")]
                                       for c in data.get("cases", [])
                                   ],
                                   "suites": sorted({c["suite"] for c in data["cases"]}) if "cases" in data else ["baseline", "thp"],
@@ -224,6 +227,13 @@ def handler_for(app):
                 if path == "/api/job":
                     with app.lock:
                         return self.send(app.job)
+                if path == "/api/demand-process-comparison":
+                    ids = [query.get(key, [""])[0] for key in ("id", "other")]
+                    repeat = int(query.get("repeat", ["0"])[0])
+                    phase = query.get("phase", [""])[0]
+                    comparison = demand_process_evidence(ids, [load_run(app.directory(id_)) for id_ in ids], repeat, phase)
+                    attachment = "demand-process-evidence.json" if query.get("download") == ["1"] else None
+                    return self.send(comparison, attachment=attachment)
                 if path not in ("/api/report", "/api/evidence", "/api/export"):
                     return self.send({"error": "not found"}, code=404)
                 directory = app.directory(query.get("id", [""])[0])

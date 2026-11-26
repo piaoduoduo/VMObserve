@@ -1,4 +1,4 @@
-import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine } from './ui.js';
+import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine, canCollect } from './ui.js';
 import { renderEvidence } from './evidence-view.js';
 import { attachReplayFlow } from './experiment-flow.js';
 import { renderReplayNotes } from './replay-notes.js';
@@ -149,7 +149,8 @@ async function refresh() {
     || state.runs.find(r => supports(r, 'sequence') && r.status === 'completed')
     || state.runs[0];
   if (preferred) return select(preferred.id, true);
-  $('#content').innerHTML = '<p class="empty">还没有实验记录。点左下角“采集新实验数据”即可跑出第一份真实记录。</p>';
+  $('#content').innerHTML = '<p class="empty">' + (canCollect(state.config)
+    ? '还没有实验记录。可以从侧栏采集新数据。' : '还没有实验记录。可在 Linux 采集后，把完整运行目录交给本机回放。') + '</p>';
 }
 
 let selectionRequest = 0, evidenceRequest = 0;
@@ -200,6 +201,7 @@ function ensureReplayChrome() {
   if (!replayStarted) {
     replayStarted = true;
     $('#run').title = `采集目标：${state.config?.executor || '默认环境'}`;
+    jobUI();
     api('/api/job').then(j => { state.job = j; jobUI(); }).catch(() => {});
     setInterval(async () => {
       if (document.body.classList.contains('course-reading')) return;
@@ -313,9 +315,11 @@ function render() {
   document.title = (lab ? '实验 ' + lab : topics[state.tab]) + ' · 重点任务可视化实验台';
   const selected = state.tab === 'group3' ? viewCases(r.cases, state.tab, item => item.suite)[state.selected] : null;
   const pairedDemand = selected?.suite === 'demand512' && Boolean(selected.parameters.thp_advice);
-  const singleMode = pairedDemand ? 'demand512-thp' : { sequence: 'sequence', group3: 'group3', course: 'course' }[state.tab];
+  const process = pairedDemand ? selected.parameters.process_thp : null;
+  const singleMode = pairedDemand ? (process ? 'demand512-thp-' + process : 'demand512-thp')
+    : { sequence: 'sequence', group3: 'group3', course: 'course' }[state.tab];
   $('#run').dataset.mode = singleMode || 'complete';
-  $('#run').textContent = pairedDemand ? '重新采集三轮大页对照'
+  $('#run').textContent = pairedDemand ? (process === 'disable' ? '重新采集进程禁用对照' : '重新采集三轮大页对照')
     : singleMode === 'group3' ? '重新采集第 3 组' : singleMode ? '重新采集本项实验' : '采集整套实验';
   savePosition();
   if (!focused) attachReplayFlow();
@@ -582,6 +586,7 @@ async function raw(caseId, kind, opts = {}) {
 let activeJobId = null, handledJobId = null;
 
 async function runLessonTrial(button) {
+  if (!canCollect(state.config)) return;
   const lesson = button.dataset.lessonRun;
   const trial = {from: state.id, index: state.selected, phase: state.phase, tab: state.tab, lesson, reading: state.report.data_origin === 'real_execution' ? button.dataset.reading : '', message: '正在运行…'};
   if (lesson === 'stack') trial.limit = viewCases(state.report.cases, 'group3', c => c.suite)[state.selected].parameters.limit_kib;
@@ -647,6 +652,7 @@ async function finishAddressTrial(trial, job) {
 }
 
 async function run(mode) {
+  if (!canCollect(state.config)) return;
   error('');
   const trial = mode === 'sequence' && $('#run-sequence')
     ? { run: state.id, caseId: state.report.cases.filter(c => c.suite === 'sequence')[state.selected]?.id, running: true } : null;
@@ -674,10 +680,22 @@ async function run(mode) {
 
 function jobUI() {
   const job = state.job;
-  if ($('[data-lesson-run]')) $('[data-lesson-run]').disabled = job?.status === 'running';
-  $('#run').disabled = job?.status === 'running';
-  for (const id of [...Object.keys(runModes), 'group4-task']) {
-    if ($('#' + id)) $('#' + id).disabled = job?.status === 'running';
+  const available = canCollect(state.config);
+  const running = job?.status === 'running';
+  if ($('[data-lesson-run]')) $('[data-lesson-run]').disabled = !available || running;
+  $('#run').hidden = !available;
+  $('#run').disabled = !available || running;
+  if ($('#collection-mode')) $('#collection-mode').hidden = available;
+  for (const id of Object.keys(runModes)) {
+    const button = $('#' + id);
+    if (button) {
+      button.hidden = !available;
+      button.disabled = !available || running;
+    }
+  }
+  for (const id of ['cow-fraction', 'group4-task']) {
+    const filter = $('#' + id);
+    if (filter) filter.disabled = running;
   }
   const button = $('#run-sequence');
   if (button && state.sequenceTrial?.running) {
@@ -716,6 +734,7 @@ try {
     if (lab) renderTaskDirectory(lab);
     else renderHome();
     state.config = await api('/api/config');
+    jobUI();
     if (lab === null && location.hash && !state.id) await startReplay();
   } else if (lab === null) {
     state.config = await api('/api/config');
@@ -726,7 +745,10 @@ try {
     [state.config, state.runs] = await Promise.all([api('/api/config'), api('/api/runs')]);
     const originalPs = lab === '3.3' && location.hash === '#original-demand';
     const suite = new URLSearchParams(location.search).get('replay') ?? (lab === '3.2' ? 'sequence' : lab === '3.3' ? (location.hash === '#stack' ? 'stack' : 'demand512') : null);
-    const topic = ({ sequence: 'sequence', demand512: 'group3', 'demand512-thp': 'group3', stack: 'group3' })[suite];
+    const topic = ({
+      sequence: 'sequence', demand512: 'group3', 'demand512-thp': 'group3',
+      'demand512-thp-allow': 'group3', 'demand512-thp-disable': 'group3', stack: 'group3'
+    })[suite];
     const entry = topic && newestReplay(lab, topic, suite);
     if (entry) {
       window.history.replaceState(null, '', entry.href);

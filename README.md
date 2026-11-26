@@ -22,9 +22,21 @@ python work/launch.py
 
 完整课程目录也收入了第 1、2 组 openEuler 实测摘录以及进程、同步和 I/O 案例。[7.2 FIFO](http://127.0.0.1:8765/labs/7.2) 可以复验。7.4 内核模块和 7.5 eBPF 目前只提供课程任务索引。
 
+## 评委复验内置记录
+
+在干净检出的项目目录运行：
+
+```sh
+python -B work/verify_submission.py
+```
+
+这条命令只读核对随仓库交付的五份历史实测记录，包括进程级禁用下建议成功、写入后无匿名大页的反例。它用临时本地端口复核报告和证据哈希，从原始 `smaps` 重算 3.2 的去重 RSS，并核对 3.3 两环境的建议对照、WSL2 的进程级对照及其 CSV、JSONL 和 `smaps`。通过后输出 JSON，失败时给出失败位置并返回非零退出码。只需要 Python 3.10 及以上，无需安装编译器或启动 Linux 虚拟机。复验现有样例与重新采集的区别见[参赛基线](docs/FOCUS_BASELINE.md)。
+
+下载 3.3 的同屏对照证据后，可离线复核单个文件。在项目根目录运行 `python -B work/verify_submission.py --process-evidence demand-process-evidence.json`。如果原始运行目录放在仓库以外，用 `--records` 指向包含这些运行目录的上一级。命令会从原报告重新生成对照，并列出与下载文件不一致的字段。
+
 ## 运行自己的实验
 
-Linux 采集需要 GCC；连续分配实验还需要 strace。在项目根目录运行：
+Linux 采集需要 GCC；连续分配实验还需要 strace。用 `python3 -B work/run_all.py --suite sequence --check-tools` 可核对当前 Linux 会话的依赖（只报告工具路径和采集环境，不编译、不生成实验记录）。在项目根目录运行：
 
 ```sh
 python work/doctor.py

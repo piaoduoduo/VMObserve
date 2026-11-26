@@ -1,0 +1,53 @@
+{
+  "run_id": "20261118T061912.089141Z",
+  "data_origin": "real_execution",
+  "view_mode": "historical_replay",
+  "os": "openEuler 24.03 LTS",
+  "kernel": "6.6.0-28.0.0.34.oe2403.x86_64",
+  "thp": "[always] madvise never",
+  "pid": 1299,
+  "source_sha256": "37b567e0471a10a4f684e7cf52621e93b72abc877552d73685acc90952cfb678",
+  "command": "ps -o min_flt,maj_flt,rsz,vsz,pid,cmd -p 1299",
+  "samples": [
+    {
+      "phase": "before",
+      "min_flt": 58,
+      "maj_flt": 0,
+      "rsz_kib": 1428,
+      "vsz_kib": 2404,
+      "ps_line": "    58      0  1428   2404    1299 /home/oslab/os-course/report-originals.p3cQ5L/run-20261118T061912.089141Z/demand/demand"
+    },
+    {
+      "phase": "allocated",
+      "min_flt": 59,
+      "maj_flt": 0,
+      "rsz_kib": 1432,
+      "vsz_kib": 526696,
+      "ps_line": "    59      0  1432 526696    1299 /home/oslab/os-course/report-originals.p3cQ5L/run-20261118T061912.089141Z/demand/demand"
+    },
+    {
+      "phase": "quarter",
+      "min_flt": 401,
+      "maj_flt": 0,
+      "rsz_kib": 133616,
+      "vsz_kib": 526696,
+      "ps_line": "   401      0 133616 526696   1299 /home/oslab/os-course/report-originals.p3cQ5L/run-20261118T061912.089141Z/demand/demand"
+    },
+    {
+      "phase": "half",
+      "min_flt": 465,
+      "maj_flt": 0,
+      "rsz_kib": 264688,
+      "vsz_kib": 526696,
+      "ps_line": "   465      0 264688 526696   1299 /home/oslab/os-course/report-originals.p3cQ5L/run-20261118T061912.089141Z/demand/demand"
+    },
+    {
+      "phase": "all",
+      "min_flt": 825,
+      "maj_flt": 0,
+      "rsz_kib": 525716,
+      "vsz_kib": 526696,
+      "ps_line": "   825      0 525716 526696   1299 /home/oslab/os-course/report-originals.p3cQ5L/run-20261118T061912.089141Z/demand/demand"
+    }
+  ]
+}

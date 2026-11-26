@@ -11,6 +11,7 @@ import threading
 import unittest
 from unittest.mock import patch
 from urllib.error import HTTPError
+from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,7 +19,9 @@ sys.path.insert(0, str(ROOT / "work"))
 from vmobserve.server import experiment_args, Workbench, handler_for
 from vmobserve import SCHEMA_VERSION
 from vmobserve.common import write_json
-from vmobserve.replay import read_evidence
+from vmobserve.replay import read_evidence, load_run
+from vmobserve.export import demand_process_evidence
+from verify_submission import verify_process_file
 
 
 class ServerTests(unittest.TestCase):
@@ -37,6 +40,14 @@ class ServerTests(unittest.TestCase):
         cls.server.shutdown()
         cls.server.server_close()
         cls.thread.join()
+
+    def test_classroom_review_page_and_assets_are_available(self):
+        for route, marker in (("/practice-review", "课堂首答复核"),
+                              ("/practice-review.js", "reviewPracticeAttempt"),
+                              ("/practice-data.js", "vmobserve.demand-practice-attempt/v1")):
+            with self.subTest(route=route), urlopen(self.base + route) as response:
+                self.assertEqual(response.status, 200)
+                self.assertIn(marker, response.read().decode("utf-8"))
 
     def test_report_and_all_export_formats(self):
         with urlopen(self.base + "/api/report?id=test--legacy-run") as response:
@@ -103,6 +114,69 @@ class ServerTests(unittest.TestCase):
             page = response.read().decode("utf-8")
         self.assertIn(f'<td>{case["id"]}</td><td>alloc_1MiB</td><td>parent</td>'
                       "<td>相关 VMA 去重合计</td><td>16</td>", page)
+
+    def test_process_evidence_download_matches_display_and_hashes(self):
+        allow, disable = "20261125T110630.221939Z", "20261125T110657.478995Z"
+        endpoint = self.base + "/api/demand-process-comparison?"
+        query = urlencode({"id": f"example--{disable}", "other": f"example--{allow}", "repeat": 3})
+        active = endpoint + query + "&phase=write_quarter"
+        with urlopen(active) as response:
+            evidence = json.load(response)
+        with urlopen(active + "&download=1") as response:
+            self.assertIn('filename="demand-process-evidence.json"', response.headers["Content-Disposition"])
+            self.assertEqual(json.load(response), evidence)
+        self.assertEqual(evidence["schema_version"], "vmobserve.demand-process-evidence/v1")
+        self.assertEqual((evidence["repeat"], evidence["phase"]), (3, "write_quarter"))
+        self.assertEqual([(row["rss_kib"], row["huge_kib"], row["action_minor"]) for row in evidence["cases"]],
+                         [(131072, 131072, 64), (131072, 0, 32768)])
+        for row in evidence["cases"]:
+            root = ROOT / "examples" / row["run_id"]
+            self.assertEqual(row["case_id"], "demand512-thp-on-3")
+            self.assertEqual(row["report_sha256"], hashlib.sha256((root / "report.json").read_bytes()).hexdigest())
+            self.assertEqual(set(row["artifacts"]), {"jsonl", "smaps"})
+            for source in row["artifacts"].values():
+                self.assertEqual(source["sha256"], hashlib.sha256((root / source["path"]).read_bytes()).hexdigest())
+        with urlopen(endpoint + query + "&phase=freed") as response:
+            released = json.load(response)["cases"]
+        self.assertTrue(all(row["rss_kib"] is None and row["huge_kib"] is None
+                            and row["written_positions"] is None for row in released))
+        self.assertTrue(all(isinstance(row["action_minor"], int) for row in released))
+
+    def test_downloaded_process_file_rebuilds_and_rejects_changed_readings(self):
+        paths = ["20261125T110630.221939Z", "20261125T110657.478995Z"]
+        reports = [load_run(ROOT / "examples" / path) for path in paths]
+        ids = [f"example--{path}" for path in paths]
+        evidence = demand_process_evidence(ids, reports, 1, "write_quarter")
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory) / "process.json"
+            file.write_text(json.dumps(evidence, indent=2, sort_keys=True), encoding="utf-8")
+            roots = [ROOT / "examples"]
+            self.assertEqual(verify_process_file(file, roots)["status"], "passed")
+            with self.assertRaisesRegex(ValueError, "no matching original report"):
+                verify_process_file(file, [])
+            evidence["cases"][1]["huge_kib"] = False
+            file.write_text(json.dumps(evidence), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, r"cases\[2\]\.huge_kib"):
+                verify_process_file(file, roots)
+            file.write_text('{"repeat":1,"repeat":2}', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "duplicate JSON fields"):
+                verify_process_file(file, roots)
+
+    def test_process_evidence_rejects_incompatible_records(self):
+        paths = ["20261125T110630.221939Z", "20261125T110657.478995Z"]
+        first, second = [load_run(ROOT / "examples" / path) for path in paths]
+        ids = [f"example--{path}" for path in paths]
+        for changes in ({"environment": {**second["environment"], "page_bytes": 65536}},
+                        {"sources": {}}, {"integrity": {"status": "failed"}}):
+            with self.subTest(changes=changes):
+                with self.assertRaises(ValueError):
+                    demand_process_evidence(ids, [first, {**second, **changes}], 2, "write_quarter")
+        with self.assertRaises(ValueError):
+            demand_process_evidence(ids, [first, second], 4, "write_quarter")
+        with self.assertRaises(ValueError):
+            demand_process_evidence(ids, [first, second], 2, "not_a_phase")
+        with self.assertRaises(ValueError):
+            demand_process_evidence(ids, [first, first], 2, "write_quarter")
 
     def test_demand_pair_export_rejects_unpaired_baseline(self):
         path = "/api/export?id=example--20261118T013159.221864Z&format=demand-pair-csv&case=demand512-1"

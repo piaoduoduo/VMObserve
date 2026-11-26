@@ -1,8 +1,9 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
+import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, gradeDemandExercise, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 import {groupBlocksIntoRegions, sharedPointerRegion} from '../work/vmobserve/web/sequence-view.js';
 import {learningReport} from '../work/vmobserve/web/learning-report.js';
+import {demandPair} from '../work/vmobserve/web/ui.js';
 
 test('3.2 conclusion exports the third allocation and the released addresses separately', () => {
   const heap = {start: '1000', end: '4000', rss_kib: 8};
@@ -79,7 +80,7 @@ test('source manifests compare by file and hash instead of JSON property order',
   assert.equal(sameSources({a:'1'},{a:'2'}), false);
 });
 
-import {demandEnvironmentReplays} from '../work/vmobserve/web/curriculum.js';
+import {demandEnvironmentReplays, demandProcessCandidates} from '../work/vmobserve/web/curriculum.js';
 
 test('demand environment links preserve policy, repeat and phase across distinct case ordering', () => {
   const run = (id, distribution, case_keys) => ({
@@ -104,13 +105,15 @@ test('demand environment links preserve policy, repeat and phase across distinct
 
 test('demand pair timeline joins by phase and rejects incomplete or mismatched measurements', () => {
   const sample = (phase, count, rss_kib) => ({phase, count, rss_kib});
-  const make = samples => ({validation: {status: 'passed'}, data: {samples}});
+  const make = samples => ({status: 'completed', validation: {status: 'passed'}, data: {samples}});
   const off = make([sample('allocated', 0, 0), sample('write_quarter', 32768, 131072)]);
   const on = make([sample('write_quarter', 32768, 131072), sample('allocated', 0, 0)]);
   assert.deepEqual(demandPairTimeline([off, on]).map(row => [row.phase, row.enabled.rss_kib]),
     [['allocated', 0], ['write_quarter', 131072]]);
   assert.deepEqual(demandPairTimeline([off]), []);
   assert.deepEqual(demandPairTimeline([off, {...on, validation: {status: 'failed'}}]), []);
+  assert.deepEqual(demandPairTimeline([off, {...on, status: 'failed'}]), []);
+  assert.deepEqual(demandPairTimeline([off, {...on, parameters: {process_thp: 'disable'}}]), []);
   on.data.samples[0].count = 1;
   assert.deepEqual(demandPairTimeline([off, on]), []);
 });
@@ -220,6 +223,15 @@ test('learning report keeps released write count and absent VMA measurements bla
   assert.match(html, /<dt>进程本步次缺页<\/dt><dd>0<\/dd>/);
 });
 
+test('demand policy pairs require one unique case per strategy in the same repeat', () => {
+  const off = item('demand512', [], {repeat: 1, thp_advice: 'off'});
+  const on = item('demand512', [], {repeat: 1, thp_advice: 'on'});
+  assert.deepEqual(demandPair([on, off], on), [off, on]);
+  assert.deepEqual(demandPair([on], on), []);
+  assert.deepEqual(demandPair([on, off, {...off}], off), []);
+  assert.deepEqual(demandPair([on, {...off, parameters: {...off.parameters, repeat: 2}}], on), []);
+});
+
 test('evidence exercise follows the phase readings and requires a measurable pair', () => {
   const reading = (rss_kib, huge_kib, mapping_present = true) =>
     ({rss_kib, huge_kib, mapping_present, action_minor: 0});
@@ -234,4 +246,30 @@ test('evidence exercise follows the phase readings and requires a measurable pai
   assert.equal(demandExerciseReadings({disabled, enabled: reading(0, 0, false)}), null);
   assert.equal(demandExerciseReadings({disabled, enabled: {...enabled, action_minor: null}}), null);
   assert.equal(demandExerciseReadings({repeat: 2, issue: 'validation'}), null);
+});
+
+test('process comparison candidates keep the other mode in the same recorded setting and repeat', () => {
+  const run = (id, mode, repeat, overrides = {}) => ({id, run_id: id, data_origin: 'real_execution',
+    distribution: 'Ubuntu', execution_context: 'wsl2', kernel: '6.6', status: 'completed',
+    case_keys: [['demand512', null, 'on', repeat, mode]], ...overrides});
+  const current = run('01', 'disable', 2);
+  const candidates = [current, run('02', 'allow', 2), run('03', 'allow', 2, {kernel: '6.8'}),
+    run('04', 'allow', 1), run('05', 'disable', 2), run('06', 'allow', 2, {data_origin:'synthetic'})];
+  assert.deepEqual(demandProcessCandidates(candidates, current.id, {process_thp: 'disable', repeat: 2})
+    .map(candidate => candidate.id), ['02']);
+});
+
+test('demand practice grades three answers and rejects missing or invalid choices', () => {
+  const practice = {rss: 0, huge: 'zero'};
+  assert.equal(gradeDemandExercise(practice, {rss: '', huge: 'zero', scope: 'process'}), null);
+  assert.equal(gradeDemandExercise(practice, {rss: '0', huge: 'zero', scope: 'VMA'}), null);
+  const graded = gradeDemandExercise(practice, {rss: '0', huge: 'present', scope: 'process'});
+  assert.deepEqual(graded, {
+    responses: [
+      {question: 'rss', answer: '0', expected: '0', correct: true},
+      {question: 'huge', answer: 'present', expected: 'zero', correct: false},
+      {question: 'scope', answer: 'process', expected: 'process', correct: true}
+    ],
+    score: 2, total: 3
+  });
 });

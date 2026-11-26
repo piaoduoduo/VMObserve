@@ -52,6 +52,18 @@ async function api(route, options) {
   return value;
 }
 
+export function download(value, filename, type = 'application/json') {
+  const data = type === 'text/html' ? value : JSON.stringify(value, null, 2);
+  const blobUrl = URL.createObjectURL(new Blob([data], {type}));
+  const link = document.createElement('a');
+  link.href = blobUrl; link.download = filename; link.click();
+  setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+}
+
+export function canCollect(config) {
+  return config?.executor === 'openeuler-vm' || config?.host_system === 'Linux';
+}
+
 export function replayOriginLabel(report) {
   if (report?.data_origin === 'real_execution') return '历史实测回放';
   if (report?.data_origin === 'synthetic') return '模拟回放';
@@ -66,10 +78,11 @@ export function stepActions(selected, length, attr = 'data-course-step') {
 }
 
 export function demandPair(cases, selected) {
-  if (selected?.suite !== 'demand512' || !selected.parameters?.thp_advice) return [];
-  return ['off', 'on'].map(advice => cases.find(item =>
+  if (selected?.suite !== 'demand512' || !['off', 'on'].includes(selected.parameters?.thp_advice)) return [];
+  const groups = ['off', 'on'].map(advice => cases.filter(item =>
     item.suite === 'demand512' && item.parameters.repeat === selected.parameters.repeat &&
-    item.parameters.thp_advice === advice)).filter(Boolean);
+    item.parameters.thp_advice === advice));
+  return groups.every(group => group.length === 1) ? groups.flat() : [];
 }
 
 export function stepNavigation(titles, selected, attr = 'data-sequence-step') {
@@ -112,6 +125,7 @@ export function missingReading() {
 }
 
 export function lessonPractice(mode, caption, reading, settings = '', hint = '') {
+  if (!canCollect(state.config)) return '';
   const trial = state.lessonTrial;
   const before = trial?.from === state.id && trial.index === state.selected;
   const after = trial?.to === state.id && trial.toIndex === state.selected;

@@ -1,4 +1,4 @@
-import { $, state, esc, kib, table, stepNavigation, stepControls, runTargetLabel } from './ui.js';
+import { $, state, esc, kib, table, stepNavigation, stepControls, runTargetLabel, canCollect } from './ui.js';
 
 const BLOCK_SIZES = ['1 KiB', '256 KiB', '1 MiB'];
 const PHASES = ['申请前', '申请 1 KiB', '申请 256 KiB', '申请 1 MiB', '全部释放'];
@@ -375,6 +375,7 @@ function comparisonReadings(data) {
 }
 
 function addressTrial(c) {
+  if (!canCollect(state.config)) return '';
   const trial = state.sequenceTrial;
   const current = trial?.run === state.id && trial.caseId === c.id ? trial : null;
   const before = state.report.data_origin === 'real_execution' && c.integrity === 'verified' ? c.data?.allocations : null;
@@ -453,7 +454,9 @@ export function renderSequence() {
   const cases = state.report.cases.filter(c => c.suite === 'sequence');
   const content = $('#content');
   if (!cases.length) {
-    content.innerHTML = '<h2>连续三次 malloc</h2><p>这份记录没有 3.2 的采样。</p><a href="/labs/3.2">打开 3.2 实验</a> · <a href="/#topic=evidence">浏览原始证据</a>';
+    content.innerHTML = '<h2>连续三次 malloc</h2><p>这份记录没有 3.2 的采样。' +
+      (canCollect(state.config) ? '可在顶部更换记录，或从侧栏重新采集本项实验。' : '可在顶部更换记录。') +
+      '</p><a href="/labs/3.2">打开 3.2 实验</a> · <a href="/#topic=evidence">浏览原始证据</a>';
     return;
   }
   state.selected = Math.min(state.selected, cases.length - 1);

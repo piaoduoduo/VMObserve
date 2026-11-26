@@ -1,6 +1,7 @@
-import { $, state, labels, esc, kib, table, runTargetLabel, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, stepControls, sampleReadings, lessonPractice, missingReading, demandPair, url, replayOriginLabel } from './ui.js';
-import { newestReplay, demandEnvironmentReplays } from './curriculum.js';
-import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings } from './comparison-data.js';
+import { $, state, labels, esc, kib, table, api, download, canCollect, runTargetLabel, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, stepControls, sampleReadings, lessonPractice, missingReading, demandPair, url, replayOriginLabel } from './ui.js';
+import { newestReplay, demandEnvironmentReplays, demandProcessCandidates } from './curriculum.js';
+import { demandPracticeEvidence, practiceAttemptSchema } from './practice-data.js';
+import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings, gradeDemandExercise } from './comparison-data.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -14,7 +15,7 @@ function renderLayout() {
   </div>`;
   const cases = state.report.cases.filter(c => c.suite === 'layout');
   if (!cases.length) {
-    $('#content').innerHTML = intro + '<p class="empty">当前记录里没有“程序地址”实验，请点顶部“切换记录”选一条“程序地址”记录或点击上方按钮采集。</p>';
+    $('#content').innerHTML = intro + '<p class="empty">这份记录里没有「程序地址」实验。可在顶部切换到包含该实验的记录。</p>';
     return;
   }
   state.selected = Math.min(state.selected, cases.length - 1);
@@ -286,6 +287,7 @@ function demandRepeatReview(rows, activePhase, currentRepeat) {
   const issues = {
     pair: '两组未唯一配对',
     validation: '案例未完成或未通过校验',
+    condition: '两组进程级大页设置不同',
     phase: '阶段或写入量不一致'
   };
   const metrics = demandChartMetrics.map(([key, label, format]) => ({
@@ -310,6 +312,8 @@ function demandRepeatReview(rows, activePhase, currentRepeat) {
   </details>`;
 }
 
+const demandPracticeSessions = new Map();
+
 function demandEvidencePractice(practice) {
   if (!practice) return '';
   return `<form class="demand-evidence-exercise">
@@ -327,32 +331,140 @@ function demandEvidencePractice(practice) {
     </div>
     <button class="primary" type="submit">核对三项判断</button>
     <div class="demand-exercise-feedback" role="status"></div>
+    <div class="demand-first-attempt" hidden>
+      <p class="detail-copy"></p>
+      <button type="button">下载本步首次作答</button>
+    </div>
   </form>`;
 }
 
-function bindDemandEvidencePractice(practice) {
+function bindDemandEvidencePractice(practice, selected, phase) {
   const form = $('.demand-evidence-exercise');
   if (!form || !practice) return;
+  const report = state.report;
+  const repeat = selected.parameters.repeat;
+  const key = JSON.stringify([report.original_report_sha256, repeat, phase]);
+  if (!demandPracticeSessions.has(key)) demandPracticeSessions.set(key, {});
+  const session = demandPracticeSessions.get(key);
+  const evidence = form.closest('.demand-evidence');
+  const first = form.querySelector('.demand-first-attempt');
+  const feedback = form.querySelector('.demand-exercise-feedback');
+  const markOpened = () => {
+    if (evidence.isConnected && evidence.open) session.openedAt ??= performance.now();
+  };
+  const showFirst = () => {
+    if (!session.firstAttempt) return;
+    const {score, total} = session.firstAttempt;
+    first.querySelector('p').textContent = `本页首次作答 ${score} / ${total} 项。重答后仍可下载首答，刷新会清除这份记录。`;
+    first.hidden = false;
+  };
+  evidence.addEventListener('toggle', markOpened);
+  markOpened();
+  showFirst();
+  first.querySelector('button').addEventListener('click', () => {
+    if (session.firstAttempt) download(session.firstAttempt, `vmobserve-3.3-${report.run_id}-r${repeat}-${phase}-first.json`);
+  });
   form.addEventListener('submit', event => {
     event.preventDefault();
-    const answers = new FormData(form);
-    const checks = [
-      [answers.get('rss') === String(practice.rss), `禁用组 RSS ${kib(practice.disabledRss)}，使用组 RSS ${kib(practice.enabledRss)}。依据是两组目标 VMA 的 Rss。`],
-      [answers.get('huge') === practice.huge, `使用组 AnonHugePages 为 ${kib(practice.enabledHuge)}。实际驻留量由这一项读出，madvise 的返回值用于判断建议调用是否成功。`],
-      [answers.get('scope') === 'process', '次缺页取自各组进程本步的 getrusage 增量，统计范围覆盖整个进程。']
-    ];
-    const correct = checks.filter(([passed]) => passed).length;
-    form.querySelector('.demand-exercise-feedback').innerHTML =
-      `<strong>答对 ${correct} / ${checks.length} 项</strong><ol>${checks.map(([passed, explanation]) =>
-        `<li>${passed ? '正确' : '再核对'} · ${esc(explanation)}</li>`).join('')}</ol>`;
+    const data = new FormData(form);
+    const answers = Object.fromEntries(['rss', 'huge', 'scope'].map(name => [name, data.get(name)]));
+    const result = gradeDemandExercise(practice, answers);
+    if (!result) return;
+    if (!session.firstAttempt) {
+      const pair = demandPair(report.cases, selected);
+      session.firstAttempt = {
+        schema_version: practiceAttemptSchema, kind: 'learner_self_check',
+        submitted_at: new Date().toISOString(),
+        elapsed_ms_since_evidence_opened: session.openedAt == null ? null : Math.round(performance.now() - session.openedAt),
+        evidence: demandPracticeEvidence(report, pair, repeat, phase),
+        ...result
+      };
+    }
+    const hints = {
+      rss: `禁用组 RSS ${kib(practice.disabledRss)}，使用组 RSS ${kib(practice.enabledRss)}。依据是两组目标 VMA 的 Rss。`,
+      huge: `使用组 AnonHugePages 为 ${kib(practice.enabledHuge)}。实际驻留量由这一项读出，madvise 的返回值用于判断建议调用是否成功。`,
+      scope: '次缺页取自各组进程本步的 getrusage 增量，统计范围覆盖整个进程。'
+    };
+    feedback.innerHTML = `<strong>本次答对 ${result.score} / ${result.total} 项</strong><ol>${result.responses.map(row =>
+      `<li>${row.correct ? '正确' : '再核对'} · ${esc(hints[row.question])}</li>`).join('')}</ol>`;
+    showFirst();
   });
+}
+
+function demandProcessPanel() {
+  const previous = $('.demand-process-comparison');
+  const open = previous?.dataset.run === state.id && previous.open;
+  return `<details class="secondary-fold demand-process-comparison" data-run="${esc(state.id)}"${open ? ' open' : ''}>
+    <summary>同阶段比较进程级开关</summary>
+    <p class="detail-copy" role="status"></p>
+    <div class="demand-process-results"></div>
+  </details>`;
+}
+
+function demandProcessResults(evidence, downloadUrl) {
+  const {phase, repeat, cases} = evidence;
+  const href = row => {
+    const hash = new URLSearchParams({run: row.record_id, topic: 'group3', case: row.case_index, step: row.step_index});
+    return '/' + location.search + '#' + hash;
+  };
+  const read = (label, key, format = String) => [label, ...cases.map(row => row[key] === null ? '—' : format(row[key]))];
+  return `<p class="detail-copy"><strong>${esc(demandActions[phase]?.[0] || phase)} · 第 ${esc(repeat)} 轮 · 两组均使用 MADV_HUGEPAGE</strong></p>
+    ${table(['观测指标', '解除进程禁用', '进程级禁用'], [
+      read('进程禁用读回', 'process_thp_disabled'),
+      read('madvise 返回值', 'madvise_result'),
+      read('累计写入位置', 'written_positions'),
+      ...demandChartMetrics.map(([key, label, format]) => read(label, key, format))
+    ])}
+    <p class="detail-copy">两组目标 VMA 的 RSS 与匿名大页来自 smaps，次缺页为各自进程的本步增量。「—」表示该步没有对应读数。</p>
+    <ul class="demand-process-sources">${cases.map(row =>
+      `<li><a href="${esc(href(row))}">${row.process_thp === 'allow' ? '解除禁用原文' : '进程禁用原文'} · ${esc(row.run_id)}</a></li>`).join('')}</ul>
+    <div class="raw-links"><a class="btn-link" href="${esc(downloadUrl)}" download>下载本步对照证据 JSON</a></div>`;
+}
+
+function bindDemandProcessPanel(parameters, phase) {
+  const panel = $('.demand-process-comparison');
+  if (!panel || !phase) return;
+  const repeat = parameters.repeat;
+  const id = state.id;
+  const candidates = demandProcessCandidates(state.runs, id, parameters);
+  const status = panel.querySelector('[role="status"]');
+  const result = panel.querySelector('.demand-process-results');
+  let started = false;
+  const load = async () => {
+    if (!panel.open || started) return;
+    started = true;
+    if (!candidates.length) {
+      status.textContent = '当前目录没有同一环境和轮次的另一进程条件记录。';
+      return;
+    }
+    status.textContent = '正在核对对应记录的探针、环境与采样阶段…';
+    const issues = new Set();
+    const endpoint = '/api/demand-process-comparison';
+    for (const candidate of candidates) {
+      const params = {id, other: candidate.id, repeat, phase};
+      try {
+        const evidence = await api(url(endpoint, params));
+        if (!panel.isConnected) return;
+        result.innerHTML = demandProcessResults(evidence, url(endpoint, {...params, download: 1}));
+        status.textContent = '';
+        return;
+      } catch (error) {
+        if (!panel.isConnected) return;
+        issues.add(error instanceof TypeError ? '本地服务连接失败' : error.message);
+      }
+    }
+    status.textContent = '无法并排核对，' + [...issues].join('、') + '。';
+    started = false;
+  };
+  panel.addEventListener('toggle', load);
+  if (panel.open) load();
 }
 
 function demandPolicyPanel(c, sample, rounds, practice) {
   const recipe = c.parameters.thp_advice;
   if (!recipe) {
     const next = newestReplay('3.3', 'group3', 'demand512-thp');
-    const collect = state.config?.executor === 'openeuler-vm' || state.config?.host_system === 'Linux'
+    const collect = canCollect(state.config)
       ? '<button type="button" id="run-demand-thp">采集三轮策略对照</button>' : '';
     return `<section class="seq-panel demand-policy">
       <h2>同样写入 512 MiB，改一个条件再试</h2>
@@ -363,41 +475,50 @@ function demandPolicyPanel(c, sample, rounds, practice) {
   }
 
   const repeat = c.parameters.repeat;
-  const available = demandPair(state.report.cases, c);
-  const pair = ['off', 'on'].map(advice => available.find(item => item.parameters.thp_advice === advice));
+  const pair = demandPair(state.report.cases, c);
+  const available = pair.length ? pair : [c];
   const phase = sample?.phase || 'before_alloc';
-  const readings = pair.map(item => item?.data?.samples.find(row => row.phase === phase));
-  const policyName = index => index === 0 ? '禁用大页建议' : '使用大页建议';
-  const matched = pair.every(item => item?.validation?.status === 'passed') &&
-    readings.every(Boolean) && readings[0].count === readings[1].count;
-  const observed = readings[1]?.huge_kib;
-  const interpretation = !matched ? '本轮缺少通过校验的配对证据。可查看已有原文和各组状态。'
-    : !readings[0].mapping_present || !readings[1].mapping_present ? '本阶段至少一组缺少目标映射，驻留量无法配对。'
+  const readings = available.map(item => item.data?.samples.find(row => row.phase === phase));
+  const policyName = item => item.parameters.thp_advice === 'off' ? '禁用大页建议' : '使用大页建议';
+  const matched = demandPairTimeline(pair).find(row => row.phase === phase);
+  const observed = matched?.enabled.huge_kib;
+  const process = c.parameters.process_thp;
+  const blocked = pair[1]?.data?.condition?.process_thp_disabled === 1 && pair[1]?.data?.policy?.result === 0;
+  const interpretation = !pair.length ? '本轮缺组或存在重复策略案例，当前仅展示所选案例。'
+    : !matched ? '本轮缺少通过校验的配对证据。可查看已有原文和各组状态。'
+    : !matched.disabled.mapping_present || !matched.enabled.mapping_present ? '本阶段至少一组缺少目标映射，驻留量无法配对。'
     : observed > 0 ? '使用大页建议组本步采到了匿名大页。对照缺页增量时，注意它是进程级计数。'
+    : blocked ? '映射建议调用成功，进程级禁用读回为 1。本步的 AnonHugePages 实测为 0 KiB。'
     : '使用大页建议组在本步的匿名大页驻留为 0 KiB。可继续查看后续写入阶段。';
+  const counterexample = process ? null : newestReplay('3.3', 'group3', 'demand512-thp-disable');
+  const processLink = counterexample ? `<p class="detail-copy"><a href="${esc(counterexample.href)}&amp;step=2">查看进程级禁用时的四分之一写入反例</a></p>` : '';
   const baseline = newestReplay('3.3', 'group3', 'demand512');
   return `<section class="seq-panel demand-policy" aria-labelledby="policy-title">
     <h2 id="policy-title">512 MiB 透明大页对照 · 第 ${esc(repeat)} 轮</h2>
     <p>两个独立进程各用一个带保护页的匿名映射。按相同的 4096 字节步长分批写入，仅切换映射的大页建议。</p>
     ${demandEnvironmentNav(c.parameters)}
+    ${process ? `<p class="detail-copy">本轮两组进程条件均为${process === 'disable' ? '「禁用透明大页」' : '「解除透明大页禁用」'}。</p>` : ''}
+    ${processLink}
     <div class="demand-prediction"></div>
-    <details class="secondary-fold demand-evidence"><summary>${practice ? '读原文，核对三项判断' : '查看本步两组原文'}</summary>
-    ${pair.map((item, i) => item ? `<div class="raw-links"><strong>${policyName(i)}</strong>
+    <details class="secondary-fold demand-evidence"><summary>${practice ? '读原文，核对三项判断' : pair.length ? '查看本步两组原文' : '查看当前案例原文'}</summary>
+    ${available.map((item, i) => `<div class="raw-links"><strong>${policyName(item)}</strong>
       ${evidenceButtons(item, practice ? { phase, stepLabel: demandActions[phase]?.[0] } : { recordKind: 'policy' }, ['jsonl'])}
-      ${evidenceButtons(item, { phase, vmaStart: readings[i]?.mapping_header?.split('-')[0] }, ['smaps'])}</div>` : '').join('')}
+      ${evidenceButtons(item, { phase, vmaStart: readings[i]?.mapping_header?.split('-')[0] }, ['smaps'])}</div>`).join('')}
     ${demandEvidencePractice(practice)}
     </details>
-    <details class="secondary-fold demand-result"><summary>查看本步两组采样</summary>
-    ${table(['组别', 'madvise', 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], pair.map((item, i) => {
+    <details class="secondary-fold demand-result"><summary>${pair.length ? '查看本步两组采样' : '查看当前案例采样'}</summary>
+    ${table(['组别', 'madvise', ...(process ? ['进程禁用读回'] : []), 'VmFlags', '累计写入位置', '映射 RSS', 'AnonHugePages', '本步次缺页', '检查状态'], available.map((item, i) => {
       const row = readings[i];
       const policy = item?.data?.policy;
-      return [policyName(i), !policy ? '未采集' : policy.result === 0 ? '成功' : '失败 · errno ' + policy.errno,
+      return [policyName(item), !policy ? '未采集' : policy.result === 0 ? '成功' : '失败 · errno ' + policy.errno,
+        ...(process ? [item.data?.condition?.process_thp_disabled] : []),
         row?.vm_flags?.filter(flag => flag === 'hg' || flag === 'nh').join(' ') || '—',
         demandMeasurement(row, 'count'), kib(demandMeasurement(row, 'rss_kib')), kib(demandMeasurement(row, 'huge_kib')),
-        demandMeasurement(row, 'action_minor'), item?.validation?.status === 'passed' ? '通过' : item ? '待核对' : '缺失'];
+        demandMeasurement(row, 'action_minor'), item.validation?.status === 'passed' ? '通过' : '待核对'];
     }))}
     <p>${esc(interpretation)}</p>
     </details>
+    ${process && sample ? demandProcessPanel() : ''}
     ${demandTimeline(c, pair, phase)}
     ${demandRepeatReview(rounds, phase, repeat)}
     ${baseline ? `<p class="detail-copy"><a href="${esc(baseline.href)}">返回原版 malloc 实验</a></p>` : ''}
@@ -477,7 +598,8 @@ function renderMemorySteps(c, cases) {
     </section>`;
   if (controlled) {
     bindDemandTimeline();
-    bindDemandEvidencePractice(practice);
+    bindDemandEvidencePractice(practice, c, sample?.phase);
+    bindDemandProcessPanel(c.parameters, sample?.phase);
   }
   if (original) loadOriginalPs($('#demand-original-ps'));
 }
@@ -496,7 +618,8 @@ function renderGroup3() {
   </div>`;
   const cases = state.report.cases.filter(c => suites.includes(c.suite));
   if (!cases.length) {
-    $('#content').innerHTML = intro + '<p class="empty">当前记录里没有第 3 组实验，请点顶部“切换记录”选一条“链接与栈”记录或点击上方按钮采集。</p>';
+    $('#content').innerHTML = intro + '<p class="empty">这份记录里没有第 3 组实验。可在顶部更换记录。' +
+      (canCollect(state.config) ? '也可以从侧栏重新采集第 3 组。' : '') + '</p>';
     return;
   }
   state.selected = Math.min(state.selected, cases.length - 1);
@@ -534,7 +657,7 @@ function renderGroup4() {
   </div>`;
   const cases = state.report.cases.filter(c => c.suite.startsWith('g4-'));
   if (!cases.length) {
-    $('#content').innerHTML = intro + '<p class="empty">当前记录里没有第 4 组实验，请点顶部“切换记录”选一条“进程与线程”记录或点击上方按钮采集。</p>';
+    $('#content').innerHTML = intro + '<p class="empty">这份记录里没有第 4 组实验。可在顶部切换到「进程与线程」记录。</p>';
     return;
   }
   state.selected = Math.min(state.selected, cases.length - 1);

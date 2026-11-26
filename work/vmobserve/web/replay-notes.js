@@ -1,4 +1,4 @@
-import { state, esc, demandPair } from './ui.js';
+import { state, esc, demandPair, download } from './ui.js';
 import { viewCases } from './curriculum.js';
 import { createNotesStore, noteFields } from './notes-store.js';
 import { renderNoteLibrary } from './notes-library.js';
@@ -20,8 +20,8 @@ function selectedCases() {
     return cases.filter(item => item.parameters.pattern + ':' + item.parameters.repeat === group);
   }
   const selected = cases[state.selected];
-  if (selected?.parameters.thp_advice) return demandPair(cases, selected);
-  return selected ? [selected] : [];
+  const pair = demandPair(cases, selected);
+  return pair.length ? pair : selected ? [selected] : [];
 }
 
 function snapshot(item) {
@@ -77,15 +77,6 @@ function context() {
     },
     replay_url: location.href, cases: cases.map(snapshot)
   };
-}
-
-
-function download(value, filename, type = 'application/json') {
-  const data = type === 'text/html' ? value : JSON.stringify(value, null, 2);
-  const url = URL.createObjectURL(new Blob([data], {type}));
-  const link = document.createElement('a');
-  link.href = url; link.download = filename; link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 
