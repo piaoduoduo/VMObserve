@@ -1,0 +1,2757 @@
+{
+  "schema_version": "vmobserve.run/v1",
+  "tool_version": "0.8.3",
+  "run_id": "20261126T111928.837850Z",
+  "data_origin": "real_execution",
+  "view_mode": "execution_record",
+  "status": "completed",
+  "started_at": "2026-11-26T11:19:28.846209+00:00",
+  "environment": {
+    "system": "Linux",
+    "kernel": "6.6.0-28.0.0.34.oe2403.x86_64",
+    "machine": "x86_64",
+    "os_release": "NAME=\"openEuler\"\nVERSION=\"24.03 (LTS)\"\nID=\"openEuler\"\nVERSION_ID=\"24.03\"\nPRETTY_NAME=\"openEuler 24.03 (LTS)\"\nANSI_COLOR=\"0;31\"",
+    "distribution": {
+      "NAME": "openEuler",
+      "VERSION": "24.03 (LTS)",
+      "ID": "openEuler",
+      "VERSION_ID": "24.03",
+      "PRETTY_NAME": "openEuler 24.03 (LTS)",
+      "ANSI_COLOR": "0;31"
+    },
+    "python": "3.11.6",
+    "libc": [
+      "glibc",
+      "2.38"
+    ],
+    "allocator_environment": {
+      "GLIBC_TUNABLES": null,
+      "MALLOC_MMAP_THRESHOLD_": null,
+      "MALLOC_TRIM_THRESHOLD_": null,
+      "MALLOC_PERTURB_": null,
+      "LD_PRELOAD": null
+    },
+    "page_bytes": 4096,
+    "thp_enabled": "[always] madvise never",
+    "thp_defrag": "always defer defer+madvise [madvise] never",
+    "pmd_size": "2097152",
+    "thp_sizes": {
+      "hugepages-32kB": "always inherit madvise [never]",
+      "hugepages-512kB": "always inherit madvise [never]",
+      "hugepages-2048kB": "always [inherit] madvise never",
+      "hugepages-1024kB": "always inherit madvise [never]",
+      "hugepages-64kB": "always inherit madvise [never]",
+      "hugepages-16kB": "always inherit madvise [never]",
+      "hugepages-256kB": "always inherit madvise [never]",
+      "hugepages-128kB": "always inherit madvise [never]"
+    },
+    "meminfo": "MemTotal:        1753684 kB\nMemFree:         1450756 kB\nMemAvailable:    1517320 kB\nBuffers:           13916 kB\nCached:           186456 kB\nSwapCached:            0 kB\nActive:            94668 kB\nInactive:         146932 kB\nActive(anon):        628 kB\nInactive(anon):    49840 kB\nActive(file):      94040 kB\nInactive(file):    97092 kB\nUnevictable:           0 kB\nMlocked:               0 kB\nSwapTotal:             0 kB\nSwapFree:              0 kB\nZswap:                 0 kB\nZswapped:              0 kB\nDirty:              1304 kB\nWriteback:             0 kB\nAnonPages:         40240 kB\nMapped:            71572 kB\nShmem:              9232 kB\nKReclaimable:      12148 kB\nSlab:              31860 kB\nSReclaimable:      12148 kB\nSUnreclaim:        19712 kB\nKernelStack:        1920 kB\nPageTables:         1500 kB\nSecPageTables:         0 kB\nNFS_Unstable:          0 kB\nBounce:                0 kB\nWritebackTmp:          0 kB\nCommitLimit:      876840 kB\nCommitted_AS:     356672 kB\nVmallocTotal:   13743895347199 kB\nVmallocUsed:       14832 kB\nVmallocChunk:          0 kB\nPercpu:              904 kB\nHardwareCorrupted:     0 kB\nAnonHugePages:      2048 kB\nShmemHugePages:        0 kB\nShmemPmdMapped:        0 kB\nFileHugePages:         0 kB\nFilePmdMapped:         0 kB\nUnaccepted:            0 kB\nHugePages_Total:       0\nHugePages_Free:        0\nHugePages_Rsvd:        0\nHugePages_Surp:        0\nHugepagesize:       2048 kB\nHugetlb:               0 kB\nDirectMap4k:       94056 kB\nDirectMap2M:     2002944 kB\nDirectMap1G:           0 kB",
+    "captured_at": "2026-11-26T11:19:28.885998+00:00",
+    "execution_context": "qemu-tcg"
+  },
+  "sources": {
+    "run_all.py": "f94b36c625afdd3fe8fa1828cee3bc05840c82be0f3fb947a1993d77d602d473",
+    "launch.py": "ffc137660f6edb4d5786b44a247f3a71b43362fa8c88aa8e6a71b6621e4f3657",
+    "proj5-memory-pilot/memory_probe.c": "a518fd2b5265189230bc68dee42103e4c274af6644174d5737b67f734a3eed20",
+    "proj5-round2/thp_probe.c": "7a95878ef66c01114ae00f4550844c51b9c1c1958245f2b14ca06f450a849e1b",
+    "proj5-course/allocator_probe.c": "c3f4612c8cb68a7d1faafb5a0f52096182cde30e673daf5114c738c7f74703b6",
+    "proj5-course/layout_probe.c": "60795ef2090bed0e6531be424bc2e3ee09e46bfd298ac609db70a6da779c3b1a",
+    "proj5-course/group3_link.c": "459db3c54c0fa09368bbb187899955f3d3886099ef08a600bc8c9fd191351f35",
+    "proj5-course/group3_sequence.c": "14c31a0ba276cf5ed45bfe942b0ea31523f2f96c12c446fc4f5009ebd45e09c3",
+    "proj5-course/group3_demand.c": "e92c9bd386d02cdcc177cad7642236d1152fc6ff4c41c3a1bcf14cf24e32dabf",
+    "proj5-course/group3_stack.c": "125197bc6a6aae8ab0d69eb2c7ae66ed69acc8faf6f710f4c3230fc822a86bd4",
+    "course-labs/group4/lab4_1/fork_exec_wait.c": "363e8a1309fc3dda566de47a5610cb90620341695042f308d4bf9d22dcdf2d29",
+    "course-labs/group4/lab4_2/pthread_test.c": "575e85f16ffc4e4920c96d9687b52d66de9cba29b476a2f5637351e9eeb56073",
+    "course-labs/group4/lab4_3/user_thread_test.c": "1249083bfc46c799f83ad62a83b4ab97454abea650258088bf8b7c696187904e",
+    "course-labs/group4/lab4_4/pipe_communication.c": "77d8b3a1a1b4869ff9b28e2a6105e7844dda667250bf7e56deef616ad76c5e1c",
+    "course-labs/group4/lab4_4/thread_communication.c": "4dcfb86e4649cb503c6168d493e2eab0a182bc74adbf3069499817592b30bad8",
+    "course-labs/systems/sync.c": "425e714e8903db75ebf9232bc171c7c9ad9709a2447126da84e69fa032942a02",
+    "course-labs/systems/io_observe.py": "b000e00bbdf79d125aa7d016d0c6cf928426ce3de20b1eef978b101b7a0b5584",
+    "common/probe.h": "5508d4521f4a530882a8e1f36ceb5e65cab91ece03026f54572116b0cc745a6c",
+    "proj5-course/access_pattern.h": "191b2771546e8365a8ede1f85db5373de3b91b291fecace74a865e3759031c45",
+    "proj5-course/group3_snapshot.h": "d18ba0edf15c13b9184161dc6a39ca1b87233c18b649539cd0494231df01c3c9",
+    "lessons/catalog/basics.json": "3097b854fb58322b3e5d944def2afab88daa03999c9633e1b5797b1bbdf82d12",
+    "lessons/demand/WORKSHEET.md": "c6b36ce44b23127d0996be9e62b4f4b0deb135c5259796dd1913e1f5be0d81e9",
+    "lessons/demand/original-ps.json": "bf5e9f9a32b816ea6246291a0593f7cc1b3755897d3f7f7bd415c2854f99e2e9",
+    "lessons/demand/student.h": "a4e4ca53cfb082999f08285b4ba24e1e38c98903ee25b2f311c16afbb4c1f10d",
+    "lessons/layout/WORKSHEET.md": "9db686a910cbb33c5b7495b2516176fde802a663587e0fc8bd9c7350d3ffe317",
+    "lessons/sequence/WORKSHEET.md": "00257712cb0e82b41305668f8a5a417ad41689f50a994a38e356ed86bd49fca6",
+    "vmobserve/__init__.py": "148ac2f1ce8572f6e512176da0d4a94fbf9bfbbc8b17de7c7d8432ffae929342",
+    "vmobserve/__main__.py": "3b93eb45fdc020f830329ad25e605b9f50db2c27c918a0b14e71a7c212fe71df",
+    "vmobserve/allocator.py": "308dbe04ba2c6886822ed0e671a8603cd1a67a34044946f97819e5780d0cceae",
+    "vmobserve/common.py": "eb07f230fbf3c8a0b94fe761d88c0177baba7c9dfb72348e4fdf7062cf7c1ee3",
+    "vmobserve/cow.py": "12f369f252a12c3bb31f8e22844885dd57a624b75ccf93227caafac79dbf08ca",
+    "vmobserve/diagnosis.py": "6f709a0cb237a8bf1f6639d7b0983d8e7786ca835c5df2defdb5db2c33e1f4a8",
+    "vmobserve/evidence.py": "48eb3ae39ad9ef392ec9573a4c0197cbaeb2be47aad3e52d532cb93658338f69",
+    "vmobserve/export.py": "48294cf29fedb2cd92a5f977141713a7c8cb3f66b14aeab2b13ce3409f63e97d",
+    "vmobserve/group3.py": "632a61fbf1139a667c99ec73fd291431bd97acdc979116514a84855a7235d1ce",
+    "vmobserve/group4.py": "9bb0759ecb522711f087d91ce9fcdf066ca9034fae9061521f6dd912a0974acf",
+    "vmobserve/layout.py": "9b50d90f32e72deee742c1fbfbe5a096d6e7e07845f3baa3c6325a080021497a",
+    "vmobserve/replay.py": "d8e6cb2f723486c09ee752705b4ab72ea52d54273fc7d2bddab574df4549460f",
+    "vmobserve/runner.py": "7b344bfee49b4b7cb73984415a98f82007996ce8ff234f038b3762f85b5ee569",
+    "vmobserve/sequence.py": "c50b831b0ddfa09387c84428586cfd233d57d61d7ff8a953a7e2048d16a7add7",
+    "vmobserve/server.py": "d2e49800df32bf9a3a4d2177b127960c7d15aa4efb82d5af9f9eb418fdebf2eb",
+    "vmobserve/smaps.py": "c6c78a96ef639f741fb6daffd62bcb82551b11e9519fbfc203f1aad4f890cdc0",
+    "vmobserve/systems.py": "98a651a8b1a444a17838ea211c92c08565520f7bdbf255722446043e1880c1f9",
+    "vmobserve/thp_policy.py": "1d599914b89a2a532f1e53fdc382256933eec1d1149799d70ec2e34d90a1d2f6",
+    "vmobserve/web/app.js": "5369170f6ceef61c4f044fe50470a164078d1f8ff959e27d68685ba27ae6897a",
+    "vmobserve/web/comparison-data.js": "26ca0b6edf29b8d6a042092634a54c1a6e796f53dec1f6037bb6837880df8762",
+    "vmobserve/web/course-views.js": "d897cc7e26edd5541fd623b881ba4a04b8070b385816316f88a185ab08923806",
+    "vmobserve/web/curriculum.js": "762a50f862d28131591d4e348dc802ff79582d882ab06452ef6d09cb129d44d2",
+    "vmobserve/web/evidence-view.js": "3d5ac71e34b7473daec4f73b173930234286a3c158eb8b8d42f0616387c2c338",
+    "vmobserve/web/experiment-flow.js": "841f67f70cb428b9eaa4e326929e09e5cfa2fb304ed45a10fa5802f084efd3d8",
+    "vmobserve/web/favicon.svg": "5169559ecc1840b0d537e0433255dea6d375f6da42bb451864687b7a29a3ff24",
+    "vmobserve/web/index.html": "b005d585206498904f623cb67b212784ecee91e6955faef0171bea798ce67f72",
+    "vmobserve/web/learning-report.js": "8d08cdb472dc90fb11e1a0bd451ad1129ee7e9a90ced0d30792740c91ef901db",
+    "vmobserve/web/lesson.html": "7bd8d4201bd644ca0cfcf49924597420f0eecff8ce1de6e1a961687517b42f75",
+    "vmobserve/web/lesson.js": "25eac3178759b4056a4147567fafb462120a5a2afd5ad914782ad4820d579003",
+    "vmobserve/web/memory-views.js": "521f0401ebce308970f959e11a458cb00e8560397e6ad4a3dc1fcb8bb4af5160",
+    "vmobserve/web/notes-library.js": "db354669c6671d2d338891cbab178c31f4f690cc1a32f844df4fa7038f73564e",
+    "vmobserve/web/notes-store.js": "81183215c8a0bb4b695284f8daaabb7ef9ca35775284c367362774b11a70f863",
+    "vmobserve/web/practice-data.js": "1820441ce52dcf41438026ee896cc6a38d3c70246b1c01c09a4831bac1f2acce",
+    "vmobserve/web/practice-review.html": "87f9b91e7e043c4bee4419c99a8b31230aa63edf10ef2323e9165e3579b6f332",
+    "vmobserve/web/practice-review.js": "348d0276b5a3784a1277e9be2888df60da5b0a5629858956d009d9bdecbd284c",
+    "vmobserve/web/replay-comparison.js": "5d80ae606b3fc008bc595c1c191d47d6d511b95597257d0eb623fa24d1700da0",
+    "vmobserve/web/replay-notes.js": "e7ff635af6766452161a1287aa4074872e2705de6db971608d154f047bdf3dfe",
+    "vmobserve/web/sequence-view.js": "38e9af33b7ad8bea41b3832c135ba19f29745755f61d024f019bb44a24071403",
+    "vmobserve/web/style.css": "5d15e6d08e07cd7356077a5a0c06bf9497f44e4f101f1b07f226f3674ed3841b",
+    "vmobserve/web/ui.js": "cf66f2bb839396b14de405d3fa668951db42abe6049dd14213003c273976e5da",
+    "package_sources.py": "4d3091fac8b344bef656810645805d3bae1cec53eccdb50d8fcc119abebbfba6",
+    "vm.ps1": "d3bc9cf58783f808b72e9953703a8a3a4af409a31e8fa7acaa4c8dd2594f961e",
+    "openeuler-vm/config.sh": "9824af1e0910a8857dc78a69284b3f791b5176357c8dce0b288c82072148b7ac",
+    "openeuler-vm/retest.sh": "2c9bbfde9a81e37eeda22143c0cd5985c573deece64b9ff3c652f01e31077fd6",
+    "openeuler-vm/start.sh": "d9381156afce699ff92a930e34ac0e2e1e9ff3f62e64d4e84894fd99b8d09cc5",
+    "openeuler-vm/status.sh": "048b5f63b9e0fc16e073bf8fa1b19745a4bb3158098f8a6ffbaebc621a2d2841",
+    "openeuler-vm/wait.sh": "4cef1b3e8d43528c48e0da80929530038f9220294e662ac5fb55bae408de5a71",
+    "course-labs/group4/build.sh": "dc7cc5aa2b8bd57d28db328dbc91c57e616eb07d03805030c7dc79b76c0feadf",
+    "course-labs/group4/view_events.py": "15c82a3e982bbc9e41c921e1b63068396d9aff62f690421405e1227fff93214a",
+    "course-labs/group4/demo.sh": "d964458d5b31be075bd22c38502cd72ec52334bd6dc4d50207b63883f4afd5c2",
+    "course-labs/group4/README.md": "1ce6518b154239ad7b2676e763ed6c229f3e704060014c96647cc2af5e3dbc35",
+    "course-labs/group4/lab_common.h": "2522147bccdff0e5bb5dea54763e3c01b854c63b148b9140514740cf30564598",
+    "course-labs/group4/lab4_1/child_prog.c": "0f59e7dd417df641d09663516b6d7c22dbb92f5e069207f66378a68dac6dc0ed"
+  },
+  "artifacts": {
+    "cases/demand512-thp-off-1/stdout.jsonl": "51e20adb282fe1573a8aff0b508bf9374e949cdb824ec6304f8424ed48a6856d",
+    "cases/demand512-thp-off-1/smaps.stderr.txt": "a250f174bf8cbf664f432ad77db5dda23e47f97efab73a0099d5e0f67538d0b9",
+    "cases/demand512-thp-on-1/stdout.jsonl": "2e29612c589c808a7cf8b8c10b65ba88c5f75372974a7157a1a31380f412b40c",
+    "cases/demand512-thp-on-1/smaps.stderr.txt": "f667a1f8af193782b4138a8d05934396bc07e71e68c53256589e2d86b8e8d71b",
+    "cases/demand512-thp-on-2/stdout.jsonl": "c24a457effdef1a0de0fc1ffde5925569734993c44fc0d4408fea20599b9e493",
+    "cases/demand512-thp-on-2/smaps.stderr.txt": "2287c39beaf8440384dd5f2c79a2ecb4a564e0acdd192a42ef439b1892f69842",
+    "cases/demand512-thp-off-2/stdout.jsonl": "e871677908c0d671f29be6d925b3d198adb19eac225ce5c50e40aa0e34be455b",
+    "cases/demand512-thp-off-2/smaps.stderr.txt": "40fa161d65f2df0bd02dd2d56edf2a0af2a9bfee60c0939e080aa30f9e12ee46",
+    "cases/demand512-thp-off-3/stdout.jsonl": "d0c8dfebf601c6772e8bba1d32ece2580a1b10e5db67bd342b5308f2bcae7b5f",
+    "cases/demand512-thp-off-3/smaps.stderr.txt": "f304dab1239d9c6e0243de9e3ed044e952f948d32f2a78c9362cfe3561698cc6",
+    "cases/demand512-thp-on-3/stdout.jsonl": "4cd5311fa9b57e0e006238031c8b8f3da912e86ee7e6a27e515ea86ec470ace0",
+    "cases/demand512-thp-on-3/smaps.stderr.txt": "429545168860395c684063025a0f7ffdf05cc481f712804ab7bece5c5d879bf6",
+    "environment.json": "cbda8659eb5d62b91a273f70082d5be21c3cf62b6c2519a88f8bb26f1d9fb9cf",
+    "build/compiler.stdout.log": "47214cb7a32d8be03220eb0f5ef9186fbd03556cf0fd580e1553d863d131d8dc",
+    "build/demand512.stdout.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/demand512.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/compiler.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "builds": {
+    "demand512": {
+      "command": [
+        "gcc",
+        "-std=c11",
+        "-O2",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "/root/proj5-transfers/20261126T111915-89/runs/20261126T111928.837850Z/source/proj5-course/group3_demand.c",
+        "-o",
+        "/root/proj5-transfers/20261126T111915-89/runs/20261126T111928.837850Z/build/demand512"
+      ],
+      "started_at": "2026-11-26T11:19:30.071055+00:00",
+      "status": "completed",
+      "exit_code": 0,
+      "error": null,
+      "finished_at": "2026-11-26T11:19:35.475389+00:00",
+      "duration_seconds": 5.405
+    }
+  },
+  "cases": [
+    {
+      "id": "demand512-thp-off-1",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 1,
+        "thp_advice": "off",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "off",
+        "allow"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "original_values",
+            "observed": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "expected": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "resident_growth",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "full_residency",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_advice_result",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_vma_flags",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "controlled_region_released",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_process_readback",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_disabled_observation",
+            "observed": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "expected": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "demand512",
+          "pid": 1261,
+          "bytes": 536870912,
+          "stride": 4096,
+          "page_bytes": 4096,
+          "process_thp": "allow",
+          "process_thp_disabled": 0
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 1261,
+            "address": "0",
+            "program_break": "df7000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 55,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1468,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "allocated",
+            "pid": 1261,
+            "address": "7fd0a4a00000",
+            "program_break": "df7000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 56,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fd0a4a00000-7fd0c4a00000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 1472,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_quarter",
+            "pid": 1261,
+            "address": "7fd0a4a00000",
+            "program_break": "df7000",
+            "count": 32768,
+            "action_minor": 32768,
+            "action_major": 0,
+            "total_minor": 32824,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fd0a4a00000-7fd0c4a00000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 131072,
+            "pss_kib": 131072,
+            "private_dirty_kib": 131072,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 132544,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_half",
+            "pid": 1261,
+            "address": "7fd0a4a00000",
+            "program_break": "df7000",
+            "count": 65536,
+            "action_minor": 32768,
+            "action_major": 0,
+            "total_minor": 65592,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fd0a4a00000-7fd0c4a00000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 262144,
+            "pss_kib": 262144,
+            "private_dirty_kib": 262144,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 263616,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_all",
+            "pid": 1261,
+            "address": "7fd0a4a00000",
+            "program_break": "df7000",
+            "count": 131072,
+            "action_minor": 65536,
+            "action_major": 0,
+            "total_minor": 131128,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fd0a4a00000-7fd0c4a00000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 524288,
+            "pss_kib": 524288,
+            "private_dirty_kib": 524288,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 525760,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 1261,
+            "address": "7fd0a4a00000",
+            "program_break": "df7000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 131128,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1472,
+            "process_size_kib": 2284
+          }
+        ],
+        "values": {
+          "kind": "values",
+          "checked": 131072,
+          "mismatches": 0
+        },
+        "policy": {
+          "kind": "policy",
+          "policy": "off",
+          "pid": 1261,
+          "address": "7fd0a4a00000",
+          "bytes": 536870912,
+          "result": 0,
+          "errno": 0
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/demand512-thp-off-1/stdout.jsonl",
+        "smaps": "cases/demand512-thp-off-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261126T111915-89/runs/20261126T111928.837850Z/build/demand512",
+          "off",
+          "allow"
+        ],
+        "started_at": "2026-11-26T11:19:35.501773+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-26T11:19:38.888799+00:00",
+        "duration_seconds": 3.387
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "demand512-thp-on-1",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 1,
+        "thp_advice": "on",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "on",
+        "allow"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "original_values",
+            "observed": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "expected": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "resident_growth",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "full_residency",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_advice_result",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_vma_flags",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "controlled_region_released",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_process_readback",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "demand512",
+          "pid": 1262,
+          "bytes": 536870912,
+          "stride": 4096,
+          "page_bytes": 4096,
+          "process_thp": "allow",
+          "process_thp_disabled": 0
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 1262,
+            "address": "0",
+            "program_break": "1fb6000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 56,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1424,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "allocated",
+            "pid": 1262,
+            "address": "7f1112800000",
+            "program_break": "1fb6000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 57,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1112800000-7f1132800000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 1428,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_quarter",
+            "pid": 1262,
+            "address": "7f1112800000",
+            "program_break": "1fb6000",
+            "count": 32768,
+            "action_minor": 64,
+            "action_major": 0,
+            "total_minor": 121,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1112800000-7f1132800000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 131072,
+            "pss_kib": 131072,
+            "private_dirty_kib": 131072,
+            "shared_dirty_kib": 0,
+            "huge_kib": 131072,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 132500,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_half",
+            "pid": 1262,
+            "address": "7f1112800000",
+            "program_break": "1fb6000",
+            "count": 65536,
+            "action_minor": 64,
+            "action_major": 0,
+            "total_minor": 185,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1112800000-7f1132800000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 262144,
+            "pss_kib": 262144,
+            "private_dirty_kib": 262144,
+            "shared_dirty_kib": 0,
+            "huge_kib": 262144,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 263572,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_all",
+            "pid": 1262,
+            "address": "7f1112800000",
+            "program_break": "1fb6000",
+            "count": 131072,
+            "action_minor": 128,
+            "action_major": 0,
+            "total_minor": 313,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1112800000-7f1132800000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 524288,
+            "pss_kib": 524288,
+            "private_dirty_kib": 524288,
+            "shared_dirty_kib": 0,
+            "huge_kib": 524288,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 525716,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 1262,
+            "address": "7f1112800000",
+            "program_break": "1fb6000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 313,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1428,
+            "process_size_kib": 2284
+          }
+        ],
+        "values": {
+          "kind": "values",
+          "checked": 131072,
+          "mismatches": 0
+        },
+        "policy": {
+          "kind": "policy",
+          "policy": "on",
+          "pid": 1262,
+          "address": "7f1112800000",
+          "bytes": 536870912,
+          "result": 0,
+          "errno": 0
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/demand512-thp-on-1/stdout.jsonl",
+        "smaps": "cases/demand512-thp-on-1/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261126T111915-89/runs/20261126T111928.837850Z/build/demand512",
+          "on",
+          "allow"
+        ],
+        "started_at": "2026-11-26T11:19:39.329944+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-26T11:19:40.662193+00:00",
+        "duration_seconds": 1.332
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "demand512-thp-on-2",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 2,
+        "thp_advice": "on",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "on",
+        "allow"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "original_values",
+            "observed": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "expected": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "resident_growth",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "full_residency",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_advice_result",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_vma_flags",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "controlled_region_released",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_process_readback",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "demand512",
+          "pid": 1263,
+          "bytes": 536870912,
+          "stride": 4096,
+          "page_bytes": 4096,
+          "process_thp": "allow",
+          "process_thp_disabled": 0
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 1263,
+            "address": "0",
+            "program_break": "6e9000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 55,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1476,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "allocated",
+            "pid": 1263,
+            "address": "7f1210000000",
+            "program_break": "6e9000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 56,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1210000000-7f1230000000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 1480,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_quarter",
+            "pid": 1263,
+            "address": "7f1210000000",
+            "program_break": "6e9000",
+            "count": 32768,
+            "action_minor": 64,
+            "action_major": 0,
+            "total_minor": 120,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1210000000-7f1230000000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 131072,
+            "pss_kib": 131072,
+            "private_dirty_kib": 131072,
+            "shared_dirty_kib": 0,
+            "huge_kib": 131072,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 132552,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_half",
+            "pid": 1263,
+            "address": "7f1210000000",
+            "program_break": "6e9000",
+            "count": 65536,
+            "action_minor": 64,
+            "action_major": 0,
+            "total_minor": 184,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1210000000-7f1230000000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 262144,
+            "pss_kib": 262144,
+            "private_dirty_kib": 262144,
+            "shared_dirty_kib": 0,
+            "huge_kib": 262144,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 263624,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_all",
+            "pid": 1263,
+            "address": "7f1210000000",
+            "program_break": "6e9000",
+            "count": 131072,
+            "action_minor": 128,
+            "action_major": 0,
+            "total_minor": 312,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f1210000000-7f1230000000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 524288,
+            "pss_kib": 524288,
+            "private_dirty_kib": 524288,
+            "shared_dirty_kib": 0,
+            "huge_kib": 524288,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 525768,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 1263,
+            "address": "7f1210000000",
+            "program_break": "6e9000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 312,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1480,
+            "process_size_kib": 2284
+          }
+        ],
+        "values": {
+          "kind": "values",
+          "checked": 131072,
+          "mismatches": 0
+        },
+        "policy": {
+          "kind": "policy",
+          "policy": "on",
+          "pid": 1263,
+          "address": "7f1210000000",
+          "bytes": 536870912,
+          "result": 0,
+          "errno": 0
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/demand512-thp-on-2/stdout.jsonl",
+        "smaps": "cases/demand512-thp-on-2/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261126T111915-89/runs/20261126T111928.837850Z/build/demand512",
+          "on",
+          "allow"
+        ],
+        "started_at": "2026-11-26T11:19:40.905097+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-26T11:19:41.954337+00:00",
+        "duration_seconds": 1.049
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "demand512-thp-off-2",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 2,
+        "thp_advice": "off",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "off",
+        "allow"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "original_values",
+            "observed": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "expected": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "resident_growth",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "full_residency",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_advice_result",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_vma_flags",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "controlled_region_released",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_process_readback",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_disabled_observation",
+            "observed": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "expected": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "demand512",
+          "pid": 1264,
+          "bytes": 536870912,
+          "stride": 4096,
+          "page_bytes": 4096,
+          "process_thp": "allow",
+          "process_thp_disabled": 0
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 1264,
+            "address": "0",
+            "program_break": "17ff000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 52,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1356,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "allocated",
+            "pid": 1264,
+            "address": "7f8190600000",
+            "program_break": "17ff000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 53,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f8190600000-7f81b0600000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 1360,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_quarter",
+            "pid": 1264,
+            "address": "7f8190600000",
+            "program_break": "17ff000",
+            "count": 32768,
+            "action_minor": 32768,
+            "action_major": 0,
+            "total_minor": 32821,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f8190600000-7f81b0600000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 131072,
+            "pss_kib": 131072,
+            "private_dirty_kib": 131072,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 132432,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_half",
+            "pid": 1264,
+            "address": "7f8190600000",
+            "program_break": "17ff000",
+            "count": 65536,
+            "action_minor": 32768,
+            "action_major": 0,
+            "total_minor": 65589,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f8190600000-7f81b0600000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 262144,
+            "pss_kib": 262144,
+            "private_dirty_kib": 262144,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 263504,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_all",
+            "pid": 1264,
+            "address": "7f8190600000",
+            "program_break": "17ff000",
+            "count": 131072,
+            "action_minor": 65536,
+            "action_major": 0,
+            "total_minor": 131125,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f8190600000-7f81b0600000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 524288,
+            "pss_kib": 524288,
+            "private_dirty_kib": 524288,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 525648,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 1264,
+            "address": "7f8190600000",
+            "program_break": "17ff000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 131125,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1360,
+            "process_size_kib": 2284
+          }
+        ],
+        "values": {
+          "kind": "values",
+          "checked": 131072,
+          "mismatches": 0
+        },
+        "policy": {
+          "kind": "policy",
+          "policy": "off",
+          "pid": 1264,
+          "address": "7f8190600000",
+          "bytes": 536870912,
+          "result": 0,
+          "errno": 0
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/demand512-thp-off-2/stdout.jsonl",
+        "smaps": "cases/demand512-thp-off-2/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261126T111915-89/runs/20261126T111928.837850Z/build/demand512",
+          "off",
+          "allow"
+        ],
+        "started_at": "2026-11-26T11:19:42.187713+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-26T11:19:44.110984+00:00",
+        "duration_seconds": 1.923
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "demand512-thp-off-3",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 3,
+        "thp_advice": "off",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "off",
+        "allow"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "original_values",
+            "observed": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "expected": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "resident_growth",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "full_residency",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_advice_result",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_vma_flags",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "controlled_region_released",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_process_readback",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_disabled_observation",
+            "observed": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "expected": [
+              0,
+              0,
+              0,
+              0
+            ],
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "demand512",
+          "pid": 1265,
+          "bytes": 536870912,
+          "stride": 4096,
+          "page_bytes": 4096,
+          "process_thp": "allow",
+          "process_thp_disabled": 0
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 1265,
+            "address": "0",
+            "program_break": "ca7000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 54,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1412,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "allocated",
+            "pid": 1265,
+            "address": "7fdf2ae00000",
+            "program_break": "ca7000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 55,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fdf2ae00000-7fdf4ae00000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 1416,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_quarter",
+            "pid": 1265,
+            "address": "7fdf2ae00000",
+            "program_break": "ca7000",
+            "count": 32768,
+            "action_minor": 32768,
+            "action_major": 0,
+            "total_minor": 32823,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fdf2ae00000-7fdf4ae00000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 131072,
+            "pss_kib": 131072,
+            "private_dirty_kib": 131072,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 132488,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_half",
+            "pid": 1265,
+            "address": "7fdf2ae00000",
+            "program_break": "ca7000",
+            "count": 65536,
+            "action_minor": 32768,
+            "action_major": 0,
+            "total_minor": 65591,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fdf2ae00000-7fdf4ae00000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 262144,
+            "pss_kib": 262144,
+            "private_dirty_kib": 262144,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 263560,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_all",
+            "pid": 1265,
+            "address": "7fdf2ae00000",
+            "program_break": "ca7000",
+            "count": 131072,
+            "action_minor": 65536,
+            "action_major": 0,
+            "total_minor": 131127,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7fdf2ae00000-7fdf4ae00000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 524288,
+            "pss_kib": 524288,
+            "private_dirty_kib": 524288,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "nh"
+            ],
+            "process_rss_kib": 525704,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 1265,
+            "address": "7fdf2ae00000",
+            "program_break": "ca7000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 131127,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1416,
+            "process_size_kib": 2284
+          }
+        ],
+        "values": {
+          "kind": "values",
+          "checked": 131072,
+          "mismatches": 0
+        },
+        "policy": {
+          "kind": "policy",
+          "policy": "off",
+          "pid": 1265,
+          "address": "7fdf2ae00000",
+          "bytes": 536870912,
+          "result": 0,
+          "errno": 0
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/demand512-thp-off-3/stdout.jsonl",
+        "smaps": "cases/demand512-thp-off-3/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261126T111915-89/runs/20261126T111928.837850Z/build/demand512",
+          "off",
+          "allow"
+        ],
+        "started_at": "2026-11-26T11:19:44.352994+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-26T11:19:46.652310+00:00",
+        "duration_seconds": 2.308
+      },
+      "error": null,
+      "integrity": "verified"
+    },
+    {
+      "id": "demand512-thp-on-3",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 3,
+        "thp_advice": "on",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "on",
+        "allow"
+      ],
+      "status": "completed",
+      "validation": {
+        "status": "passed",
+        "checks": [
+          {
+            "id": "original_values",
+            "observed": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "expected": {
+              "kind": "values",
+              "checked": 131072,
+              "mismatches": 0
+            },
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "resident_growth",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "full_residency",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_advice_result",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_vma_flags",
+            "observed": true,
+            "expected": true,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "controlled_region_released",
+            "observed": false,
+            "expected": false,
+            "status": "passed",
+            "category": "correctness"
+          },
+          {
+            "id": "thp_process_readback",
+            "observed": 0,
+            "expected": 0,
+            "status": "passed",
+            "category": "correctness"
+          }
+        ]
+      },
+      "data": {
+        "condition": {
+          "kind": "condition",
+          "mode": "demand512",
+          "pid": 1266,
+          "bytes": 536870912,
+          "stride": 4096,
+          "page_bytes": 4096,
+          "process_thp": "allow",
+          "process_thp_disabled": 0
+        },
+        "samples": [
+          {
+            "kind": "sample",
+            "phase": "before_alloc",
+            "pid": 1266,
+            "address": "0",
+            "program_break": "192f000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 53,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1360,
+            "process_size_kib": 2284
+          },
+          {
+            "kind": "sample",
+            "phase": "allocated",
+            "pid": 1266,
+            "address": "7f442e400000",
+            "program_break": "192f000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 54,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f442e400000-7f444e400000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 1364,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_quarter",
+            "pid": 1266,
+            "address": "7f442e400000",
+            "program_break": "192f000",
+            "count": 32768,
+            "action_minor": 64,
+            "action_major": 0,
+            "total_minor": 118,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f442e400000-7f444e400000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 131072,
+            "pss_kib": 131072,
+            "private_dirty_kib": 131072,
+            "shared_dirty_kib": 0,
+            "huge_kib": 131072,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 132436,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_half",
+            "pid": 1266,
+            "address": "7f442e400000",
+            "program_break": "192f000",
+            "count": 65536,
+            "action_minor": 64,
+            "action_major": 0,
+            "total_minor": 182,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f442e400000-7f444e400000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 262144,
+            "pss_kib": 262144,
+            "private_dirty_kib": 262144,
+            "shared_dirty_kib": 0,
+            "huge_kib": 262144,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 263508,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "write_all",
+            "pid": 1266,
+            "address": "7f442e400000",
+            "program_break": "192f000",
+            "count": 131072,
+            "action_minor": 128,
+            "action_major": 0,
+            "total_minor": 310,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": true,
+            "pathname": "",
+            "mapping_header": "7f442e400000-7f444e400000 rw-p 00000000 00:00 0 ",
+            "size_kib": 524288,
+            "rss_kib": 524288,
+            "pss_kib": 524288,
+            "private_dirty_kib": 524288,
+            "shared_dirty_kib": 0,
+            "huge_kib": 524288,
+            "swap_kib": 0,
+            "vm_flags": [
+              "rd",
+              "wr",
+              "mr",
+              "mw",
+              "me",
+              "ac",
+              "sd",
+              "hg"
+            ],
+            "process_rss_kib": 525652,
+            "process_size_kib": 530668
+          },
+          {
+            "kind": "sample",
+            "phase": "freed",
+            "pid": 1266,
+            "address": "7f442e400000",
+            "program_break": "192f000",
+            "count": 0,
+            "action_minor": 0,
+            "action_major": 0,
+            "total_minor": 310,
+            "total_major": 0,
+            "role": "parent",
+            "scope": "address_containing_vma",
+            "mapping_present": false,
+            "pathname": "",
+            "mapping_header": "",
+            "size_kib": 0,
+            "rss_kib": 0,
+            "pss_kib": 0,
+            "private_dirty_kib": 0,
+            "shared_dirty_kib": 0,
+            "huge_kib": 0,
+            "swap_kib": 0,
+            "process_rss_kib": 1364,
+            "process_size_kib": 2284
+          }
+        ],
+        "values": {
+          "kind": "values",
+          "checked": 131072,
+          "mismatches": 0
+        },
+        "policy": {
+          "kind": "policy",
+          "policy": "on",
+          "pid": 1266,
+          "address": "7f442e400000",
+          "bytes": 536870912,
+          "result": 0,
+          "errno": 0
+        }
+      },
+      "artifacts": {
+        "jsonl": "cases/demand512-thp-on-3/stdout.jsonl",
+        "smaps": "cases/demand512-thp-on-3/smaps.stderr.txt"
+      },
+      "execution": {
+        "command": [
+          "/root/proj5-transfers/20261126T111915-89/runs/20261126T111928.837850Z/build/demand512",
+          "on",
+          "allow"
+        ],
+        "started_at": "2026-11-26T11:19:47.124781+00:00",
+        "status": "completed",
+        "exit_code": 0,
+        "error": null,
+        "finished_at": "2026-11-26T11:19:48.306362+00:00",
+        "duration_seconds": 1.182
+      },
+      "error": null,
+      "integrity": "verified"
+    }
+  ],
+  "error": null,
+  "related_run": null,
+  "scope": "Mechanism/function verification; no hardware performance inference, especially under QEMU TCG.",
+  "plan": [
+    {
+      "id": "demand512-thp-off-1",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 1,
+        "thp_advice": "off",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "off",
+        "allow"
+      ]
+    },
+    {
+      "id": "demand512-thp-on-1",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 1,
+        "thp_advice": "on",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "on",
+        "allow"
+      ]
+    },
+    {
+      "id": "demand512-thp-on-2",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 2,
+        "thp_advice": "on",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "on",
+        "allow"
+      ]
+    },
+    {
+      "id": "demand512-thp-off-2",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 2,
+        "thp_advice": "off",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "off",
+        "allow"
+      ]
+    },
+    {
+      "id": "demand512-thp-off-3",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 3,
+        "thp_advice": "off",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "off",
+        "allow"
+      ]
+    },
+    {
+      "id": "demand512-thp-on-3",
+      "suite": "demand512",
+      "parameters": {
+        "repeat": 3,
+        "thp_advice": "on",
+        "process_thp": "allow"
+      },
+      "arguments": [
+        "on",
+        "allow"
+      ]
+    }
+  ],
+  "compiler_check": {
+    "command": [
+      "gcc",
+      "--version"
+    ],
+    "started_at": "2026-11-26T11:19:29.870927+00:00",
+    "status": "completed",
+    "exit_code": 0,
+    "error": null,
+    "finished_at": "2026-11-26T11:19:30.065812+00:00",
+    "duration_seconds": 0.195
+  },
+  "finished_at": "2026-11-26T11:19:48.522923+00:00",
+  "completed": true,
+  "diagnosis": {
+    "rule_version": "2026-11-13.1",
+    "findings": [
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 原尺寸按需调页",
+        "explanation": "512 MiB、4096字节步长，按A/B/C分批写入；映射RSS依次为 0 KiB / 131072 KiB / 262144 KiB / 524288 KiB。",
+        "evidence": [
+          {
+            "case_id": "demand512-thp-off-1",
+            "artifacts": {
+              "jsonl": "cases/demand512-thp-off-1/stdout.jsonl",
+              "smaps": "cases/demand512-thp-off-1/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "original_values",
+                "observed": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "expected": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "resident_growth",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "full_residency",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_advice_result",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_vma_flags",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "controlled_region_released",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_process_readback",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_disabled_observation",
+                "observed": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "expected": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 原尺寸按需调页",
+        "explanation": "512 MiB、4096字节步长，按A/B/C分批写入；映射RSS依次为 0 KiB / 131072 KiB / 262144 KiB / 524288 KiB。",
+        "evidence": [
+          {
+            "case_id": "demand512-thp-on-1",
+            "artifacts": {
+              "jsonl": "cases/demand512-thp-on-1/stdout.jsonl",
+              "smaps": "cases/demand512-thp-on-1/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "original_values",
+                "observed": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "expected": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "resident_growth",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "full_residency",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_advice_result",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_vma_flags",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "controlled_region_released",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_process_readback",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 原尺寸按需调页",
+        "explanation": "512 MiB、4096字节步长，按A/B/C分批写入；映射RSS依次为 0 KiB / 131072 KiB / 262144 KiB / 524288 KiB。",
+        "evidence": [
+          {
+            "case_id": "demand512-thp-on-2",
+            "artifacts": {
+              "jsonl": "cases/demand512-thp-on-2/stdout.jsonl",
+              "smaps": "cases/demand512-thp-on-2/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "original_values",
+                "observed": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "expected": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "resident_growth",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "full_residency",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_advice_result",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_vma_flags",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "controlled_region_released",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_process_readback",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 原尺寸按需调页",
+        "explanation": "512 MiB、4096字节步长，按A/B/C分批写入；映射RSS依次为 0 KiB / 131072 KiB / 262144 KiB / 524288 KiB。",
+        "evidence": [
+          {
+            "case_id": "demand512-thp-off-2",
+            "artifacts": {
+              "jsonl": "cases/demand512-thp-off-2/stdout.jsonl",
+              "smaps": "cases/demand512-thp-off-2/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "original_values",
+                "observed": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "expected": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "resident_growth",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "full_residency",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_advice_result",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_vma_flags",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "controlled_region_released",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_process_readback",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_disabled_observation",
+                "observed": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "expected": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 原尺寸按需调页",
+        "explanation": "512 MiB、4096字节步长，按A/B/C分批写入；映射RSS依次为 0 KiB / 131072 KiB / 262144 KiB / 524288 KiB。",
+        "evidence": [
+          {
+            "case_id": "demand512-thp-off-3",
+            "artifacts": {
+              "jsonl": "cases/demand512-thp-off-3/stdout.jsonl",
+              "smaps": "cases/demand512-thp-off-3/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "original_values",
+                "observed": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "expected": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "resident_growth",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "full_residency",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_advice_result",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_vma_flags",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "controlled_region_released",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_process_readback",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_disabled_observation",
+                "observed": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "expected": [
+                  0,
+                  0,
+                  0,
+                  0
+                ],
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      },
+      {
+        "rule": "group3",
+        "confidence": "confirmed",
+        "title": "3.3 原尺寸按需调页",
+        "explanation": "512 MiB、4096字节步长，按A/B/C分批写入；映射RSS依次为 0 KiB / 131072 KiB / 262144 KiB / 524288 KiB。",
+        "evidence": [
+          {
+            "case_id": "demand512-thp-on-3",
+            "artifacts": {
+              "jsonl": "cases/demand512-thp-on-3/stdout.jsonl",
+              "smaps": "cases/demand512-thp-on-3/smaps.stderr.txt"
+            },
+            "checks": [
+              {
+                "id": "original_values",
+                "observed": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "expected": {
+                  "kind": "values",
+                  "checked": 131072,
+                  "mismatches": 0
+                },
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "resident_growth",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "full_residency",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_advice_result",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_vma_flags",
+                "observed": true,
+                "expected": true,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "controlled_region_released",
+                "observed": false,
+                "expected": false,
+                "status": "passed",
+                "category": "correctness"
+              },
+              {
+                "id": "thp_process_readback",
+                "observed": 0,
+                "expected": 0,
+                "status": "passed",
+                "category": "correctness"
+              }
+            ]
+          }
+        ],
+        "limitations": "映射指标包含整个区域；栈深度为最后采样点。缺页数受分配器、大页与采样影响，不按一写一次缺页推断。"
+      }
+    ],
+    "comparisons": [],
+    "cow_observations": [],
+    "policy_comparisons": [],
+    "references": [
+      "https://docs.kernel.org/filesystems/proc.html",
+      "https://docs.kernel.org/admin-guide/mm/transhuge.html",
+      "https://man7.org/linux/man-pages/man2/getrusage.2.html",
+      "https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html"
+    ],
+    "confidence_labels": {
+      "confirmed": "已确认（限列出的观测与对照）",
+      "probable": "可能原因",
+      "insufficient_evidence": "证据不足"
+    }
+  }
+}

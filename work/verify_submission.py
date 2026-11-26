@@ -27,12 +27,15 @@ RECORD_ROOTS = (EXAMPLES, WORK / "runs", WORK / "openeuler-vm" / "guest-runs")
 BASELINE = "20261118T013159.221864Z"
 PAIRED = ("20261120T120355.446473Z", "20261120T113225.827429Z")
 PROCESS_PAIRED = {"allow": "20261125T110630.221939Z", "disable": "20261125T110657.478995Z"}
+OPENEULER_PROCESS_PAIRED = {"allow": "20261126T111928.837850Z", "disable": "20261126T112012.869310Z"}
 REPORT_HASHES = {
     BASELINE: "7471631ce89130bfcf0caef4bacb0ef6de291ce11405d17279d76ac922c880a8",
     PAIRED[0]: "53118ce1664fbc55b7884aac42794065de71a22cee14cd39649b319ec4f9fea0",
     PAIRED[1]: "9d7aa036cd908c7bbd110dc8f4755a594486e0a07d4073a2be3d43bcd5f9110e",
     PROCESS_PAIRED["allow"]: "b36c7e88bfa7f64e7c7013c26f5a3c9961e476a36cb0d90f2a60b942bea5c525",
     PROCESS_PAIRED["disable"]: "7ece2455ac84c941f6a8eb2ae8b1b4c4c3635060987c8e1570cb2737202123ff",
+    OPENEULER_PROCESS_PAIRED["allow"]: "24f2a4f0a1e60358e5c7ee0b62c5119835090b566b7a53e3f42e3b9be90b8859",
+    OPENEULER_PROCESS_PAIRED["disable"]: "ca0eedb69eb4809148aae0609c1f2f9c2dc1de613d1feb8e98b0bee36b95185f",
 }
 
 
@@ -145,8 +148,8 @@ def verify_demand(get, run, process=None):
                    "process_minor_delta": 32768 if process == "disable" else 64}}
 
 
-def verify_process_controls(get):
-    allow, disable = [report_for(get, run) for run in PROCESS_PAIRED.values()]
+def verify_process_controls(get, pair):
+    allow, disable = [report_for(get, run) for run in pair.values()]
     for key in ("kernel", "machine", "execution_context", "page_bytes", "thp_enabled", "thp_defrag",
                 "thp_sizes", "pmd_size", "allocator_environment"):
         require(allow["environment"].get(key) == disable["environment"].get(key),
@@ -154,11 +157,11 @@ def verify_process_controls(get):
     for path in ("proj5-course/group3_demand.c", "proj5-course/group3_snapshot.h"):
         require(allow["sources"][path] == disable["sources"][path],
                 f"process controls: probe source differed for {path}")
-    params = {"other": "example--" + PROCESS_PAIRED["disable"], "repeat": 3, "download": 1}
+    params = {"other": "example--" + pair["disable"], "repeat": 3, "download": 1}
     for phase in ("write_quarter", "freed"):
-        evidence = json.loads(get("demand-process-comparison", PROCESS_PAIRED["allow"], phase=phase, **params))
+        evidence = json.loads(get("demand-process-comparison", pair["allow"], phase=phase, **params))
         cases = evidence["cases"]
-        require([row["run_id"] for row in cases] == list(PROCESS_PAIRED.values())
+        require([row["run_id"] for row in cases] == list(pair.values())
                 and evidence["phase"] == phase and evidence["repeat"] == 3,
                 "process evidence export points to the wrong run or stage")
         expected = [(131072, 131072), (131072, 0)] if phase == "write_quarter" else [(None, None)] * 2
@@ -170,7 +173,7 @@ def verify_process_controls(get):
                 raw = get("evidence", row["run_id"], case=row["case_id"], kind=kind)
                 require(hashlib.sha256(raw).hexdigest() == artifact["sha256"],
                         f"{row['case_id']}: {kind} hash mismatch in process evidence export")
-    return [verify_demand(get, run, mode) for mode, run in PROCESS_PAIRED.items()]
+    return [verify_demand(get, run, mode) for mode, run in pair.items()]
 
 
 def unique_json_object(pairs):
@@ -260,7 +263,8 @@ def verify_bundled():
             result = {"status": "passed", "mode": "historical_replay", "host": platform.system(),
                       "python": platform.python_version(), "sequence": verify_sequence(get),
                       "demand": [verify_demand(get, run) for run in PAIRED],
-                      "process_demand": verify_process_controls(get)}
+                      "process_demand": verify_process_controls(get, PROCESS_PAIRED),
+                      "openeuler_process_demand": verify_process_controls(get, OPENEULER_PROCESS_PAIRED)}
         except (OSError, ValueError, KeyError, StopIteration) as exc:
             print(f"Verification failed: {exc}", file=sys.stderr)
             return 1

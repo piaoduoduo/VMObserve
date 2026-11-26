@@ -43,7 +43,9 @@ test('only Linux or a configured VM expose collection actions', () => {
 test('review recomputes the score from the paired evidence and picks up modified feedback', () => {
   const report = makeReport();
   const raw = makeAttempt(report);
-  const graded = reviewPracticeAttempt(parsePracticeAttempt(raw), report);
+  const parsed = parsePracticeAttempt(raw);
+  assert.deepEqual([parsed.score, parsed.total], [2, 3]);
+  const graded = reviewPracticeAttempt(parsed, report);
   assert.equal(graded.status, 'verified');
   assert.equal(graded.recalculated.score, 2);
   assert.equal(reviewPracticeAttempt(parsePracticeAttempt({...raw, score: 3}), report).status, 'score_mismatch');

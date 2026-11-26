@@ -1,0 +1,9 @@
+{"kind":"condition","mode":"demand512","pid":1494,"bytes":536870912,"stride":4096,"page_bytes":4096,"process_thp":"disable","process_thp_disabled":1}
+{"kind":"sample","phase":"before_alloc","pid":1494,"address":"0","program_break":"1c2f000","count":0,"action_minor":0,"action_major":0,"total_minor":53,"total_major":0}
+{"kind":"policy","policy":"on","pid":1494,"address":"7f7c5d600000","bytes":536870912,"result":0,"errno":0}
+{"kind":"sample","phase":"allocated","pid":1494,"address":"7f7c5d600000","program_break":"1c2f000","count":0,"action_minor":0,"action_major":0,"total_minor":54,"total_major":0}
+{"kind":"sample","phase":"write_quarter","pid":1494,"address":"7f7c5d600000","program_break":"1c2f000","count":32768,"action_minor":32768,"action_major":0,"total_minor":32822,"total_major":0}
+{"kind":"sample","phase":"write_half","pid":1494,"address":"7f7c5d600000","program_break":"1c2f000","count":65536,"action_minor":32768,"action_major":0,"total_minor":65590,"total_major":0}
+{"kind":"sample","phase":"write_all","pid":1494,"address":"7f7c5d600000","program_break":"1c2f000","count":131072,"action_minor":65536,"action_major":0,"total_minor":131126,"total_major":0}
+{"kind":"values","checked":131072,"mismatches":0}
+{"kind":"sample","phase":"freed","pid":1494,"address":"7f7c5d600000","program_break":"1c2f000","count":0,"action_minor":0,"action_major":0,"total_minor":131126,"total_major":0}

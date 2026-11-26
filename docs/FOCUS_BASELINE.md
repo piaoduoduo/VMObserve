@@ -22,6 +22,8 @@
 
 ## openEuler 双环境复验
 
+2026-11-26 从网页在 openEuler 24.03 LTS 中复做了进程开关对照。两边各跑三轮，每轮含两种映射建议。客体内核为 `6.6.0-28.0.0.34.oe2403.x86_64`，系统 THP 为 `always`。单看使用 `MADV_HUGEPAGE` 的组，写到 128 MiB 时两边的 RSS 都是 128 MiB，建议返回值都是 0。允许组实际用了 128 MiB 匿名大页，进程记了 64 次次缺页。禁用组匿名大页为 0 KiB，记了 32768 次次缺页。三轮结果一致。下载项目后可用首页的一键复验命令核对两环境的原文。[openEuler 允许组](../examples/20261126T111928.837850Z/report.json) · [openEuler 禁用组](../examples/20261126T112012.869310Z/report.json)
+
 在官方 openEuler 24.03 LTS x86_64 镜像上启动 QEMU TCG 客体，内核为 `6.6.0-28.0.0.34.oe2403.x86_64`。镜像 SHA-256 为 `c6af522d36d659b66da668cc4eb86b032a9cff05a95a0e37505a63e70ed585dc`。客体启动后从发行版仓库安装 GCC 12.3.1，再将分支 `b855a8a` 的源码传入客体现场编译。采集命令为 `python3 run_all.py --require-openeuler --suite demand512-thp --repeats 3 --timeout 120`。[官方镜像与校验文件](https://repo.openeuler.org/openEuler-24.03-LTS/virtual_machine_img/x86_64/)
 
 [内置 openEuler 实测记录](../examples/20261120T120355.446473Z/report.json)的报告 SHA-256 为 `53118ce1664fbc55b7884aac42794065de71a22cee14cd39649b319ec4f9fea0`。两种环境的探针 C 文件和采样头文件哈希逐字节一致。默认透明大页策略分别为 openEuler 的 `always` 与 WSL2 的 `madvise`。两边分别在同一环境内做对照，每种策略各跑三次并交替顺序。

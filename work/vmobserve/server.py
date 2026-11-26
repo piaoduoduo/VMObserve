@@ -33,6 +33,12 @@ WEB_PAGES = {
 }
 
 
+def default_executor():
+    if platform.system() == "Windows" and (WORK / "openeuler-vm/experiment.qcow2").is_file():
+        return "openeuler-vm"
+    return "local"
+
+
 def experiment_args(mode, pattern="sparse", cow_fraction="all", group4_task="all", mib=16):
     if isinstance(mode, str) and mode.startswith("lab-") and mode[4:] in LABS:
         return ["--suite", "systems", "--lab", mode[4:], "--repeats", "1"]
@@ -101,7 +107,7 @@ class Workbench:
                                   "suites": sorted({c["suite"] for c in data["cases"]}) if "cases" in data else ["baseline", "thp"],
                                   "data_origin": data.get("data_origin", "real_execution"),
                                   "legacy": "schema_version" not in data})
-                except (OSError, ValueError, TypeError):
+                except (OSError, ValueError, TypeError, KeyError, AttributeError):
                     items.append({"id": f"{group}--{path.parent.name}", "run_id": path.parent.name,
                                   "group": group, "distribution": "记录损坏", "status": "unreadable", "count": 0})
         return items
@@ -134,6 +140,8 @@ class Workbench:
 
     def start(self, mode, identifier=None, pattern="sparse", cow_fraction="all", group4_task="all", mib=16):
         options = experiment_args(mode, pattern, cow_fraction, group4_task, mib)
+        if self.executor == "local" and platform.system() != "Linux":
+            raise ValueError("本机提供回放与导出。请在 Linux 或已配置的 openEuler 虚拟机中采集。")
         parent = self.directory(identifier or "") if mode in ("recheck", "policy-recheck") else None
         if parent:
             report = load_run(parent)
@@ -282,7 +290,7 @@ def handler_for(app):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--port", type=int, default=8765)
-    parser.add_argument("--executor", choices=("local", "openeuler-vm"), default="openeuler-vm" if os.name == "nt" else "local")
+    parser.add_argument("--executor", choices=("local", "openeuler-vm"), default=default_executor())
     args = parser.parse_args(argv)
     server = ThreadingHTTPServer(("127.0.0.1", args.port), handler_for(Workbench(args.executor)))
     print(f"Local workbench: http://127.0.0.1:{server.server_port} (executor: {args.executor})", flush=True)

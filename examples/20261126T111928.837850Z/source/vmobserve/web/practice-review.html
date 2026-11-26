@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>课堂首答复核 · VMObserve</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/practice-review.js"></script>
+</head>
+<body class="lesson-shell">
+<header class="topbar">
+  <a class="brand" href="/"><div><strong>VMObserve</strong><span>重点任务可视化实验台</span></div></a>
+  <div class="topbar-actions"><a class="nav-pill" href="/lesson">返回课程笔记</a></div>
+</header>
+<main class="lesson-page practice-review-page">
+  <header class="lesson-hero">
+    <small class="question-kicker">实验 3.3 · 课堂试用</small>
+    <h1>课堂首答复核</h1>
+    <p>选择学生导出的首答 JSON，按对应的实测记录复算三项判断。</p>
+  </header>
+  <section aria-labelledby="review-files-heading">
+    <h2 id="review-files-heading">选择首答文件</h2>
+    <label for="practice-files">首答 JSON，可多选</label>
+    <input id="practice-files" type="file" accept=".json,application/json" multiple>
+    <p class="detail-copy">文件在当前页面读取。复核只通过本地服务查找对应实验记录，作答内容留在当前页面。报告按文件计数，学员人数由试用组织者登记。</p>
+    <p id="practice-review-status" class="detail-copy" role="status"></p>
+  </section>
+  <section id="practice-review-results" aria-labelledby="review-results-heading" hidden>
+    <h2 id="review-results-heading">复核结果</h2>
+    <dl id="practice-review-counts" class="sample-readings"></dl>
+    <div id="practice-review-questions"></div>
+    <div id="practice-review-table"></div>
+    <div class="raw-links"><button id="practice-review-export" type="button">下载复核汇总 JSON</button></div>
+  </section>
+</main>
+</body>
+</html>

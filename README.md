@@ -4,7 +4,7 @@
 
 ## 打开第一课
 
-在项目根目录运行以下命令，然后打开 <http://127.0.0.1:8765>。Python 3.10 及以上即可回放。
+在项目根目录运行以下命令，然后打开 <http://127.0.0.1:8765>。Python 3.10 及以上即可回放。Windows 新下载的仓库会直接打开回放模式。项目里已有 openEuler 虚拟磁盘时，页面也提供采集入口。
 
 ```sh
 python work/launch.py
@@ -30,7 +30,7 @@ python work/launch.py
 python -B work/verify_submission.py
 ```
 
-这条命令只读核对随仓库交付的五份历史实测记录，包括进程级禁用下建议成功、写入后无匿名大页的反例。它用临时本地端口复核报告和证据哈希，从原始 `smaps` 重算 3.2 的去重 RSS，并核对 3.3 两环境的建议对照、WSL2 的进程级对照及其 CSV、JSONL 和 `smaps`。通过后输出 JSON，失败时给出失败位置并返回非零退出码。只需要 Python 3.10 及以上，无需安装编译器或启动 Linux 虚拟机。复验现有样例与重新采集的区别见[参赛基线](docs/FOCUS_BASELINE.md)。
+这条命令核对七份随仓库交付的实测记录。3.2 从原始 `smaps` 重算三次分配的驻留量。3.3 分别用 openEuler 和 WSL2 的原文核对两种大页建议，以及进程允许、禁用大页的对照。每份报告与原文都校验 SHA-256。通过后输出 JSON，失败时指出哪份证据有问题并返回非零退出码。回放只需要 Python 3.10 及以上。[样例和实测读数](docs/FOCUS_BASELINE.md)
 
 下载 3.3 的同屏对照证据后，可离线复核单个文件。在项目根目录运行 `python -B work/verify_submission.py --process-evidence demand-process-evidence.json`。如果原始运行目录放在仓库以外，用 `--records` 指向包含这些运行目录的上一级。命令会从原报告重新生成对照，并列出与下载文件不一致的字段。
 

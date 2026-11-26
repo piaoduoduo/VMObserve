@@ -429,7 +429,7 @@ function renderComparison(c, readings) {
   return `<section class="seq-panel seq-comparison" id="sequence-result" aria-labelledby="sequence-heading">
     <div class="demand-heading"><h2 id="sequence-heading">整理结论</h2></div>
     ${conclusionTakeaways(c.data)}
-    <p>现在换一份新地址来检验刚学会的方法：点下方按钮拿一组新指针，或开双终端在自己的虚拟机上跑一遍，逐一核对「起点 ≤ 指针 &lt; 终点」。</p>
+    <p>${canCollect(state.config) ? '点下方按钮采一组新指针，或在自己的 Linux 环境中运行。' : '展开下方的双终端步骤，在自己的 Linux 环境中采一组新指针。'}用新地址逐一核对「起点 ≤ 指针 &lt; 终点」。</p>
     ${addressTrial(c)}
     <details class="secondary-fold"><summary>对照示例的五步完整数据表</summary>${readings}</details>
     ${reproduction()}

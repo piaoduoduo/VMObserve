@@ -164,7 +164,7 @@ export function currentLab(topic, report, index) {
 export function newestReplay(id, topic, suite, preferredId) {
   const process = {'demand512-thp': null, 'demand512-thp-disable': 'disable', 'demand512-thp-allow': 'allow'}[suite];
   const matches = ([key, lab, policy, , mode]) => process !== undefined
-    ? key === 'demand512' && Boolean(policy) && (mode ?? null) === process
+    ? key === 'demand512' && (process ? policy === 'on' : Boolean(policy)) && (mode ?? null) === process
     : key === suite && (topic !== 'systems' || lab === id) && (suite !== 'demand512' || !policy);
   const runs = (state.runs || []).filter(r => r.data_origin === 'real_execution' && !r.environment_issue &&
     (r.status === 'completed' || (process !== undefined && r.status === 'completed_with_deviations')) &&
@@ -173,7 +173,15 @@ export function newestReplay(id, topic, suite, preferredId) {
   const run = runs.find(r => r.id === preferredId) || runs[0];
   if (!run) return null;
   const index = viewCases(run.case_keys, topic, x => x[0]).findIndex(matches);
-  return { run, href: '/#' + new URLSearchParams({ run: run.id, topic, case: index }) };
+  const position = new URLSearchParams({ run: run.id, topic, case: index });
+  if (process) position.set('step', '2'); // First write in the process-level comparison.
+  return { run, href: '/#' + position };
+}
+
+export function demandCaseIndex(caseKeys, parameters) {
+  return viewCases(caseKeys, 'group3', key => key[0]).findIndex(([suite, , advice, repeat, process]) =>
+    suite === 'demand512' && advice === parameters.thp_advice && repeat === parameters.repeat &&
+    (process ?? null) === (parameters.process_thp ?? null));
 }
 
 export function demandProcessCandidates(runs, currentId, parameters) {
@@ -198,12 +206,10 @@ export function demandEnvironmentReplays(runs, currentId, parameters, step) {
   ]);
   const selected = new Map();
   const findPair = run => {
-    const cases = viewCases(run.case_keys || [], 'group3', key => key[0]);
-    const indexOf = advice => cases.findIndex(([suite, , policy, repeat, process]) =>
-      suite === 'demand512' && policy === advice && repeat === parameters.repeat &&
-      (process ?? null) === (parameters.process_thp ?? null));
-    const index = indexOf(parameters.thp_advice);
-    return index >= 0 && indexOf(parameters.thp_advice === 'on' ? 'off' : 'on') >= 0 ? index : -1;
+    const keys = run.case_keys || [];
+    const index = demandCaseIndex(keys, parameters);
+    const other = parameters.thp_advice === 'on' ? 'off' : 'on';
+    return index >= 0 && demandCaseIndex(keys, {...parameters, thp_advice: other}) >= 0 ? index : -1;
   };
   const toReplay = (run, index) => ({ run, index, step, current: run.id === currentId });
   const currentIndex = findPair(current);

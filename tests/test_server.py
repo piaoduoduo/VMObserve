@@ -16,7 +16,7 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "work"))
-from vmobserve.server import experiment_args, Workbench, handler_for
+from vmobserve.server import default_executor, experiment_args, Workbench, handler_for
 from vmobserve import SCHEMA_VERSION
 from vmobserve.common import write_json
 from vmobserve.replay import read_evidence, load_run
@@ -49,6 +49,21 @@ class ServerTests(unittest.TestCase):
                 self.assertEqual(response.status, 200)
                 self.assertIn(marker, response.read().decode("utf-8"))
 
+    def test_windows_clean_checkout_defaults_to_replay_until_vm_is_configured(self):
+        with tempfile.TemporaryDirectory() as tmp, patch("vmobserve.server.WORK", Path(tmp)), \
+                patch("vmobserve.server.platform.system", return_value="Windows"):
+            self.assertEqual(default_executor(), "local")
+            app = Workbench(default_executor())
+            with self.assertRaisesRegex(ValueError, "回放"):
+                app.start("sequence")
+            self.assertIsNone(app.job)
+            disk = Path(tmp) / "openeuler-vm/experiment.qcow2"
+            disk.parent.mkdir()
+            disk.touch()
+            self.assertEqual(default_executor(), "openeuler-vm")
+            with patch("vmobserve.server.platform.system", return_value="Linux"):
+                self.assertEqual(default_executor(), "local")
+
     def test_report_and_all_export_formats(self):
         with urlopen(self.base + "/api/report?id=test--legacy-run") as response:
             report = json.load(response)
@@ -58,6 +73,16 @@ class ServerTests(unittest.TestCase):
                 self.assertIn(mime, response.headers["Content-Type"])
                 self.assertIn("attachment", response.headers["Content-Disposition"])
                 self.assertGreater(len(response.read()), 100)
+
+    def test_catalog_keeps_other_runs_when_a_case_is_missing_its_suite(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "broken").mkdir()
+            (root / "broken/report.json").write_text('{"cases":[{"parameters":{}}]}', encoding="utf-8")
+            app = Workbench("local", {"import": root, "example": ROOT / "examples"})
+            items = {record["id"]: record for record in app.catalog()}
+            self.assertEqual(items["import--broken"]["status"], "unreadable")
+            self.assertEqual(items["example--20261120T120355.446473Z"]["status"], "completed")
 
     def test_demand_pair_export_includes_same_repeat_and_evidence_checksums(self):
         run_id = "20261120T120355.446473Z"

@@ -53,7 +53,7 @@ export function parsePracticeAttempt(value) {
     }]))
   }));
   return {
-    submitted_at, elapsed_ms_since_evidence_opened: elapsed, score,
+    submitted_at, elapsed_ms_since_evidence_opened: elapsed, score, total,
     evidence: {run_id: evidence.run_id, report_sha256: evidence.report_sha256,
       phase: evidence.phase, repeat: evidence.repeat, data_origin: stringOrNull(evidence.data_origin),
       view_mode: stringOrNull(evidence.view_mode), cases},

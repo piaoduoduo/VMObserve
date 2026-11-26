@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandExerciseReadings, gradeDemandExercise, liveRequestedKib, replaySample, matchingSample, comparisonMetrics, parameterDifferences} from '../work/vmobserve/web/comparison-data.js';
 import {groupBlocksIntoRegions, sharedPointerRegion} from '../work/vmobserve/web/sequence-view.js';
 import {learningReport} from '../work/vmobserve/web/learning-report.js';
-import {demandPair} from '../work/vmobserve/web/ui.js';
+import {demandPair, state} from '../work/vmobserve/web/ui.js';
 
 test('3.2 conclusion exports the third allocation and the released addresses separately', () => {
   const heap = {start: '1000', end: '4000', rss_kib: 8};
@@ -80,7 +80,22 @@ test('source manifests compare by file and hash instead of JSON property order',
   assert.equal(sameSources({a:'1'},{a:'2'}), false);
 });
 
-import {demandEnvironmentReplays, demandProcessCandidates} from '../work/vmobserve/web/curriculum.js';
+import {demandEnvironmentReplays, demandProcessCandidates, demandCaseIndex, newestReplay} from '../work/vmobserve/web/curriculum.js';
+
+test('the process counterexample opens the HUGEPAGE case at first write, also when off is first', t => {
+  const previous = state.runs;
+  t.after(() => { state.runs = previous; });
+  const key = (advice, repeat) => ['demand512', null, advice, repeat, 'disable'];
+  const run = {id: 'example--trial', run_id: 'trial', status: 'completed', data_origin: 'real_execution',
+    case_keys: [['io', '7.2'], key('off', 1), key('on', 1), key('on', 2), key('off', 2)]};
+  state.runs = [run];
+  const href = newestReplay('3.3', 'group3', 'demand512-thp-disable').href;
+  const position = new URLSearchParams(href.split('#')[1]);
+  assert.deepEqual([position.get('case'), position.get('step')], ['1', '2']);
+  const parameters = {repeat: 2, thp_advice: 'off', process_thp: 'disable'};
+  assert.equal(demandCaseIndex(run.case_keys, parameters), 3);
+  assert.equal(demandCaseIndex(run.case_keys, {...parameters, process_thp: 'allow'}), -1);
+});
 
 test('demand environment links preserve policy, repeat and phase across distinct case ordering', () => {
   const run = (id, distribution, case_keys) => ({

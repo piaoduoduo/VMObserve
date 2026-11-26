@@ -1,4 +1,4 @@
-import { $, state, labels, esc, kib, table, api, download, canCollect, runTargetLabel, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, stepControls, sampleReadings, lessonPractice, missingReading, demandPair, url, replayOriginLabel } from './ui.js';
+import { $, state, labels, esc, kib, table, api, download, canCollect, demandCollectionMode, runTargetLabel, diagnosisHTML, findingFor, evidenceButtons, loadOriginalPs, stepNavigation, stepExplanation, stepControls, sampleReadings, lessonPractice, missingReading, demandPair, url, replayOriginLabel } from './ui.js';
 import { newestReplay, demandEnvironmentReplays, demandProcessCandidates } from './curriculum.js';
 import { demandPracticeEvidence, practiceAttemptSchema } from './practice-data.js';
 import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings, gradeDemandExercise } from './comparison-data.js';
@@ -8,10 +8,10 @@ function renderLayout() {
     <small class="question-kicker">实验 3.1 · 虚拟地址与映射</small>
     <h2>程序里的地址都在哪里？</h2>
     <p>对照《第七章 主存管理》课件第 9、12、43–49 页，先想一想：程序的函数代码和栈上的局部变量能放在同一块可写内存里吗？只读常量应该是什么权限？</p>
-    <div class="sequence-controls">
+    ${canCollect(state.config) ? `<div class="sequence-controls">
       <button id="run-layout" class="primary">重新采集地址空间实验</button>
       <span class="picker-hint">会运行 3 次独立进程并保存各自的地址、装载段和 smaps</span>
-    </div>
+    </div>` : ''}
   </div>`;
   const cases = state.report.cases.filter(c => c.suite === 'layout');
   if (!cases.length) {
@@ -113,7 +113,7 @@ function renderCourse() {
 const demandActions = {
   before_alloc: ['申请前', '申请内存前先拍一张快照，作为后面各步对照的起点。', '此时代码、栈等基础映射已经建好，程序还没向系统要目标大块。'],
   allocated: ['申请内存', '调用 malloc 申请 512 MiB，记下返回指针，先不写入。', '分配器取得一段虚拟地址。等程序第一次往里面写，内核再给触及的地址分配可写的物理页。'],
-  write_quarter: ['写到 ¼', '从起点写到 128 MiB，每隔 4 KiB 写 1 个字节（值 A）。', '首次往还没配物理页的匿名地址写入时，CPU 触发次缺页异常（不读磁盘），Linux 分配一块清零的物理页框并建立页表映射，再继续完成写入。'],
+  write_quarter: ['写到 ¼', '从起点写到 128 MiB，每隔 4 KiB 写 1 个字节（值 A）。', '第一次写到尚未映射物理页的地址时，CPU 触发缺页异常。Linux 为匿名内存分配已清零的页、更新页表，再让程序继续写。这种无须读取磁盘的缺页计为次缺页。'],
   write_half: ['写到 ½', '从四分之一处接着写 B，写到 256 MiB 停下；前面写过的 A 保持不变。', '新触及的虚拟地址继续按需获得物理页，映射驻留（RSS）跟着推进而涨；前面写过的页直接写入，不会再缺页。'],
   write_all: ['全部写完', '从一半处接着写 C，写到 512 MiB 末尾，预定位置全写过一遍。', '整片区域的访问点都配上了物理页。现在可以直接对比映射大小（虚拟）和 RSS（物理）。'],
   freed: ['释放后', '读回 A、B、C 核对内容，再调用 free。用旧地址查映射表。', '分配器可以用 munmap 把大块映射还给 Linux。查看这一步的 smaps，可以判断原地址所在的映射是否还在。']
@@ -140,9 +140,10 @@ function demandSteps(c) {
       result += sample.mapping_present ? ` 看下方指标：映射大小变为 ${kib(sample.size_kib)}、RSS 为 ${kib(sample.rss_kib)}。` : ' 目标映射已不存在，因此映射大小和 RSS 均无读数。';
       if (c.data.values) result += ` 释放前共核对 ${c.data.values.checked} 个写入位置，不一致 ${c.data.values.mismatches} 处。`;
     } else {
-      result = `累计写过 ${sample.count} 个位置，这一步发生 ${sample.action_minor} 次缺页（都是“次缺页”——直接在内存里建映射，不读磁盘）。`;
+      result = `累计写过 ${sample.count} 个位置。这一步整个进程记录了 ${sample.action_minor} 次次缺页` +
+        (sample.action_major > 0 ? `、${sample.action_major} 次主缺页。` : '。');
       if (sample.huge_kib > 0) {
-        result += ` 为什么写了几万个点才缺页这么几次？展开下方“查看这一步的原文”，点“原始映射 smaps”里的 AnonHugePages：这一步用上了 ${kib(sample.huge_kib)} 匿名大页，1 张 2 MiB 大页能一次覆盖几百个 4 KiB 写入位置。`;
+        result += ` 原始 smaps 的 AnonHugePages 显示，目标映射用了 ${kib(sample.huge_kib)} 匿名大页。以 2 MiB 大页为例，一页就能覆盖 512 个相隔 4 KiB 的写入位置。`;
       } else {
         result += ' 已经配好物理页的地址不再缺页，展开下方“查看这一步的原文”，再点“原始映射 smaps”可以查看整段 RSS 与大页读数。';
       }
@@ -280,7 +281,7 @@ function bindDemandTimeline() {
   });
 }
 
-function demandRepeatReview(rows, activePhase, currentRepeat) {
+function demandRepeatReview(rows, activePhase, parameters) {
   if (!rows.length) return '';
   const previous = $('#demand-repeat-review');
   const open = previous?.dataset.run === state.id && previous.open;
@@ -308,7 +309,8 @@ function demandRepeatReview(rows, activePhase, currentRepeat) {
       `第 ${repeat} 轮`,
       ...metrics.map(({ values, format }) => issue ? '—' : values[index].map(value => value === null ? '—' : format(value)).join(' / ')),
       issue ? issues[issue] : '已配对'
-    ]), rows.findIndex(row => row.repeat === currentRepeat))}
+    ]), rows.findIndex(row => row.repeat === parameters.repeat))}
+    ${canCollect(state.config) ? `<button type="button" id="run-demand-thp" data-mode="${esc(demandCollectionMode(parameters))}">在${esc(runTargetLabel().trim())}按本组条件重跑三轮</button>` : ''}
   </details>`;
 }
 
@@ -491,7 +493,7 @@ function demandPolicyPanel(c, sample, rounds, practice) {
     : blocked ? '映射建议调用成功，进程级禁用读回为 1。本步的 AnonHugePages 实测为 0 KiB。'
     : '使用大页建议组在本步的匿名大页驻留为 0 KiB。可继续查看后续写入阶段。';
   const counterexample = process ? null : newestReplay('3.3', 'group3', 'demand512-thp-disable');
-  const processLink = counterexample ? `<p class="detail-copy"><a href="${esc(counterexample.href)}&amp;step=2">查看进程级禁用时的四分之一写入反例</a></p>` : '';
+  const processLink = counterexample ? `<p class="detail-copy"><a href="${esc(counterexample.href)}">查看进程级禁用时的四分之一写入反例</a></p>` : '';
   const baseline = newestReplay('3.3', 'group3', 'demand512');
   return `<section class="seq-panel demand-policy" aria-labelledby="policy-title">
     <h2 id="policy-title">512 MiB 透明大页对照 · 第 ${esc(repeat)} 轮</h2>
@@ -520,7 +522,7 @@ function demandPolicyPanel(c, sample, rounds, practice) {
     </details>
     ${process && sample ? demandProcessPanel() : ''}
     ${demandTimeline(c, pair, phase)}
-    ${demandRepeatReview(rounds, phase, repeat)}
+    ${demandRepeatReview(rounds, phase, c.parameters)}
     ${baseline ? `<p class="detail-copy"><a href="${esc(baseline.href)}">返回原版 malloc 实验</a></p>` : ''}
   </section>`;
 }
@@ -528,6 +530,8 @@ function demandPolicyPanel(c, sample, rounds, practice) {
 function renderMemorySteps(c, cases) {
   const demand = c.suite === 'demand512';
   const controlled = demand && Boolean(c.parameters.thp_advice);
+  const processThp = controlled && Boolean(c.parameters.process_thp);
+  const regularThp = controlled && !processThp;
   const steps = demand ? demandSteps(c) : stackSteps(c);
   state.phase = Math.max(0, Math.min(state.phase, steps.length - 1));
   const step = steps[state.phase], sample = step?.sample;
@@ -537,14 +541,16 @@ function renderMemorySteps(c, cases) {
   const title = demand ? '申请 512 MiB，什么时候用上物理页？' : '递归到哪一步，栈会撑不住？';
   const samples = c.data?.samples || [];
   const firstDemand = cases.findIndex(item => item.suite === 'demand512' && !item.parameters.thp_advice);
-  const firstControlled = cases.findIndex(item => item.suite === 'demand512' && Boolean(item.parameters.thp_advice));
+  const firstRegularThp = cases.findIndex(item => item.suite === 'demand512' && Boolean(item.parameters.thp_advice) && !item.parameters.process_thp);
+  const firstProcessThp = cases.findIndex(item => item.suite === 'demand512' && Boolean(item.parameters.thp_advice) && Boolean(item.parameters.process_thp));
   const firstStack = cases.findIndex(item => item.suite === 'stack');
   const switchTab = (label, active, idx, fallbackReplay) => idx >= 0
     ? `<button type="button" data-condition="${idx}" data-reset-step="1" aria-pressed="${active}">${label}</button>`
     : `<a class="condition-tab" href="/labs/3.3?replay=${fallbackReplay}">${label}</a>`;
   const modeSwitcher = `<div class="lesson-conditions" role="group" aria-label="切换 3.3 子实验"><span class="conditions-label">子实验</span>
     ${switchTab('按需调页（512 MiB）', demand && !controlled, demand && !controlled ? state.selected : firstDemand, 'demand512')}
-    ${switchTab('透明大页对照（512 MiB）', controlled, controlled ? state.selected : firstControlled, 'demand512-thp')}
+    ${switchTab('透明大页对照（512 MiB）', regularThp, regularThp ? state.selected : firstRegularThp, 'demand512-thp')}
+    ${switchTab('进程级开关对照', processThp, processThp ? state.selected : firstProcessThp, 'demand512-thp-disable')}
     ${switchTab('栈增长与溢出', !demand, !demand ? state.selected : firstStack, 'stack')}
   </div>`;
   const controlledSelector = controlled ? `<label class="replay-picker">回放记录 <select id="case-select">${cases.map((item, i) => {
@@ -577,7 +583,7 @@ function renderMemorySteps(c, cases) {
   const runHint = demand
     ? `将在${targetEnv}实跑 1 次 512 MiB 按需调页（约数秒至十余秒）；如果一直停在这一步，跑完会自动切到新记录并与本次对照`
     : `将在${targetEnv}实跑 1 轮各栈限额递归实验（约数秒）；如果一直停在这一步，跑完会自动切到新记录并保留当前限额对照`;
-  $('#content').innerHTML = `<section class="seq-reading focused-lesson${demand ? ' demand-reading' : ''}"><header class="focus-intro"><small class="question-kicker">实验 3.3 · ${controlled ? '512 MiB 透明大页对照' : demand ? '按需调页' : '栈增长与溢出'} · ${replayOriginLabel(state.report)}</small><h1>${title}</h1>
+  $('#content').innerHTML = `<section class="seq-reading focused-lesson${demand ? ' demand-reading' : ''}"><header class="focus-intro"><small class="question-kicker">实验 3.3 · ${processThp ? '512 MiB 进程级大页对照' : controlled ? '512 MiB 透明大页对照' : demand ? '按需调页' : '栈增长与溢出'} · ${replayOriginLabel(state.report)}</small><h1>${title}</h1>
     ${state.phase === 0 ? `<p>${demand ? '先预测只申请时的 RSS，再看每次多写一段后，实际多用了多少物理内存。' : '跟着递归观察栈怎样增长，最后用退出码或信号分清正常返回和栈溢出。'}</p>` : ''}</header>
     ${modeSwitcher}${stackConditions}${steps.length ? stepNavigation(steps.map(s => s.title), state.phase, 'data-course-step') : ''}
     <section class="seq-panel" id="sequence-result"><div class="panel-title-row"><h2 id="memory-heading">${esc(step?.title || '缺少采样')}</h2>${last ? stackBadge : ''}${controlledSelector}</div>
@@ -611,10 +617,10 @@ function renderGroup3() {
     <small class="question-kicker">实验第 3 组 · 链接、调页与栈</small>
     <h2>从程序装入到栈溢出</h2>
     <p>对比同一段代码在静态/动态链接下的映射差异；在同进程里连续申请三块内存；按原课例分批写入 512 MiB；以及观察递归深度超过栈限制时的段错误（SIGSEGV）。</p>
-    <div class="sequence-controls">
+    ${canCollect(state.config) ? `<div class="sequence-controls">
       <button id="run-group3" class="primary">重新采集第 3 组实验</button>
       <span class="picker-hint">每项重复 3 次，共 24 组数据</span>
-    </div>
+    </div>` : ''}
   </div>`;
   const cases = state.report.cases.filter(c => suites.includes(c.suite));
   if (!cases.length) {
@@ -650,10 +656,10 @@ function renderGroup4() {
     <small class="question-kicker">实验第 4 组 · 进程与线程</small>
     <h2>进程与线程怎样隔离和协作？</h2>
     <p>先猜一猜：<code>fork</code> 之后父子进程打印出一样的变量地址，代表它们真的共享同一份物理内存吗？<code>pthread</code> 线程之间，全局变量和局部变量栈各自属于谁？</p>
-    <div class="sequence-controls">
+    ${canCollect(state.config) ? `<div class="sequence-controls">
       <label>运行范围：<select id="group4-task">${[['all', '第 4 组全部'], ['4.1', '4.1 进程创建与替换'], ['4.2', '4.2 pthread 线程'], ['4.3', '4.3 用户级线程'], ['4.4', '4.4 管道与同步']].map(([v, t]) => `<option value="${v}" ${state.group4Task === v ? 'selected' : ''}>${t}</option>`).join('')}</select></label>
       <button id="run-group4" class="primary">运行所选实验</button>
-    </div>
+    </div>` : ''}
   </div>`;
   const cases = state.report.cases.filter(c => c.suite.startsWith('g4-'));
   if (!cases.length) {

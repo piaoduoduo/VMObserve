@@ -64,6 +64,10 @@ export function canCollect(config) {
   return config?.executor === 'openeuler-vm' || config?.host_system === 'Linux';
 }
 
+export function demandCollectionMode(parameters) {
+  return parameters.process_thp ? 'demand512-thp-' + parameters.process_thp : 'demand512-thp';
+}
+
 export function replayOriginLabel(report) {
   if (report?.data_origin === 'real_execution') return '历史实测回放';
   if (report?.data_origin === 'synthetic') return '模拟回放';
@@ -197,11 +201,11 @@ function humanizeFinding(f) {
     case 'thp_not_observed':
       title = '想要大页，但 AnonHugePages 还是 0';
       explanation = '缺一组成功分到大页的正例对照，也没看到进程开关日志，所以眼下分不清是被策略挡了还是内核没来得及合并。';
-      limitations = '缺正例对照或进程开关记录；跑一次下面的“允许/禁止开关对照”就能分清。';
+      limitations = '缺正例对照或进程开关记录；可结合“允许/禁止进程开关对照”补充证据。';
       nextSteps = [
         '先去“原始记录”看一眼当前系统的全局 THP 设置。',
-        '跑一下“进程开关对照”，保持写法不变，只切换允许/禁止大页开关。',
-        '如果允许组依然是 0，说明当时内存条件或采样时机没触发大页合并。'
+        '查看或采集“进程开关对照”，保持写法不变，只切换允许/禁止大页开关。',
+        '如果允许组依然是 0，继续核对实际策略、内核配置与采样时机，并保留原因尚未确认的结论。'
       ];
       break;
     case 'expectation_deviation':
@@ -239,7 +243,11 @@ function humanizeFinding(f) {
       limitations = '表里都是虚拟地址；同一段映射里的变量共享这一段的物理内存，计算总量时别重复相加。';
       nextSteps = [
         '先自己猜：函数、只读常量、全局变量和栈变量分别该有什么权限？再对照左边的地址分布图。',
-        state.report.cases.filter(c=>c.suite==='layout' && c.data).length > 1 ? '换一次实验，对比同一对象的地址和权限。' : '本轮只有一份完整记录。想比较地址，请点“重新采集地址空间实验”。'
+        state.report.cases.filter(c=>c.suite==='layout' && c.data).length > 1
+          ? '换一次实验，对比同一对象的地址和权限。'
+          : canCollect(state.config)
+            ? '本轮只有一份完整记录。想比较地址，请点“重新采集地址空间实验”。'
+            : '本轮只有一份完整记录。想比较不同进程的地址，可切换到含多轮地址记录的实测，或在 Linux 环境下重新采集。'
       ];
       break;
     case 'layout_permissions':

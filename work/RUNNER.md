@@ -20,7 +20,7 @@
 python work/launch.py
 ```
 
-浏览器打开 http://127.0.0.1:8765 。默认目标是已有 openEuler VM。关闭服务用 Ctrl+C，先等运行任务结束。若端口已占用，用 `python work/launch.py --port 8766`，不要杀不认识的占用进程。
+浏览器打开 http://127.0.0.1:8765 。Windows 上，新检出的仓库默认回放。若项目中已有 `work/openeuler-vm/experiment.qcow2`，默认采集目标就是这台虚拟机，采集前用上述命令启动它。连接自行配置的同一转发端口时也可显式指定 `--executor openeuler-vm`。关闭服务用 Ctrl+C，先等运行任务结束。若端口已占用，用 `python work/launch.py --port 8766`。
 
 PowerShell 入口用 wslpath 转换实际项目路径，不再要求手写 /mnt/d/...；默认发行版 Ubuntu。VM 配置集中在 `openeuler-vm/config.sh`，端口 2226，密钥默认 `/root/proj5-vm/id_ed25519`。可覆盖 PROJ5_VM_PORT、PROJ5_VM_STATE_DIR、PROJ5_VM_KEY；现有 VM 已运行时不改变其参数。
 

@@ -1,4 +1,4 @@
-import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine, canCollect } from './ui.js';
+import { $, state, labels, url, esc, api, kib, friendlyDistro, friendlyTime, highlightSyscallLine, canCollect, demandCollectionMode } from './ui.js';
 import { renderEvidence } from './evidence-view.js';
 import { attachReplayFlow } from './experiment-flow.js';
 import { renderReplayNotes } from './replay-notes.js';
@@ -6,7 +6,7 @@ import { renderReplayComparison } from './replay-comparison.js';
 import { renderSequence, locateSequencePointer, parseMmapCall, groupBlocksIntoRegions, sharedPointerRegion } from './sequence-view.js';
 import { renderCourse, renderGroup3, renderGroup4, renderLayout } from './course-views.js';
 import { renderBaseline, renderTHP } from './memory-views.js';
-import { directory, currentLab, viewCases, markLab, renderHome, renderTaskDirectory, renderSystems, showLab, newestReplay } from './curriculum.js';
+import { directory, currentLab, viewCases, demandCaseIndex, markLab, renderHome, renderTaskDirectory, renderSystems, showLab, newestReplay } from './curriculum.js';
 
 const integrityPanel = $('.manifest');
 
@@ -220,10 +220,16 @@ function ensureReplayChrome() {
             return;
           }
           await refresh();
-          const id = state.job.new_run_ids?.[0];
+          const id = finished.new_run_ids?.[0];
           if (id) {
             const selected = state.report && viewCases(state.report.cases, state.tab, c => c.suite)[state.selected];
             const record = state.runs.find(r => r.id === id);
+            if (record && selected?.parameters?.thp_advice && finished.mode.startsWith('demand512-thp')) {
+              if (finished.parent !== state.id || finished.status === 'failed') return;
+              const index = demandCaseIndex(record.case_keys, selected.parameters);
+              if (index >= 0) await select(id, false, {tab: 'group3', selected: index, phase: state.phase});
+              return;
+            }
             const index = record && selected
               ? viewCases(record.case_keys, state.tab, key => key[0]).findIndex(([suite, lab]) => suite === selected.suite && (!lab || lab === selected.parameters?.lab))
               : -1;
@@ -316,7 +322,7 @@ function render() {
   const selected = state.tab === 'group3' ? viewCases(r.cases, state.tab, item => item.suite)[state.selected] : null;
   const pairedDemand = selected?.suite === 'demand512' && Boolean(selected.parameters.thp_advice);
   const process = pairedDemand ? selected.parameters.process_thp : null;
-  const singleMode = pairedDemand ? (process ? 'demand512-thp-' + process : 'demand512-thp')
+  const singleMode = pairedDemand ? demandCollectionMode(selected.parameters)
     : { sequence: 'sequence', group3: 'group3', course: 'course' }[state.tab];
   $('#run').dataset.mode = singleMode || 'complete';
   $('#run').textContent = pairedDemand ? (process === 'disable' ? '重新采集进程禁用对照' : '重新采集三轮大页对照')
@@ -356,7 +362,7 @@ $('#content').addEventListener('click', e => {
     return;
   }
   if (b.dataset.pointer && b.closest('.sequence-tutorial')) return locateSequencePointer(b);
-  if (runModes[b.id]) return run(runModes[b.id]);
+  if (runModes[b.id]) return run(b.dataset.mode || runModes[b.id]);
   if (b.dataset.compareMerge) return compareMerge(b.dataset.compareMerge);
   if (b.dataset.raw) {
     return raw(b.dataset.raw, b.dataset.kind, {
