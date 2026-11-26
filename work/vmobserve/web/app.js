@@ -459,14 +459,15 @@ function formatHighlightedRaw(text, kind, opts = {}) {
     return esc(lineText);
   }).join('\n');
 
-  if (kind === 'jsonl' && (opts.phase || opts.recordKind)) {
+  if ((kind === 'jsonl' || kind === 'pagemap') && (opts.phase || opts.recordKind)) {
+    const expectedKind = kind === 'pagemap' ? 'pagemap' : 'sample';
     const index = lines.findIndex(line => {
       if (!line.trim()) return false;
       try {
         const event = JSON.parse(line);
         if (opts.recordKind) return event.kind === opts.recordKind;
-        return event.kind === 'sample' && event.phase === opts.phase &&
-          (!opts.role || event.role === opts.role) && (opts.count == null || event.count === opts.count);
+        return event.kind === expectedKind && event.phase === opts.phase &&
+          (!opts.role || event.role === opts.role) && (kind === 'pagemap' || opts.count == null || event.count === opts.count);
       } catch { return false; }
     });
     if (index >= 0) start = end = index + 1;
@@ -569,11 +570,12 @@ async function compareMerge(caseId) {
 async function raw(caseId, kind, opts = {}) {
   const request = ++evidenceRequest;
   const kindNames = {
-    syscalls: '系统调用原文 (strace)', smaps: '原始内存映射 (smaps)', jsonl: '采样事件 (JSONL)', kernel: '内核状态记录', stderr: '程序错误输出',
+    syscalls: '系统调用原文 (strace)', smaps: '原始内存映射 (smaps)', pagemap: '页表项采样 (pagemap)', jsonl: '采样事件 (JSONL)', kernel: '内核状态记录', stderr: '程序错误输出',
     file: 'file 文件类型信息', file_stderr: 'file 错误输出', ldd: 'ldd 动态库依赖', ldd_stderr: 'ldd 错误输出', readelf: 'readelf 装载段信息', readelf_stderr: 'readelf 错误输出'
   };
   try {
-    const res = await fetch(url('/api/evidence', { id: state.id, case: caseId, kind }));
+    const sourceKind = kind === 'pagemap' ? 'jsonl' : kind;
+    const res = await fetch(url('/api/evidence', { id: state.id, case: caseId, kind: sourceKind }));
     const text = await res.text();
     if (request !== evidenceRequest) return;
     if (!res.ok) throw new Error(text);

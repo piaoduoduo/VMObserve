@@ -178,9 +178,52 @@ function humanizeFinding(f) {
       limitations = '自动检查只核对了写入位置和数值；想看缺页变化直接看表格里的 RSS 和次缺页两列。';
       break;
     case 'anonymous_zero_page':
-      title = '只读一遍没涨 RSS，多半是映射到共享零页了';
-      explanation = '只读所有页时确实发生了次缺页，但 RSS 和私有脏页一直是 0 KiB——说明内核把还没写过的匿名页统一指到了共享零页，没有真的给你分物理页。';
-      limitations = '看的是只读阶段的次缺页和 0 KiB RSS；因为没抓取物理页帧号（PFN），按严谨标准标为“可能原因”。';
+      if (f.confidence === 'confirmed') {
+        title = '只读一遍没涨 RSS，页表项证实全部指向共享零页';
+        explanation = '只读所有页时发生了次缺页但 RSS 为 0 KiB，且 /proc/pid/pagemap 抽样证实各虚拟页指向同一个共享零页物理页帧（PFN），内核未分配独立物理内存。';
+        limitations = '结合只读阶段 0 KiB RSS 与 /proc/pid/pagemap 抽样同 PFN 确认。';
+      } else if (f.confidence === 'probable') {
+        title = '只读一遍没涨 RSS，多半是映射到共享零页了';
+        explanation = '只读所有页时确实发生了次缺页，但 RSS 和私有脏页一直是 0 KiB——说明内核把还没写过的匿名页统一指到了共享零页，没有真的给你分物理页。';
+        limitations = '看的是只读阶段的次缺页和 0 KiB RSS；因为没抓取物理页帧号（PFN），按严谨标准标为“可能原因”。';
+      } else {
+        title = title || '只读阶段未确认共同零页';
+        explanation = explanation || '本次页表和读回结果未同时满足全部抽样页驻留、共用同一页帧且读值为零。';
+        limitations = limitations || '可逐页核对原始读数与页表项原文。';
+      }
+      break;
+    case 'cow_pfn_split':
+      if (f.confidence === 'confirmed') {
+        title = '页表项实锤：改写页物理页帧已分裂，未写页仍共享';
+        explanation = explanation || '父子进程同步采样 /proc/pid/pagemap 显示：fork 后所有抽样页指向相同 PFN；子进程写入后，被改写页获得新 PFN，未改写页保持原 PFN 不变。';
+        limitations = '依据特权环境下父子同步读取的 /proc/pid/pagemap 哨兵页 PFN 对照。';
+      } else {
+        title = title || '父子页帧关系待确认';
+        explanation = explanation || '当前记录未能完整读取父子双侧的真实 PFN，仍可通过 Present、PSS 与读回校验核对。';
+        limitations = limitations || '在两个管道同步点核对同一虚拟地址。';
+      }
+      break;
+    case 'cow_pfn_shared_control':
+      if (f.confidence === 'confirmed') {
+        title = '页表项实锤：零改写时父子抽样页仍共享同一物理页帧';
+        explanation = explanation || '子进程未改写任何页，父子抽样页在 fork 前后始终指向完全相同的物理页帧（PFN）。';
+        limitations = '依据特权环境下父子同步读取的 /proc/pid/pagemap 哨兵页 PFN 对照。';
+      } else {
+        title = title || '父子页帧关系待确认';
+        explanation = explanation || '当前记录未能完整确认零改写对照下父子双侧的真实 PFN。';
+        limitations = limitations || '在两个管道同步点核对同一虚拟地址。';
+      }
+      break;
+    case 'demand_pte_present':
+      if (f.confidence === 'confirmed') {
+        title = '页表项实锤：未写页 Present = 0，首次写入后翻转为 1';
+        explanation = explanation || '/proc/pid/pagemap 逐页抽样证实，仅申请虚拟空间时哨兵页 Present 位为 0，分批写入后对应页的 Present 位依次翻转为 1。';
+        limitations = '依据各阶段对固定哨兵虚拟页的 /proc/pid/pagemap 采样（不访问目标虚拟页本身）。';
+      } else {
+        title = title || '抽样页未完整呈现按写入顺序驻留';
+        explanation = explanation || '各阶段抽样页的 Present 状态与纯按需顺序不完全一致，可结合分配器管理头、大页覆盖或原始记录核对。';
+        limitations = limitations || '按相同虚拟页比较四次快照，覆盖本次抽取的页。';
+      }
       break;
     case 'cow_accounting':
       explanation = explanation
@@ -294,7 +337,7 @@ function findingFor(cases, rules) {
 
 function evidenceButtons(c, opts = {}, kinds = Object.keys(c.artifacts || {})) {
   const names = {
-    kernel: '内核记录', syscalls: '系统调用原文', jsonl: '采样数据 JSONL', smaps: '原始映射 smaps', stderr: '程序错误输出',
+    kernel: '内核记录', syscalls: '系统调用原文', jsonl: '采样数据 JSONL', smaps: '原始映射 smaps', pagemap: '页表项采样 pagemap', stderr: '程序错误输出',
     file: 'file 信息', file_stderr: 'file 错误输出', ldd: 'ldd 依赖', ldd_stderr: 'ldd 错误输出', readelf: 'readelf 段信息', readelf_stderr: 'readelf 错误输出'
   };
   const attrs = [
@@ -308,7 +351,9 @@ function evidenceButtons(c, opts = {}, kinds = Object.keys(c.artifacts || {})) {
     opts.count != null ? `data-count="${esc(opts.count)}"` : '',
     opts.stepLabel ? `data-step-label="${esc(opts.stepLabel)}"` : ''
   ].filter(Boolean).join(' ');
-  return kinds.filter(k => c.artifacts?.[k]).map(k =>
+  const inlinePagemap = c.artifacts?.jsonl && c.data?.samples?.some(s =>
+    s.pagemap && (!opts.phase || s.phase === opts.phase) && (!opts.role || s.role === opts.role));
+  return kinds.filter(k => c.artifacts?.[k] || (k === 'pagemap' && inlinePagemap)).map(k =>
     `<button type="button" data-raw="${esc(c.id)}" data-kind="${esc(k)}" ${attrs}>${esc(names[k] || k)}</button>`
   ).join('');
 }
@@ -348,5 +393,5 @@ async function loadOriginalPs(container) {
 
 export {
   $, state, labels, phases, esc, kib, url, api, table, runTargetLabel,
-  friendlyDistro, friendlyTime, diagnosisHTML, chart, findingFor, evidenceButtons, highlightSyscallLine, loadOriginalPs
+  friendlyDistro, friendlyTime, humanizeFinding, diagnosisHTML, chart, findingFor, evidenceButtons, highlightSyscallLine, loadOriginalPs
 };

@@ -8,6 +8,18 @@
  * The measured object is one isolated anonymous VMA, not whole-process RSS.
  */
 #include "../common/probe.h"
+#include "../common/pagemap_probe.h"
+
+/* In the paired snapshots the write mask identifies the child's own modifications. */
+static void cow_snapshot(const char *phase, const char *role, pid_t pid,
+                         volatile unsigned char *p, size_t bytes, size_t page,
+                         struct faults delta, size_t write_stride) {
+    snapshot(phase, role, pid, p, bytes, delta);
+    const size_t indices[] = {0, 1, 2, 3, 4, 5, 6, 7};
+    int written[8];
+    for (size_t i = 0; i < 8; ++i) written[i] = write_stride && i % write_stride == 0;
+    sample_pagemap(pid, phase, role, (uintptr_t)p, bytes, page, indices, NULL, written, 8);
+}
 
 struct reply {
     struct faults faults;
@@ -71,7 +83,7 @@ int main(int argc, char **argv) {
     if (uname(&u)) die("uname");
     printf("{\"kind\":\"environment\",\"kernel\":\"%s\",\"arch\":\"%s\","
            "\"page_bytes\":%zu,\"mib\":%lu,\"thp_policy\":\"MADV_NOHUGEPAGE\","
-           "\"probe_version\":2,\"cow_fraction\":\"%s\",\"cow_stride_pages\":%zu,"
+           "\"probe_version\":2,\"pagemap_version\":1,\"cow_fraction\":\"%s\",\"cow_stride_pages\":%zu,"
            "\"total_pages\":%zu,\"cow_pages\":%zu}\n",
            u.release, u.machine, page, mib, fraction, cow_stride, total_pages, cow_pages);
     void *base = mmap(NULL, bytes + 2 * page, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
@@ -80,23 +92,23 @@ int main(int argc, char **argv) {
     if (mprotect((void *)p, bytes, PROT_READ | PROT_WRITE)) die("mprotect");
     if (madvise((void *)p, bytes, MADV_NOHUGEPAGE)) die("MADV_NOHUGEPAGE");
     struct faults zero = {0, 0};
-    snapshot("untouched", "parent", getpid(), p, bytes, zero);
+    cow_snapshot("untouched", "parent", getpid(), p, bytes, page, zero, 0);
 
     struct faults before = read_faults();
     unsigned long read_sum = checksum(p, bytes, page);
     struct faults delta = difference(before);
-    snapshot("read_all", "parent", getpid(), p, bytes, delta);
+    cow_snapshot("read_all", "parent", getpid(), p, bytes, page, delta, 0);
     if (read_sum != 0) return 1;
 
     before = read_faults();
     for (size_t i = 0; i < bytes; i += 4 * page) p[i] = 1;
     delta = difference(before);
-    snapshot("write_quarter", "parent", getpid(), p, bytes, delta);
+    cow_snapshot("write_quarter", "parent", getpid(), p, bytes, page, delta, 4);
 
     before = read_faults();
     for (size_t i = 0; i < bytes; i += page) p[i] = 1;
     delta = difference(before);
-    snapshot("write_all", "parent", getpid(), p, bytes, delta);
+    cow_snapshot("write_all", "parent", getpid(), p, bytes, page, delta, 1);
 
     int command[2], response[2];
     if (pipe(command) || pipe(response)) die("pipe");
@@ -131,20 +143,20 @@ int main(int argc, char **argv) {
     char signal;
     transfer(response[0], &signal, 1, 0);
     if (signal != 'R') return 1;
-    snapshot("fork_shared", "parent", getpid(), p, bytes, zero);
-    snapshot("fork_shared", "child", child, p, bytes, zero);
+    cow_snapshot("fork_shared", "parent", getpid(), p, bytes, page, zero, 0);
+    cow_snapshot("fork_shared", "child", child, p, bytes, page, zero, 0);
     signal = 'W'; transfer(command[1], &signal, 1, 1);
     struct reply reply;
     transfer(response[0], &reply, sizeof(reply), 0);
-    snapshot("child_write", "parent", getpid(), p, bytes, zero);
-    snapshot("child_write", "child", child, p, bytes, reply.faults);
+    cow_snapshot("child_write", "parent", getpid(), p, bytes, page, zero, cow_stride);
+    cow_snapshot("child_write", "child", child, p, bytes, page, reply.faults, cow_stride);
     unsigned long parent_sum = checksum(p, bytes, page);
     unsigned long parent_mismatches = mismatches(p, total_pages, page, 0);
     int isolated = parent_sum == total_pages && reply.checksum == total_pages + cow_pages &&
                    reply.written_pages == cow_pages && !parent_mismatches && !reply.mismatches;
-    printf("{\"kind\":\"isolation\",\"parent_sum\":%lu,\"child_sum\":%lu,"
+    printf("{\"kind\":\"isolation\",\"initial_read_sum\":%lu,\"parent_sum\":%lu,\"child_sum\":%lu,"
            "\"cow_written_pages\":%lu,\"parent_mismatches\":%lu,\"child_mismatches\":%lu,\"ok\":%s}\n",
-           parent_sum, reply.checksum, reply.written_pages, parent_mismatches, reply.mismatches,
+           read_sum, parent_sum, reply.checksum, reply.written_pages, parent_mismatches, reply.mismatches,
            isolated ? "true" : "false");
     signal = 'Q'; transfer(command[1], &signal, 1, 1);
     close(command[1]); close(response[0]);

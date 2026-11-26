@@ -33,6 +33,7 @@ def csv_text(report):
     fields += ["count", "total_minor", "total_major", "process_rss_kib", "process_size_kib"]
     fields += ["event", "pid", "tid", "time_ns", "mode", "worker", "step", "value", "expected", "heap_address", "stack_address", "child_pid", "ppid", "exit_code", "signal", "errno", "read_bytes", "write_bytes", "message", "variant", "amount", "balance", "from", "to", "first_lock", "second_lock", "from_balance", "to_balance", "stack_base", "stack_bytes"]
     fields += ["related_scope", "related_vma_count", "related_size_kib", "related_rss_kib", "related_pss_kib"]
+    fields += ["pagemap_status", "pagemap_sampled", "pagemap_present", "pagemap_pfn_access"]
     writer = csv.DictWriter(out, fieldnames=fields, extrasaction="ignore")
     writer.writeheader()
     for c in report["cases"]:
@@ -46,6 +47,10 @@ def csv_text(report):
         for s in (c.get("data") or {}).get("samples") or [{}]:
             if c["suite"] == "demand512":
                 s = demand_sample_export(s)
+            if pm := s.get("pagemap"):
+                s = {**s, "pagemap_status": pm["status"], "pagemap_pfn_access": pm["pfn_access"],
+                     "pagemap_sampled": pm["sampled_count"],
+                     "pagemap_present": pm["present_count"] if pm["status"] == "available" else None}
             writer.writerow(dict(run_id=report["run_id"], data_origin=report["data_origin"], view_mode=report["view_mode"],
                                  run_status=report["status"], case_status=c["status"],
                                  validation_status=c["validation"]["status"],
@@ -120,6 +125,9 @@ def demand_process_evidence(record_ids, reports, repeat, phase):
         raise ValueError("请选择不同的进程条件记录")
 
     probe_files = ("proj5-course/group3_demand.c", "proj5-course/group3_snapshot.h")
+    page_header = "common/pagemap_probe.h"
+    if any(page_header in r["sources"] for r in (current, other)):
+        probe_files += (page_header,)
     hashes = {path: current["sources"].get(path) for path in probe_files}
     if any(not sha or sha != other["sources"].get(path) for path, sha in hashes.items()):
         raise ValueError("探针源码哈希不同或缺失")
@@ -182,6 +190,7 @@ def demand_process_evidence(record_ids, reports, repeat, phase):
 def html_text(report):
     esc = lambda value: html.escape("—" if value is None else str(value))
     rows = []
+    page_rows = []
     for case in report["cases"]:
         if case["suite"] in ("layout", "sync", "io") or case["suite"].startswith("g4-"):
             continue
@@ -197,6 +206,15 @@ def html_text(report):
                 memory = [s[key] for key in memory_fields]
             cells = [case["id"], s["phase"], s["role"], scope, *memory, s["action_minor"]]
             rows.append("<tr>" + "".join(f"<td>{esc(v)}</td>" for v in cells) + "</tr>")
+            if pm := s.get("pagemap"):
+                observed = pm["status"] == "available"
+                count = f"{pm['present_count']}/{pm['sampled_count']}" if observed else "—"
+                cells = [case["id"], s["phase"], s["role"], count, pm["pfn_access"],
+                         pm["source"], pm.get("reason") or pm["status"]]
+                page_rows.append("<tr>" + "".join(f"<td>{esc(v)}</td>" for v in cells) + "</tr>")
+    page_section = ("<h2>抽样页的 Present 与 PFN</h2><table><tr><th>实验</th><th>阶段</th><th>角色</th>"
+                    "<th>驻留页/抽样页</th><th>页帧号可见性</th><th>读取位置</th><th>状态或原因</th></tr>"
+                    + "".join(page_rows) + "</table>") if page_rows else ""
     findings = []
     for f in report["diagnosis"]["findings"]:
         steps = "".join(f"<li>{esc(step)}</li>" for step in f.get("next_steps", []))
@@ -279,7 +297,7 @@ def html_text(report):
 <p>回放时间：{esc(report['replayed_at'])}。</p>
 <details><summary>运行环境与来源</summary><pre>{esc(json.dumps(metadata, ensure_ascii=False, indent=2))}</pre></details>
 {layout_section}{sequence_section}{group3_section}{group4_section}{systems_section}{cow_section}{policy_section}{task_section}
-{memory_section}{'<h2>诊断与证据边界</h2>' if findings else ''}{''.join(findings)}{references}</html>'''
+{memory_section}{page_section}{'<h2>诊断与证据边界</h2>' if findings else ''}{''.join(findings)}{references}</html>'''
 
 
 def export_run(directory, destination):

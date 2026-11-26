@@ -2,6 +2,7 @@
 import re
 from pathlib import Path
 from .smaps import parse_mappings, FIELDS
+from .pagemap import attach_pagemaps
 from .sequence import trace_actions, attach_mappings, describe_allocations, allocation_overview
 
 SUITES = ("link-dynamic", "link-static", "sequence", "demand512", "stack")
@@ -156,6 +157,7 @@ def parse(records, raw, suite, parameters, folder):
             raise ValueError("original demand size/stride changed")
         if [s["count"] for s in samples] != [0,0,32768,65536,131072,0]:
             raise ValueError("original demand write counts changed")
+        attach_pagemaps(records, samples, condition, suite, [int(s["address"], 16) for s in samples])
         result["values"] = exactly(records, "values")
         process = parameters.get("process_thp")
         recorded_process = condition.get("process_thp")

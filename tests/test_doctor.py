@@ -67,12 +67,29 @@ class Host:
     def page_size(self):
         return 4096
 
+    def pagemap_readable(self):
+        return "/proc/self/pagemap" not in self.absent
+
 
 def item(report, identifier):
     return next(c for c in report["checks"] if c["id"] == identifier)
 
 
 class DoctorTests(unittest.TestCase):
+    def test_pagemap_permissions_are_optional_and_independent(self):
+        host = Host()
+        for capability in (False, True):
+            host.files["/proc/self/status"] = f"CapEff:\t{int(capability) << 21:016x}\n"
+            result = diagnose("thp", probe=host)
+            self.assertEqual(item(result, "pagemap.present")["status"], "passed")
+            self.assertEqual(item(result, "pagemap.pfn")["status"], "passed" if capability else "warning")
+            self.assertEqual(result["status"], "ready")
+        host.absent.add("/proc/self/pagemap")
+        unreadable = diagnose("thp", probe=host)
+        self.assertEqual(item(unreadable, "pagemap.present")["status"], "warning")
+        self.assertEqual(item(unreadable, "pagemap.pfn")["status"], "warning")
+        self.assertIn("无法读取自身 pagemap", item(unreadable, "pagemap.pfn")["detail"])
+
     def test_bundled_examples_replay_without_executing_commands(self):
         host = Host()
         report = diagnose("replay", probe=host)

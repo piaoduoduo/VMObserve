@@ -1764,3 +1764,273 @@ body:has(.sequence-tutorial, .focused-lesson) :is(#toggle-runs, .rail-footer, .d
 @media (max-width: 400px) {
   .demand-chart-rows li { grid-template-columns: minmax(0, 1fr); gap: 3px; }
 }
+
+/* 短板 A：/proc/pid/pagemap 页表项（PTE）与物理页帧（PFN）可视化组件 */
+.pagemap-legacy-note {
+  margin: 12px 0;
+  padding: 9px 13px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.pagemap-panel {
+  margin: 16px 0;
+  padding: 16px 18px;
+  border: 1px solid #cbd5e1;
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #fbfdff 0%, #ffffff 100%);
+}
+.pagemap-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 10px;
+}
+.pagemap-kicker {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .02em;
+  color: var(--accent);
+}
+.pagemap-head h3 {
+  margin: 2px 0 0;
+  font-size: 16px;
+  color: var(--ink);
+}
+.pte-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 650;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--ink-secondary);
+}
+.pte-badge.is-ok { background: var(--heap-bg); border-color: var(--heap-border); color: var(--heap-ink); }
+.pte-badge.is-info { background: var(--accent-soft); border-color: #93c5fd; color: var(--accent-hover); }
+.pte-badge.is-warn { background: var(--new-bg); border-color: var(--new-border); color: var(--new-ink); }
+.pte-badge.is-muted { background: #f1f5f9; border-color: var(--line-strong); color: var(--muted); }
+
+.pagemap-verdict {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.68;
+  color: var(--ink-secondary);
+}
+.pagemap-counters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+.pagemap-counters strong { font-variant-numeric: tabular-nums; color: var(--ink); }
+.pagemap-counters .counter-shared strong { color: var(--heap-ink); }
+.pagemap-counters .counter-split strong { color: var(--new-ink); }
+
+.pte-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.pte-cell {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+}
+.pte-cell.is-present {
+  border-color: var(--heap-border);
+  background: var(--heap-bg);
+}
+.pte-cell.is-zero-shared {
+  border-color: var(--mmap-border);
+  background: var(--mmap-bg);
+}
+.pte-cell.is-absent {
+  border-style: dashed;
+  border-color: var(--line-strong);
+  background: #f8fafc;
+}
+.pte-cell-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+.pte-idx {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+}
+.pte-write-tag {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  background: #e2e8f0;
+  color: #334155;
+}
+.pte-write-tag.is-written { background: var(--accent-soft); color: var(--accent-hover); }
+.pte-write-tag.is-huge { background: var(--mmap-bg); color: var(--mmap-ink); border: 1px solid var(--mmap-border); }
+.pte-bit {
+  font-family: var(--font-mono);
+  font-size: 15px;
+  color: var(--ink);
+}
+.pte-cell.is-present .pte-bit { color: var(--heap-ink); }
+.pte-cell.is-zero-shared .pte-bit { color: var(--mmap-ink); }
+.pte-cell.is-absent .pte-bit { color: var(--muted); }
+.pte-label {
+  font-size: 12px;
+  color: var(--ink-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pte-pfn {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.pte-pfn.is-masked { color: var(--accent-hover); }
+
+.pte-contiguity {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-secondary);
+}
+.pte-contiguity.is-huge {
+  background: var(--mmap-bg);
+  border-color: var(--mmap-border);
+  color: var(--mmap-ink);
+}
+
+/* COW 父子同址 PFN 共享/分裂矩阵 */
+.cow-pfn-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(152px, 1fr));
+  gap: 9px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.cow-pfn-card {
+  padding: 10px 11px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+.cow-pfn-card.is-shared { border-color: var(--heap-border); background: var(--heap-bg); }
+.cow-pfn-card.is-split { border-color: var(--new-border); background: var(--new-bg); }
+.cow-pfn-card.is-masked { border-color: #93c5fd; background: var(--accent-soft); }
+.cow-pfn-pair {
+  display: grid;
+  gap: 4px;
+  margin-top: 7px;
+}
+.cow-pfn-side {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ink-secondary);
+}
+.cow-pfn-side code {
+  font-size: 11.5px;
+  background: rgba(255, 255, 255, .85);
+}
+.cow-pfn-link {
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, .7);
+  color: var(--ink-secondary);
+}
+.cow-pfn-card.is-shared .cow-pfn-link { color: var(--heap-ink); }
+.cow-pfn-card.is-split .cow-pfn-link { color: var(--new-ink); }
+
+/* THP 双组哨兵页对照列表 */
+.thp-pte-list {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+.thp-pte-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.5fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+}
+.thp-pte-row.is-collateral-row {
+  border-color: var(--mmap-border);
+  background: var(--mmap-bg);
+}
+.thp-pte-page {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 13px;
+}
+.thp-pte-page strong { font-family: var(--font-mono); color: var(--ink); }
+.thp-pte-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.thp-pte-pair > div { display: grid; gap: 3px; }
+.thp-pte-pair small { font-size: 11px; color: var(--muted); }
+.thp-pte-pill {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.thp-pte-pill.is-absent { background: #f1f5f9; color: var(--muted); border: 1px dashed var(--line-strong); }
+.thp-pte-pill.is-present { background: var(--heap-bg); color: var(--heap-ink); border: 1px solid var(--heap-border); }
+.thp-pte-pill.is-collateral { background: #ede9fe; color: var(--mmap-ink); border: 1px solid var(--mmap-border); }
+
+.pte-raw-fold { margin-top: 8px; }
+.pte-raw-fold table { font-size: 12.5px; }
+.pte-raw-fold th, .pte-raw-fold td { padding: 6px 8px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 680px) {
+  .pagemap-panel { padding: 13px 12px; }
+  .thp-pte-row { grid-template-columns: 1fr; gap: 6px; }
+  .pte-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cow-pfn-grid { grid-template-columns: 1fr; }
+}

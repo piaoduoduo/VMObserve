@@ -1,6 +1,7 @@
 import {esc, kib} from './ui.js';
 import {demandMeasurement} from './comparison-data.js';
 import {groupBlocksIntoRegions, sequenceRssEquation} from './sequence-view.js';
+import {pagemapReportSummary} from './pagemap-view.js';
 
 function sequenceReading(sample, label) {
   const regions = groupBlocksIntoRegions(sample);
@@ -28,7 +29,8 @@ function rowsFor(caseRecord) {
       ['进程级大页设置', caseRecord.condition.process_thp],
       ['进程级禁用读回', caseRecord.condition.process_thp_disabled]
     ] : []),
-    ['VmFlags', sample.vm_flags?.join(' ')]
+    ['VmFlags', sample.vm_flags?.join(' ')],
+    ...(pagemapReportSummary(sample) ? [['页表项观测 (pagemap)', pagemapReportSummary(sample)]] : [])
   ].map(([name, value]) => '<dt>' + esc(name) + '</dt><dd>' + esc(value ?? '—') + '</dd>').join('') + '</dl>';
 }
 

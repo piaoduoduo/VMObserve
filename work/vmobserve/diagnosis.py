@@ -1,15 +1,88 @@
-"""Conservative, evidence-linked rules; no performance or page-frame claims."""
+"""Diagnose observations from raw samples and matched controls."""
 
 from .allocator import allocator_findings
 from .layout import layout_findings
 from .thp_policy import policy_comparisons
 from . import group3, group4, systems
 
-RULE_VERSION = "2026-11-13.1"
+RULE_VERSION = "2026-11-26.pagemap1"
 REFERENCES = ["https://docs.kernel.org/filesystems/proc.html",
+              "https://docs.kernel.org/admin-guide/mm/pagemap.html",
               "https://docs.kernel.org/admin-guide/mm/transhuge.html",
               "https://man7.org/linux/man-pages/man2/getrusage.2.html",
               "https://man7.org/linux/man-pages/man3/dl_iterate_phdr.3.html"]
+
+
+def page_evidence(case, samples):
+    return [{"case_id": case["id"], "phase": s["phase"], "role": s["role"],
+             "jsonl": case["artifacts"]["jsonl"], "source": s["pagemap"]["source"],
+             **{k: s["pagemap"][k] for k in ("status", "pfn_access", "present_count", "sampled_count")}}
+            for s in samples]
+
+
+def demand_page_finding(case):
+    stages = case["data"]["samples"][1:5]
+    if len(stages) != 4 or not all("pagemap" in s for s in stages):
+        return []
+    observations = [s["pagemap"] for s in stages]
+    observed = all(p["status"] == "available" for p in observations)
+    matched = (observed and all(p["entries"] for p in observations)
+               and all(e["present"] == e.get("expected_written") and not e["swapped"]
+                       for p in observations for e in p["entries"]))
+    if matched:
+        title = "写到哪一段，那一段的抽样页才驻留"
+    else:
+        title = "抽样页未完整呈现按写入顺序驻留"
+    if observed:
+        counts = " → ".join(f"{p['present_count']}/{p['sampled_count']}" for p in observations)
+        explanation = f"申请后、写入四分之一、一半和全部时，Present 为 1 的抽样页依次是 {counts}。"
+        if not matched and observations[0]["present_count"]:
+            explanation += "第一次程序写入之前已有抽样页驻留。"
+    else:
+        explanation = "四个阶段中有页表项未读到，仍可在原始记录中查看各步的映射 RSS。"
+    return [dict(rule="demand_pte_present", confidence="confirmed" if matched else "insufficient_evidence",
+                 title=title, explanation=explanation, evidence=page_evidence(case, stages),
+                 limitations="按相同虚拟页比较四次快照，覆盖本次抽取的页。")]
+
+
+def cow_page_finding(case, samples, phase):
+    stages = [samples[p, r] for p in ("fork_shared", phase) for r in ("parent", "child")]
+    if not all("pagemap" in s for s in stages):
+        return []
+    maps = [s["pagemap"] for s in stages]
+    visible = all(p["status"] == "available" and p["pfn_access"] == "visible"
+                  and p["sampled_count"] > 0 and len(p["entries"]) == p["sampled_count"]
+                  and p["present_count"] == p["sampled_count"]
+                  for p in maps)
+    fraction = case["data"]["cow"]["fraction"]
+    rule = "cow_pfn_shared_control" if fraction == "0" else "cow_pfn_split"
+    matched = False
+    if visible:
+        copied = []
+        shared = []
+        matched = True
+        for before_p, before_c, after_p, after_c in zip(*(p["entries"] for p in maps), strict=True):
+            same_index = len({e["page_index"] for e in (before_p, before_c, after_p, after_c)}) == 1
+            split = after_p["pfn"] != after_c["pfn"]
+            (copied if split else shared).append(after_c["page_index"])
+            matched &= (same_index and bool(before_p["pfn"]) and bool(after_c["pfn"])
+                        and before_p["pfn"] == before_c["pfn"] == after_p["pfn"]
+                        and split == after_c.get("expected_written"))
+        explanation = (f"子进程改写比例为 {fraction}。改写后父子页帧号不同的抽样页有 {len(copied)} 个"
+                       + (f"（页号 {', '.join(map(str, copied))}）" if copied else "")
+                       + f"，仍共享的有 {len(shared)} 个。")
+        if matched:
+            explanation = f"fork 后 {len(copied) + len(shared)} 个抽样页的父子页帧号逐一相同。" + explanation
+        else:
+            explanation += "前后页帧与本轮写入位置没有全部对应。"
+    elif any(p["pfn_access"] == "masked" for p in maps):
+        explanation = "内核屏蔽了页帧号。可以核对 Present、PSS 和父子各自读回的值。"
+    else:
+        explanation = "父子前后四份快照没有同时读到完整的驻留页帧号。"
+    title = ("子进程改写的抽样页换了物理页帧" if fraction != "0" else "零改写时父子仍共享抽样页")
+    return [dict(rule=rule, confidence="confirmed" if matched else "insufficient_evidence",
+                 title=title if matched else "父子页帧关系待确认", explanation=explanation,
+                 evidence=page_evidence(case, stages), limitations="在两个管道同步点核对同一虚拟地址。")]
 
 
 def diagnose(report):
@@ -47,6 +120,8 @@ def diagnose(report):
             continue
         if case["suite"] in group3.SUITES:
             findings.extend(group3.findings(case))
+            if case["suite"] == "demand512":
+                findings.extend(demand_page_finding(case))
             continue
         if case["suite"] in group4.SOURCES:
             findings.extend(group4.findings(case))
@@ -60,14 +135,29 @@ def diagnose(report):
                     "metrics": {k: s[phase, role][k] for k in fields}}
         if case["suite"] == "baseline":
             read = s["read_all", "parent"]
-            if read["rss_kib"] == 0 and read["private_dirty_kib"] == 0 and read["action_minor"] > 0 and read["huge_kib"] == 0:
+            pm = read.get("pagemap", {})
+            if (data["value_check"].get("initial_read_sum") == 0
+                    and read["rss_kib"] == 0 and read["private_dirty_kib"] == 0
+                    and pm.get("status") == "available" and pm.get("pfn_access") == "visible"
+                    and pm["present_count"] == pm["sampled_count"] >= 2
+                    and all(e.get("pfn") for e in pm["entries"])
+                    and len({e["pfn"] for e in pm["entries"]}) == 1):
+                add("anonymous_zero_page", "confirmed", "只读的抽样页共用同一个零页",
+                    f"逐页读回的值合计为 0。{pm['present_count']} 个不同虚拟页的 Present 均为 1，页帧号逐一相同。",
+                    page_evidence(case, [read]), "这些页位于同一块尚未写入的私有匿名映射。")
+            elif pm.get("pfn_access") == "visible":
+                add("anonymous_zero_page", "insufficient_evidence", "只读阶段未确认共同零页",
+                    "本次页表和读回结果未同时满足全部抽样页驻留、共用同一页帧且读值为零。",
+                    page_evidence(case, [read]), "可逐页核对原始读数。")
+            elif read["rss_kib"] == 0 and read["private_dirty_kib"] == 0 and read["action_minor"] > 0 and read["huge_kib"] == 0:
                 add("anonymous_zero_page", "probable", "只读缺页与共享零页机制相符",
                     "只读阶段发生次缺页，目标区域 RSS 和私有脏页仍为 0；这支持匿名内存使用共享零页的解释。",
                     [ev("untouched"), ev("read_all")],
-                    "没有采集物理页帧号或页错误路径；不能宣称直接观测了零页共享。RSS 不包括页表开销。")
+                    "本步缺少共同零页的直接页帧证据。")
             size = data["condition"]["mib"] * 1024
             cow = data["cow"]
             phase, written = cow["phase"], cow["written_kib"]
+            findings.extend(cow_page_finding(case, s, phase))
             pre = sum(s["fork_shared", r]["pss_kib"] for r in ("parent", "child"))
             post = sum(s[phase, r]["pss_kib"] for r in ("parent", "child"))
             rss = sum(s["fork_shared", r]["rss_kib"] for r in ("parent", "child"))

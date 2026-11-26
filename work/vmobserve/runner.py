@@ -12,6 +12,7 @@ from .common import digest, execute, read_json, run_id, timestamp, write_json
 from .cow import COW_CHOICES, cow_fractions
 from .diagnosis import diagnose
 from .evidence import parse_case, validate_measurements
+from .pagemap import cap_sys_admin
 from .replay import recorded_environment
 from . import group3, group4, systems
 
@@ -40,6 +41,8 @@ def environment():
             parsed[key] = value.strip('"')
     thp = Path("/sys/kernel/mm/transparent_hugepage")
     return {"system": platform.system(), "kernel": platform.release(), "machine": platform.machine(),
+            "effective_uid": os.geteuid() if hasattr(os, "geteuid") else None,
+            "cap_sys_admin": cap_sys_admin(read_optional("/proc/self/status")),
             "os_release": release, "distribution": parsed, "python": platform.python_version(),
             "libc": list(platform.libc_ver()),
             "allocator_environment": {key: os.environ.get(key) for key in ("GLIBC_TUNABLES", "MALLOC_MMAP_THRESHOLD_", "MALLOC_TRIM_THRESHOLD_", "MALLOC_PERTURB_", "LD_PRELOAD")},
@@ -57,6 +60,7 @@ def source_files():
     files += sorted((WORK / "proj5-course").glob("*.h"))
     files += sorted((WORK / "lessons").glob("*/*"))
     files += sorted((WORK / "vmobserve").glob("*.py"))
+    files += sorted((WORK / "vmobserve/doctor").glob("*.py"))
     files += sorted((WORK / "vmobserve/web").glob("*"))
     files += [WORK / "package_sources.py", WORK / "vm.ps1"]
     files += sorted((WORK / "openeuler-vm").glob("*.sh"))
@@ -180,7 +184,13 @@ def run(args):
             relative = src.relative_to(WORK)
             target = out / "source" / relative
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, target)
+            shutil.copyfile(src, target)
+            try:
+                shutil.copystat(src, target)
+            except PermissionError:
+                # WSL's Windows mount can allow the copy but reject restoring mtime.
+                # The source manifest records a hash of the copied bytes.
+                pass
             report["sources"][relative.as_posix()] = digest(target)
         write_json(out / "environment.json", report["environment"])
         env = report["environment"]

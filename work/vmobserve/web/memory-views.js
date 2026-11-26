@@ -1,4 +1,5 @@
 import { $, state, esc, kib, table, runTargetLabel, evidenceButtons, stepNavigation, stepExplanation, stepControls, sampleReadings, lessonPractice, missingReading, thpPairs } from './ui.js';
+import { renderCowPagemapPanel, renderThpPagemapPanel } from './pagemap-view.js';
 
 function renderTHP() {
   const groups = thpPairs(state.report.cases);
@@ -84,7 +85,7 @@ function renderTHP() {
   const evidence = sides.map((c, i) => {
     if (!c?.artifacts) return '';
     const opts = step === 0 || step === 3 ? { recordKind: step === 0 ? 'condition' : 'values' } : {phase};
-    return `<div class="raw-links"><strong>${labels[i]}</strong>${evidenceButtons(c, {...opts, stepLabel: titles[step]}, opts.recordKind ? ['jsonl'] : ['jsonl', 'smaps'])}</div>`;
+    return `<div class="raw-links"><strong>${labels[i]}</strong>${evidenceButtons(c, {...opts, stepLabel: titles[step]}, opts.recordKind ? ['jsonl'] : ['jsonl', 'smaps', 'pagemap'])}</div>`;
   }).join('');
   const samePolicy = groups.map((g,i) => ({...g,i})).filter(g => g.policy === policy);
   const patterns = new Map(samePolicy.map(g => [g.pattern, samePolicy.find(x => x.pattern === g.pattern).i]));
@@ -100,6 +101,7 @@ function renderTHP() {
     ${selector}${stepNavigation(titles, step, 'data-course-step')}
     <section id="sequence-result" class="seq-panel"><h2>${titles[step]}</h2>
     ${complete ? explanation : missingReading()}${compareVisual}${table(headers, rows)}
+    ${(step === 1 || step === 2) && complete ? renderThpPagemapPanel(samples, labels) : ''}
     <details class="secondary-fold"><summary>查看两组原文</summary>${evidence}</details>
     ${step === titles.length - 1 ? lessonPractice('thp', '再跑一组，比较大页占用', observation, settings, `选好开关与写入方式后点按钮，将在${runTargetLabel()}实跑 1 对大页对照进程（约数秒）；如果一直停在这一步，跑完会自动切到新记录并与本次对照`) : ''}
     <div class="seq-navigation">${stepControls(step, titles.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>')}</div></section></section>`;
@@ -178,8 +180,8 @@ function renderBaseline() {
     <p>父进程先写满 ${esc(c.parameters.mib)} MiB，fork 后观察子进程${fraction === '0' ? '保持原样' : '改写 ' + esc(fraction) + ' 的页'}。用父子进程各自的 PSS 看它们总共占了多少物理内存。</p></header>
     ${sample ? stepNavigation(steps.map(st => st[0]), state.phase, 'data-course-step') : ''}
     <section class="seq-panel" id="sequence-result"><h2>${esc(selected?.[0] || '缺少采样')}</h2>
-    ${sample ? stepExplanation(...selected.slice(1)) + sampleReadings(readings) + pssFormula : missingReading()}
-    ${sample ? `<details class="secondary-fold"><summary>查看这一步的原文</summary><div class="raw-links">${evidenceButtons(c, {phase: sample.phase, role: sample.role, stepLabel: selected[0]}, ['jsonl','smaps','stderr'])}</div></details>` : ''}
+    ${sample ? stepExplanation(...selected.slice(1)) + sampleReadings(readings) + pssFormula + renderCowPagemapPanel(sample, peer, c.data?.cow) : missingReading()}
+    ${sample ? `<details class="secondary-fold"><summary>查看这一步的原文</summary><div class="raw-links">${evidenceButtons(c, {phase: sample.phase, role: sample.role, stepLabel: selected[0]}, ['jsonl','smaps','pagemap','stderr'])}</div></details>` : ''}
     ${state.phase === steps.length - 1 || !sample ? lessonPractice('lesson-cow', '再跑一次，比较父子 PSS', observation, settings, `选好比例后点按钮，将在${runTargetLabel()}实跑 1 组新的 COW 父子进程（约数秒）；如果一直停在这一步，跑完会自动切到新记录并与本次父子 PSS 对照`) : ''}
     ${sample ? `<div class="seq-navigation">${stepControls(state.phase, steps.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>')}</div>` : ''}</section></section>`;
 }

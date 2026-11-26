@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from .probe import Probe
+from ..pagemap import cap_sys_admin
 
 PROFILES = ("replay", "sequence", "group3", "thp", "vm")
 WORK = Path(__file__).resolve().parents[2]
@@ -26,7 +27,8 @@ def diagnose(profile="replay", *, require_openeuler=False, connect=False, probe=
     if require_openeuler and profile in ("replay", "vm"):
         raise ValueError("--require-openeuler 只适用于本机 Linux 采集检查")
     probe = probe or Probe()
-    root = Path(root) if root is not None else WORK.parent
+    project_work = Path(root) / "work" if root is not None else WORK
+    root = project_work.parent
     checks = []
 
     def add(identifier, status, detail, advice="", required=True):
@@ -52,8 +54,8 @@ def diagnose(profile="replay", *, require_openeuler=False, connect=False, probe=
     # Existing manifests are the source of truth for files copied by the runner.
     try:
         from ..runner import source_files
-        files = [root / "work" / p.relative_to(WORK) for p in source_files()]
-        files += [root / "work" / name for name in (
+        files = [project_work / p.relative_to(WORK) for p in source_files()]
+        files += [project_work / name for name in (
             "launch.py", "run_all.py", "vmobserve/server.py", "vmobserve/replay.py",
             "vmobserve/export.py", "vmobserve/web/index.html", "vmobserve/web/lesson.html",
             "vmobserve/web/app.js", "vmobserve/web/style.css")]
@@ -142,6 +144,25 @@ def _replay(root, add):
 
 
 def _memory(probe, read, add, profile):
+    if profile in ("group3", "thp"):
+        try:
+            readable = probe.pagemap_readable()
+        except OSError:
+            readable = False
+        admin = cap_sys_admin(read("/proc/self/status"))
+        add("pagemap.present", "passed" if readable else "warning",
+            "可读取自身页表项的 Present 位" if readable else "无法读取自身 pagemap，仍可采集 smaps",
+            required=False)
+        if admin is True and readable:
+            detail = "具备 CAP_SYS_ADMIN，实采时按驻留页读到的非零 PFN 判定可见性"
+        elif admin is True and not readable:
+            detail = "无法读取自身 pagemap，因此无法读出 PFN"
+        elif admin is False:
+            detail = "没有 CAP_SYS_ADMIN，内核会屏蔽 PFN"
+        else:
+            detail = "未核实读取 PFN 的条件"
+        add("pagemap.pfn", "passed" if admin and readable else "not_checked" if admin is None else "warning",
+            detail, required=False)
     try:
         page = probe.page_size()
         add("page_size", "passed" if page > 0 else "failed", f"基础页 {page} 字节")

@@ -35,6 +35,10 @@ class Probe:
     def read(self, path):
         return Path(path).read_text(encoding="utf-8")
 
+    def pagemap_readable(self):
+        with open("/proc/self/pagemap", "rb", buffering=0) as stream:
+            return len(stream.read(8)) == 8
+
     def exists(self, path):
         return Path(path).is_file()
 

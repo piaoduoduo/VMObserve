@@ -1,8 +1,28 @@
 #define _GNU_SOURCE
 #include "group3_snapshot.h"
+#include "../common/pagemap_probe.h"
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/prctl.h>
+
+static void demand_snapshot(const char *phase, uintptr_t address, size_t count,
+                            struct rusage before, size_t bytes, size_t page, size_t stride,
+                            int live) {
+    snapshot(phase, address, count, before);
+    size_t n = bytes / page, block = 2UL * 1024 * 1024 / page;
+    size_t indices[] = {0, 1, block - 1, n/4 - 1, n/4, n/2 - 1, n/2, n - 1};
+    const char *labels[] = {"A 段首", "第 2 页", "首个 2 MiB 区间末页", "A 段末",
+                            "B 段首", "B 段末", "C 段首", "最后一次写入所在页"};
+    int written[8];
+    for (size_t i = 0; i < 8; ++i) {
+        size_t lo = indices[i] * page, offset = address % page;
+        size_t first = lo > offset ? (lo - offset + stride - 1) / stride : 0;
+        written[i] = first < count && offset + first * stride < lo + page;
+    }
+    sample_pagemap(getpid(), phase, "parent", live ? address : 0, bytes, page,
+                   indices, labels, written, 8);
+}
+
 /* Preserves the supplied lab's 512 MiB, 4096-byte stride and A/B/C writes.
  * Interactive pauses are replaced by complete snapshots at the same stages. */
 int main(int argc, char **argv) {
@@ -22,21 +42,23 @@ int main(int argc, char **argv) {
         if (process_disabled < 0) fail("PR_GET_THP_DISABLE");
     }
     const size_t bytes=512UL*1024*1024, stride=4096, positions=bytes/stride;
+    long base_page = sysconf(_SC_PAGESIZE);
+    if (base_page <= 0) fail("page size");
+    size_t page = (size_t)base_page;
     printf("{\"kind\":\"condition\",\"mode\":\"demand512\",\"pid\":%ld,"
-           "\"bytes\":%zu,\"stride\":%zu,\"page_bytes\":%ld",
-           (long)getpid(),bytes,stride,sysconf(_SC_PAGESIZE));
+           "\"bytes\":%zu,\"stride\":%zu,\"page_bytes\":%zu,\"pagemap_version\":1",
+           (long)getpid(),bytes,stride,page);
     if (process_mode)
         printf(",\"process_thp\":\"%s\",\"process_thp_disabled\":%d", process_mode, process_disabled);
     puts("}");
-    snapshot("before_alloc",0,0,usage());
+    demand_snapshot("before_alloc", 0, 0, usage(), bytes, page, stride, 0);
     struct rusage before=usage();
     volatile unsigned char *p;
     void *reservation = NULL;
     size_t reserved_bytes = 0;
     if (policy) {
-        const long page = sysconf(_SC_PAGESIZE);
         const size_t alignment = 2UL * 1024 * 1024;
-        if (page <= 0 || alignment % (size_t)page != 0) {
+        if (alignment % page != 0) {
             fputs("Base page size is incompatible with the 2 MiB alignment\n", stderr);
             return 2;
         }
@@ -58,14 +80,14 @@ int main(int argc, char **argv) {
         if (!p) fail("malloc");
     }
     uintptr_t address=(uintptr_t)p;
-    snapshot("allocated",address,0,before);
+    demand_snapshot("allocated", address, 0, before, bytes, page, stride, 1);
     const size_t limits[]={positions/4,positions/2,positions};
     const char *phases[]={"write_quarter","write_half","write_all"};
     size_t written=0;
     for (int stage=0;stage<3;++stage) {
         before=usage();
         for (;written<limits[stage];++written) p[written*stride]=(unsigned char)('A'+stage);
-        snapshot(phases[stage],address,written,before);
+        demand_snapshot(phases[stage], address, written, before, bytes, page, stride, 1);
     }
     size_t mismatches=0;
     for (size_t i=0;i<positions;++i) {
@@ -79,6 +101,6 @@ int main(int argc, char **argv) {
     } else {
         free((void *)p);
     }
-    snapshot("freed",address,0,before);
+    demand_snapshot("freed", address, 0, before, bytes, page, stride, 0);
     return mismatches?1:0;
 }

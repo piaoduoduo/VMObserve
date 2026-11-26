@@ -2,6 +2,7 @@ import { $, state, labels, esc, kib, table, api, download, canCollect, demandCol
 import { newestReplay, demandEnvironmentReplays, demandProcessCandidates } from './curriculum.js';
 import { demandPracticeEvidence, practiceAttemptSchema } from './practice-data.js';
 import { demandPairTimeline, demandMetricData, demandRepeatReadings, demandRepeatMetric, demandMeasurement, demandExerciseReadings, gradeDemandExercise } from './comparison-data.js';
+import { renderDemandPagemapPanel } from './pagemap-view.js';
 
 function renderLayout() {
   const intro = `<div class="course-intro">
@@ -505,7 +506,7 @@ function demandPolicyPanel(c, sample, rounds, practice) {
     <details class="secondary-fold demand-evidence"><summary>${practice ? '读原文，核对三项判断' : pair.length ? '查看本步两组原文' : '查看当前案例原文'}</summary>
     ${available.map((item, i) => `<div class="raw-links"><strong>${policyName(item)}</strong>
       ${evidenceButtons(item, practice ? { phase, stepLabel: demandActions[phase]?.[0] } : { recordKind: 'policy' }, ['jsonl'])}
-      ${evidenceButtons(item, { phase, vmaStart: readings[i]?.mapping_header?.split('-')[0] }, ['smaps'])}</div>`).join('')}
+      ${evidenceButtons(item, { phase, vmaStart: readings[i]?.mapping_header?.split('-')[0] }, ['smaps', 'pagemap'])}</div>`).join('')}
     ${demandEvidencePractice(practice)}
     </details>
     <details class="secondary-fold demand-result"><summary>${pair.length ? '查看本步两组采样' : '查看当前案例采样'}</summary>
@@ -520,6 +521,7 @@ function demandPolicyPanel(c, sample, rounds, practice) {
     }))}
     <p>${esc(interpretation)}</p>
     </details>
+    ${pair.length === 2 ? renderDemandPagemapPanel(sample, { pairSamples: readings, pairLabels: ['禁用大页建议', '使用大页建议'] }) : (sample ? renderDemandPagemapPanel(sample) : '')}
     ${process && sample ? demandProcessPanel() : ''}
     ${demandTimeline(c, pair, phase)}
     ${demandRepeatReview(rounds, phase, c.parameters)}
@@ -594,7 +596,8 @@ function renderMemorySteps(c, cases) {
       ['目标映射 RSS', demand && !sample.mapping_present ? '—' : kib(sample.rss_kib)],
       ...(controlled ? [['本步次缺页', `${sample.action_minor} 次`]] : [])
     ]) : ''}
-    ${step ? `<details class="secondary-fold"><summary>查看这一步的原文</summary><div class="raw-links">${evidenceButtons(c, rawOpts, ['jsonl','smaps','kernel'])}</div></details>` : ''}
+    ${demand && !controlled && sample ? renderDemandPagemapPanel(sample) : ''}
+    ${step ? `<details class="secondary-fold"><summary>查看这一步的原文</summary><div class="raw-links">${evidenceButtons(c, rawOpts, ['jsonl','smaps','pagemap','kernel'])}</div></details>` : ''}
     ${step && c.validation?.status !== 'passed' ? `<p class="integrity-warning">本次实测与预期有差异。<a href="/#${new URLSearchParams({run:state.id,topic:'evidence'})}">查看核对结果</a></p>` : ''}
     ${controlled ? '</details>' : ''}
     ${original}${demand && !controlled && last ? `<div class="practice-action lesson-note-action"><a class="btn-link" href="/lesson?${new URLSearchParams({run:state.id,case:c.id})}">用这次实测写小结 →</a><span class="practice-hint">会把本组真实数据带入思考题笔记页</span></div>` : ''}

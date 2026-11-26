@@ -12,6 +12,7 @@ from .cow import COW_STRIDES
 from .allocator import parse_allocator, validate_allocator
 from .layout import parse_layout, validate_layout
 from .thp_policy import parse_policy
+from .pagemap import attach_pagemaps
 from . import group3, group4, systems
 
 METRICS = {"size_kib": "Size", "rss_kib": "Rss", "pss_kib": "Pss",
@@ -104,12 +105,14 @@ def parse_case(jsonl, smaps, suite, parameters):
     blocks = re.findall(r"BEGIN phase=(\S+) role=(\S+) pid=(\d+)\n(.*?)\nEND(?:\n|$)", raw, re.S)
     if len(blocks) != len(samples):
         raise ValueError("incomplete raw smaps blocks")
+    addresses = []
     for row, (phase, role, pid, body) in zip(samples, blocks):
         if (phase, role, int(pid)) != (row["phase"], row["role"], row["pid"]):
             raise ValueError("raw smaps identity differs from JSONL")
         header = re.match(r"([0-9a-f]+)-([0-9a-f]+)\s", body)
         if not header or (int(header[2], 16) - int(header[1], 16)) != row["size_kib"] * 1024:
             raise ValueError("raw VMA address span differs from size")
+        addresses.append(int(header[1], 16))
         for field, label in METRICS.items():
             matches = re.findall(rf"^{label}:\s+(\d+) kB$", body, re.M)
             if len(matches) != 1 or int(matches[0]) != row[field]:
@@ -147,6 +150,9 @@ def parse_case(jsonl, smaps, suite, parameters):
         size = condition["region_bytes"] // 1024
     if any(r["size_kib"] != size for r in samples):
         raise ValueError("sample size differs from condition")
+    attach_pagemaps(records, samples, condition, suite, addresses)
+    if suite == "baseline" and "pagemap_version" in condition:
+        integer(check, "initial_read_sum")
     result = {"condition": condition, "samples": samples, "value_check": check}
     if cow is not None:
         result["cow"] = cow
@@ -178,6 +184,8 @@ def validate_measurements(suite, data):
     add("untouched_rss", s("untouched")["rss_kib"], 0)
     if suite == "baseline":
         size = data["condition"]["mib"] * 1024
+        if "initial_read_sum" in data["value_check"]:
+            add("initial_read_sum", data["value_check"]["initial_read_sum"], 0, category="correctness")
         pages = size * 1024 // data["condition"]["page_bytes"]
         cow = data["cow"]
         phase, written = cow["phase"], cow["written_kib"]
