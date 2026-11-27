@@ -1,5 +1,6 @@
 """Synthetic negative-path checks; these are not real Linux experiment results."""
 import copy
+import json
 from pathlib import Path
 import sys
 import unittest
@@ -10,6 +11,7 @@ from vmobserve.runner import parser, plan_cases
 from vmobserve.server import experiment_args, Workbench
 from vmobserve.diagnosis import diagnose
 import test_allocator
+from vmobserve.student import CONDITIONS, CONTRACT_CASES, compare_student_runs, contract_checks
 from vmobserve.allocator import parse_allocator, validate_allocator
 
 
@@ -71,6 +73,33 @@ class ControlsTests(unittest.TestCase):
         self.assertEqual([f["rule"] for f in findings], ["course_task_incomplete"])
         with self.assertRaises(ValueError):
             parse_allocator(records, raw, {"requested_kib": 1, "course_code": "reference"})
+
+    def test_student_contract_scores_memory_and_return_value_separately(self):
+        rows = [{"check": name, "stride": stride, "previous": previous, "limit": limit,
+                 "returned": limit, "memory_ok": True}
+                for name, (stride, previous, limit) in CONTRACT_CASES.items()]
+        def read():
+            return contract_checks("\n".join(json.dumps(row) for row in rows))
+        self.assertTrue(all(row["status"] == "passed" for row in read()))
+        rows[2]["memory_ok"] = False
+        self.assertEqual(read()[2]["status"], "failed")
+        rows[1]["returned"] = 0
+        self.assertEqual(read()[1]["status"], "failed")
+        rows.pop()
+        with self.assertRaises(ValueError):
+            read()
+
+    def test_student_acceptance_distinguishes_environment_and_duplicate_run(self):
+        env = {key: "known" for key in CONDITIONS}
+        first = {"report_sha256": "first", "environment": env, "compiler": "gcc 13",
+                 "source_sha256": {"student": "same"}, "repeats": 1}
+        other = {**first, "report_sha256": "other", "environment": {**env, "page_bytes": 16384}}
+        result = compare_student_runs(first, other)
+        self.assertEqual(result["environment_differences"], ["page_bytes"])
+        self.assertFalse(result["recorded_environment_matches"])
+        self.assertTrue(result["same_sources"])
+        self.assertFalse(result["same_run"])
+        self.assertTrue(compare_student_runs(first, first)["same_run"])
 
     def test_public_plans_and_commands(self):
         for mode, count in (("demand512", 1), ("stack", 3), ("lesson-cow", 1), ("lesson-thp", 2), ("policy", 2)):

@@ -1,5 +1,6 @@
 """Explicit opt-in connection to an existing VM, with strict SSH host checks."""
 import shlex
+from ..common import configured_wsl_distro
 
 GUEST_CODE = '''import json, platform, shutil, sys
 from pathlib import Path
@@ -21,10 +22,10 @@ print(json.dumps(dict(system=platform.system(), kernel=platform.release(),
 
 def inspect_guest(probe, vm):
     if probe.system == "Windows":
-        result = probe.command(["wsl", "-d", "Ubuntu", "--exec", "wslpath", "-a", vm.as_posix()])
+        result = probe.command(["wsl", "-d", configured_wsl_distro(), "--exec", "wslpath", "-a", vm.as_posix()])
         if result["status"] != "passed" or not result["detail"].startswith("/"):
             return {"status": "failed", "detail": "无法将项目目录转换成 WSL 路径"}
-        prefix, directory = ["wsl", "-d", "Ubuntu", "--exec", "bash"], result["detail"]
+        prefix, directory = ["wsl", "-d", configured_wsl_distro(), "--exec", "bash"], result["detail"]
     else:
         prefix, directory = ["bash"], str(vm)
     # Options before SSH_OPTS take priority over its accept-new default.

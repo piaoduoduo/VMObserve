@@ -34,6 +34,10 @@ python -B work/verify_submission.py
 
 下载 3.3 的同屏对照证据后，可离线复核单个文件。在项目根目录运行 `python -B work/verify_submission.py --process-evidence demand-process-evidence.json`。如果原始运行目录放在仓库以外，用 `--records` 指向包含这些运行目录的上一级。命令会从原报告重新生成对照，并列出与下载文件不一致的字段。
 
+## 学生 C 编程实战
+
+学生另存模板、编辑 `course_touch`，在 Linux 运行 `python3 -B work/run_all.py --suite course --course-code student --student-source ./student.c --repeats 1`。自动判题通过后采集真实 RSS、次缺页和原文，3.3 课程笔记页可查看结果。步骤、环境配置和跨机收据见[学生任务单](work/lessons/demand/WORKSHEET.md)。
+
 ## 运行自己的实验
 
 Linux 采集需要 GCC；连续分配实验还需要 strace。用 `python3 -B work/run_all.py --suite sequence --check-tools` 可核对当前 Linux 会话的依赖（只报告工具路径和采集环境，不编译、不生成实验记录）。在项目根目录运行：

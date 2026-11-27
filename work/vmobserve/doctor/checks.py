@@ -4,9 +4,10 @@ import json
 from pathlib import Path
 
 from .probe import Probe
+from ..common import configured_wsl_distro
 from ..pagemap import cap_sys_admin
 
-PROFILES = ("replay", "sequence", "group3", "thp", "vm")
+PROFILES = ("replay", "student", "sequence", "group3", "thp", "vm")
 WORK = Path(__file__).resolve().parents[2]
 
 
@@ -215,12 +216,13 @@ def _vm(root, probe, add, connect):
         "仓库不附带镜像。已有运行中的 VM 仍可能可连接；新建/启动需另行准备镜像。", required=False)
     if probe.system == "Windows":
         if not probe.which("wsl"):
-            add("wsl", "missing", "未找到 wsl.exe", "安装 WSL 和名为 Ubuntu 的发行版。")
+            add("wsl", "missing", "未找到 wsl.exe", "安装 WSL，并配置用于启动虚拟机的发行版。")
             return
         result = probe.command(["wsl", "--list", "--quiet"])
-        present = result["status"] == "passed" and "Ubuntu" in result["detail"].splitlines()
+        distro = configured_wsl_distro()
+        present = result["status"] == "passed" and distro in result["detail"].splitlines()
         add("wsl.ubuntu", "passed" if present else "failed", result["detail"],
-            "现有 vm.ps1 固定调用 Ubuntu；确认该发行版已安装。")
+            f"确认已安装 {distro}，或设置 VMOBSERVE_WSL_DISTRO。")
         if not present:
             return
     elif probe.system == "Linux":
@@ -238,7 +240,7 @@ def _vm(root, probe, add, connect):
         return
     if not connect:
         add("vm.guest", "not_checked", "尚未连接客体；未读取客体工具、镜像状态、密钥或 SSH 信任记录",
-            "需要验证既有客体时使用 --profile vm --connect；此选项可能启动 WSL Ubuntu。")
+            "需要验证既有客体时使用 --profile vm --connect；此选项可能启动配置的 WSL 发行版。")
         return
     from .vm import inspect_guest
     result = inspect_guest(probe, vm)

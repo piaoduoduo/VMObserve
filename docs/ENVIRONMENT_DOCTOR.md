@@ -7,6 +7,7 @@
 | 命令 | 检查内容 |
 | --- | --- |
 | `python work/doctor.py --profile replay` | 必需项目文件，以及全部内置样例的只读回放、来源完整性和案例校验 |
+| `python3 work/doctor.py --profile student` | 学生 C 实战的最小条件，Linux、smaps、GCC 与基础页信息 |
 | `python3 work/doctor.py --profile sequence` | Linux、smaps、GCC、strace、基础页尺寸及资源提示 |
 | `python3 work/doctor.py --profile group3` | sequence 的检查，加 file、ldd、readelf 和 GCC 能否找到静态 libc |
 | `python3 work/doctor.py --profile thp` | Linux、smaps、GCC、PMD THP 尺寸和大页策略 |
@@ -26,7 +27,7 @@ GCC 定位到 `libc.a` 只说明库文件存在，不能证明启动对象、其
 python work/doctor.py --profile vm --connect
 ```
 
-此选项可能启动 WSL Ubuntu，但不启动或重建 QEMU VM。它使用现有 `config.sh` 的端口、密钥路径和 known_hosts 配置，通过固定的回环地址连接已有客体，只读取系统信息、自身 smaps 和工具可定位性。
+此选项可能启动配置的 WSL 发行版，但不启动或重建 QEMU VM。Windows 启动器、本地服务和环境诊断共用 `VMOBSERVE_WSL_DISTRO`，默认 `Ubuntu`。配置不同发行版时，先用 `wsl -l -q` 核对实际名称，再设置 `$env:VMOBSERVE_WSL_DISTRO = '实际名称'`。它使用现有 `config.sh` 的端口、密钥路径和 known_hosts 配置，通过固定的回环地址连接已有客体，只读取系统信息、自身 smaps 和工具可定位性。
 
 连接强制 `StrictHostKeyChecking=yes`、`UpdateHostKeys=no` 和非交互认证，不接受新主机密钥，也不写入 known_hosts。若尚无信任记录，应先按既有 VM 配置流程核对主机密钥。Windows 使用 `wsl --exec bash -s`，通过标准输入传送脚本；路径和远端命令使用 shell 转义，避免中间 shell 提前解释变量。
 

@@ -11,7 +11,7 @@ import sys
 import threading
 from urllib.parse import parse_qs, urlparse
 
-from .common import execute, read_json, run_id, timestamp, write_json
+from .common import configured_wsl_distro, execute, read_json, run_id, timestamp, write_json
 from .cow import COW_CHOICES
 from .export import csv_text, demand_pair_csv, demand_process_evidence, html_text
 from .replay import load_run, read_evidence, recorded_environment, safe_child
@@ -104,6 +104,7 @@ class Workbench:
                                   "environment_issue": issue,
                                   "status": data.get("status", "completed" if data.get("completed") else "failed"),
                                   "count": len(data["cases"]) if "cases" in data else 18,
+                                  "student_contract": bool(data.get("student_contract")),
                                   "case_keys": [
                                       [c["suite"], c.get("parameters", {}).get("lab"),
                                        c.get("parameters", {}).get("thp_advice"), c.get("parameters", {}).get("repeat"),
@@ -132,8 +133,8 @@ class Workbench:
             script = WORK / "openeuler-vm/retest.sh"
             if os.name == "nt":
                 def linux_path(path):
-                    return subprocess.check_output(["wsl", "-d", "Ubuntu", "--", "wslpath", "-a", Path(path).as_posix()], text=True, timeout=10).strip()
-                cmd = ["wsl", "-d", "Ubuntu", "--", "bash", linux_path(script)]
+                    return subprocess.check_output(["wsl", "-d", configured_wsl_distro(), "--", "wslpath", "-a", Path(path).as_posix()], text=True, timeout=10).strip()
+                cmd = ["wsl", "-d", configured_wsl_distro(), "--", "bash", linux_path(script)]
                 if parent:
                     parent = linux_path(parent)
             else:

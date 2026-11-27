@@ -1,5 +1,5 @@
 import { directory } from './curriculum.js';
-import { loadOriginalPs, kib } from './ui.js';
+import { loadOriginalPs, kib, table } from './ui.js';
 
 const $ = s => document.querySelector(s);
 const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -132,9 +132,73 @@ $('#result-notes').value = notes.result_notes || '';
 $('#extension').value = notes.extension || '';
 $('#own-trial').value = notes.own_trial || '';
 
+function studentResult(report, identifier) {
+  const grade = report.student_contract;
+  if (!grade || report.integrity?.status !== 'verified') return '<p>判题证据不完整，无法核对。</p>';
+  const checks = {empty_stage: '空阶段不写入', first_position: '首次写入', extend_prefix: '保留已写前缀',
+    different_stride: '适配不同步长'};
+  const headers = ['检查', '返回值', '写入检查'];
+  const rows = grade.checks.map(row => [
+    checks[row.check] || row.check, `${row.returned} / ${row.limit}`,
+    row.memory_ok ? '通过' : `相对块首偏移 ${row.offset}，读到 ${row.actual_byte}，应为 ${row.expected_byte}`
+  ]);
+  const cases = report.cases.filter(item => item.suite === 'course')
+    .sort((a,b) => b.parameters.requested_kib - a.parameters.requested_kib || a.parameters.repeat - b.parameters.repeat);
+  const status = {passed:'通过', compile_failed:'编译失败', failed:'未通过', timeout:'超时', cancelled:'已取消'};
+  const measurements = grade.status === 'passed' ? table(['申请量', '阶段校验', '写完 RSS', '写完当步次缺页'], cases.map(item => {
+    const final = item.data?.samples.find(sample => sample.phase === 'write_all');
+    return [kib(item.parameters.requested_kib), item.validation?.status === 'passed' ? '通过' : item.status,
+      final?.mapping_present ? kib(final.rss_kib) : null, final?.action_minor];
+  })) : '';
+  const first = cases.findIndex(item => item.validation?.status === 'passed' && item.data?.samples?.length);
+  const worksheet = first >= 0 ? new URLSearchParams({run: identifier, case: cases[first].id}) : null;
+  const targets = worksheet ? `<p><a href="/lesson?${esc(worksheet)}#case-observation">引用这次实测完成作答</a></p>` : '';
+  return `<p><strong>写入契约 · ${status[grade.status] || '待核对'}</strong> · ${esc(report.run_id)}</p>
+    ${rows.length ? table(headers, rows) : ''}
+    ${grade.diagnostics ? `<details><summary>查看编译或执行诊断</summary><pre>${esc(grade.diagnostics)}</pre></details>` : ''}
+    ${measurements}${targets}`;
+}
+
+async function loadStudentLab() {
+  const picker = $('#student-run');
+  const status = $('#student-status');
+  const result = $('#student-result');
+  try {
+    const records = (await api('/api/runs')).filter(run => run.student_contract)
+      .sort((a,b) => b.run_id.localeCompare(a.run_id));
+    if (!records.length) {
+      picker.innerHTML = '<option>暂无判题记录</option>';
+      status.textContent = '终端完成第一次判题后刷新。使用默认输出目录可直接在此查看。';
+      return;
+    }
+    picker.innerHTML = records.map(run => `<option value="${esc(run.id)}">${esc(run.run_id)} · ${esc(run.distribution)}</option>`).join('');
+    picker.disabled = false;
+    const citedId = new URLSearchParams(location.search).get('run');
+    if (records.some(run => run.id === citedId)) picker.value = citedId;
+    let revision = 0;
+    const show = async () => {
+      const id = picker.value, request = ++revision;
+      status.textContent = '正在核对判题记录…';
+      result.replaceChildren();
+      try {
+        const report = await api('/api/report?id=' + encodeURIComponent(id));
+        if (request !== revision) return;
+        result.innerHTML = studentResult(report, id);
+        status.textContent = '';
+      } catch (error) {
+        if (request === revision) status.textContent = error.message;
+      }
+    };
+    picker.addEventListener('change', show);
+    await show();
+  } catch (error) {
+    status.textContent = error.message;
+  }
+}
+
 try {
   if (location.hash === '#original-demand') $('#original-demand').open = true;
-  await Promise.all([loadOriginalPs($('#original-ps')), loadObservation()]);
+  await Promise.all([loadOriginalPs($('#original-ps')), loadObservation(), loadStudentLab()]);
 } catch (e) {
   if ($('#error')) $('#error').textContent = e.message;
 }

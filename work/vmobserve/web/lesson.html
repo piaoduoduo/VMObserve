@@ -25,6 +25,18 @@
     <div id="original-ps"></div>
   </details>
 
+  <section class="course-intro" id="student-lab">
+    <h2>C 编程实战 · 分阶段写入</h2>
+    <p>把 <code>work/lessons/demand/student.h</code> 另存为自己的 C 源码，只实现 <code>course_touch</code>。在目标 Linux 中先查环境，再运行自动判题。</p>
+    <pre>python3 -B work/doctor.py --profile student
+python3 -B work/run_all.py --suite course --course-code student --student-source ./student.c --repeats 1</pre>
+    <p>先核对空阶段、首次写入、保留前缀和不同步长。全部通过后，同一份源码会运行四种申请尺寸，采集 RSS、次缺页和原文。</p>
+    <label for="student-run">判题记录</label>
+    <select id="student-run" disabled><option>正在读取…</option></select>
+    <p id="student-status" role="status"></p>
+    <div id="student-result"></div>
+  </section>
+
   <section class="course-intro">
     <h2>1. 先写下你的预测</h2>
     <label for="prediction">向系统申请大块内存后，物理驻留（RSS）会立刻涨上去吗？分批写入时又会怎样？</label>

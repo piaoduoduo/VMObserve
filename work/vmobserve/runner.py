@@ -13,6 +13,7 @@ from .cow import COW_CHOICES, cow_fractions
 from .diagnosis import diagnose
 from .evidence import parse_case, validate_measurements
 from .pagemap import cap_sys_admin
+from .student import STUDENT, grade_contract
 from .replay import read_hashed_report, recorded_environment
 from . import group3, group4, systems
 
@@ -55,7 +56,7 @@ def environment():
 
 
 def source_files():
-    files = [WORK / "run_all.py", WORK / "launch.py", *(WORK / name for name in SOURCES.values())]
+    files = [WORK / "run_all.py", WORK / "launch.py", WORK / "doctor.py", *(WORK / name for name in SOURCES.values())]
     files += sorted((WORK / "common").glob("*.h"))
     files += sorted((WORK / "proj5-course").glob("*.h"))
     files += sorted((WORK / "lessons").glob("*/*"))
@@ -191,6 +192,8 @@ def run(args):
             if args.recheck_kind == "process":
                 args.thp, args.thp_process = "on", "pair"
         for src, relative in source_entries():
+            if getattr(args, "student_source", None) and relative.as_posix() == STUDENT:
+                src = args.student_source.resolve()
             target = out / "source" / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(src, target)
@@ -213,6 +216,26 @@ def run(args):
         checkpoint()
         (out / "build").mkdir()
         report["compiler_check"] = execute([args.compiler, "--version"], out / "build/compiler.stdout.log", out / "build/compiler.stderr.log", 10)
+        if getattr(args, "course_code", "reference") == "student" and any(case["suite"] == "course" for case in planned):
+            grade = grade_contract(out, args.compiler, args.timeout)
+            report["student_contract"] = grade
+            print(f"STUDENT_CONTRACT={grade['status']}", flush=True)
+            if grade["status"] != "passed":
+                for check in grade["checks"]:
+                    if check["status"] == "failed":
+                        print(f"  {check['check']}: returned {check['returned']}, expected {check['limit']}", flush=True)
+                        if not check["memory_ok"]:
+                            print(f"    byte offset {check['offset']}: observed {check['actual_byte']}, "
+                                  f"expected {check['expected_byte']}", flush=True)
+                if grade.get("diagnostics"):
+                    print(grade["diagnostics"], file=sys.stderr, flush=True)
+                for case in report["cases"]:
+                    if case["suite"] == "course":
+                        case["error"] = {"code": "student_contract_failed", "message": "Fix the C access contract before measuring pages."}
+                if grade["status"] == "cancelled" or all(case["suite"] == "course" for case in planned):
+                    report["status"] = "cancelled" if grade["status"] == "cancelled" else "failed"
+                    report["error"] = {"code": "student_contract_failed", "message": grade["status"]}
+                    return (130 if grade["status"] == "cancelled" else 1), out
         if any(c["suite"] == "g4-fork" for c in planned):
             report["builds"]["child_prog"] = group4.build_child(out, args.compiler, execute)
             if report["builds"]["child_prog"]["status"] != "completed":
@@ -221,6 +244,8 @@ def run(args):
             report["trace_tool"] = execute(["strace", "--version"], out / "build/strace.stdout.log", out / "build/strace.stderr.log", 10)
             report["trace_tool"]["version"] = read_optional(out / "build/strace.stdout.log")
         for suite in dict.fromkeys(c["suite"] for c in planned):
+            if suite == "course" and report.get("student_contract", {}).get("status", "passed") != "passed":
+                continue
             command = [args.compiler, "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror",
                        str(out / "source" / SOURCES[suite]), "-o", str(out / "build" / suite)]
             if suite in group4.SOURCES:
@@ -318,6 +343,7 @@ def parser():
     p.add_argument("--thp", choices=("both", "on", "off"), default="both")
     p.add_argument("--thp-process", choices=("inherit", "allow", "disable", "pair"), default="inherit")
     p.add_argument("--course-code", choices=("reference", "student"), default="reference")
+    p.add_argument("--student-source", type=Path, help="local C submission to snapshot in place of the starter header")
     p.add_argument("--recheck-kind", choices=("advice", "process"), default="advice")
     p.add_argument("--timeout", type=float, default=20)
     p.add_argument("--compiler", default="gcc")
@@ -333,6 +359,10 @@ def main(argv=None):
         p.error("timeout must be > 0 and <= 120 seconds")
     if args.suite == "demand512-thp" and args.thp_process == "pair":
         p.error("use --thp-process allow or disable for separate demand512-thp records")
+    if args.student_source is not None and (args.suite != "course" or args.course_code != "student" or args.recheck_from):
+        p.error("--student-source requires --suite course --course-code student")
+    if args.student_source is not None and not args.student_source.is_file():
+        p.error("--student-source must point to an existing C source file")
     if args.check_tools:
         result = check_collection(args)
         print(json.dumps(result, indent=2))

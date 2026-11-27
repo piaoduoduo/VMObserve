@@ -10,6 +10,10 @@ import subprocess
 import time
 
 
+def configured_wsl_distro():
+    return os.getenv("VMOBSERVE_WSL_DISTRO", "").strip() or "Ubuntu"
+
+
 def timestamp():
     return dt.datetime.now(dt.timezone.utc).isoformat()
 

@@ -20,6 +20,7 @@ from vmobserve.group3 import DEMAND_PHASES
 from vmobserve.replay import load_run, safe_child
 from vmobserve.server import Workbench, handler_for
 from vmobserve.smaps import parse_mappings
+from vmobserve.student import compare_student_runs, verify_student_run
 
 WORK = Path(__file__).resolve().parent
 EXAMPLES = WORK.parent / "examples"
@@ -280,7 +281,23 @@ def main(argv=None):
     parser.add_argument("--process-evidence", type=Path, help="downloaded process comparison JSON to recheck offline")
     parser.add_argument("--records", type=Path, action="append", default=[],
                         help="additional directory containing original run folders")
+    parser.add_argument("--student-run", type=Path, action="append", default=[],
+                        help="verify one student run directory, or compare two verified runs")
     args = parser.parse_args(argv)
+    if args.student_run:
+        if args.process_evidence or args.records or len(args.student_run) > 2:
+            parser.error("--student-run accepts one or two directories by itself")
+        try:
+            runs = [verify_student_run(path) for path in args.student_run]
+        except (OSError, ValueError, KeyError, TypeError, StopIteration) as exc:
+            print(f"Student verification failed: {exc}", file=sys.stderr)
+            return 1
+        receipt = {"schema_version": "vmobserve.student-acceptance/v1", "status": "passed",
+                   "mode": "historical_replay", "runs": runs}
+        if len(runs) == 2:
+            receipt["comparison"] = compare_student_runs(*runs)
+        print(json.dumps(receipt, indent=2))
+        return 0
     if args.process_evidence is None:
         if args.records:
             parser.error("--records is only used with --process-evidence")
