@@ -2,7 +2,7 @@
 import shlex
 from ..common import configured_wsl_distro
 
-GUEST_CODE = '''import json, platform, shutil, sys
+GUEST_CODE = '''import json, os, platform, shutil, sys
 from pathlib import Path
 release = {}
 for line in Path('/etc/os-release').read_text().splitlines():
@@ -15,6 +15,7 @@ except OSError:
     smaps = False
 print(json.dumps(dict(system=platform.system(), kernel=platform.release(),
     distribution=release.get('ID', ''), smaps=smaps, python_version=list(sys.version_info[:3]),
+    page_bytes=os.sysconf('SC_PAGE_SIZE'),
     tools={name: bool(shutil.which(name)) for name in
            ('python3', 'gcc', 'strace', 'file', 'ldd', 'readelf')})))
 '''

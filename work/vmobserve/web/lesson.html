@@ -30,6 +30,12 @@
     <p>把 <code>work/lessons/demand/student.h</code> 另存为自己的 C 源码，只实现 <code>course_touch</code>。在目标 Linux 中先查环境，再运行自动判题。</p>
     <pre>python3 -B work/doctor.py --profile student
 python3 -B work/run_all.py --suite course --course-code student --student-source ./student.c --repeats 1</pre>
+    <details>
+      <summary>在 Windows 提交到 openEuler</summary>
+      <p>启动并配置好 openEuler 客体后，从项目根目录执行。</p>
+      <pre>python work/doctor.py --profile vm --connect --guest-lab student
+.\work\vm.ps1 retest -StudentSource .\student.c --suite course --course-code student --repeats 1</pre>
+    </details>
     <p>先核对空阶段、首次写入、保留前缀和不同步长。全部通过后，同一份源码会运行四种申请尺寸，采集 RSS、次缺页和原文。</p>
     <label for="student-run">判题记录</label>
     <select id="student-run" disabled><option>正在读取…</option></select>

@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/config.sh"
+caller_dir="$PWD"
 cd -- "$VM_DIR"
 stamp="$(date -u +%Y%m%dT%H%M%S)-$$"
 transport="$VM_DIR/transfers/$stamp"
@@ -26,8 +27,9 @@ stage=preflight
 ssh "${SSH_OPTS[@]}" -p "$VM_PORT" root@127.0.0.1 "set -e; mkdir -p '$remote'; command -v gcc; command -v python3; uname -r; date -u +GUEST_UTC=%Y-%m-%dT%H:%M:%SZ" > "$transport/preflight.log" 2>&1
 stage=upload
 scp "${SSH_OPTS[@]}" -P "$VM_PORT" "$transport/experiments.tar.gz" "root@127.0.0.1:$remote/source.tar.gz" > "$transport/upload.log" 2>&1
-# A local saved report may be supplied as the parent of a controlled recheck.
+# Local paths that the runner needs are staged under fixed names in the guest.
 runner_args=()
+student_source=''
 while (( $# )); do
  if [[ "$1" == --recheck-from ]]; then
   test "$#" -ge 2
@@ -54,6 +56,20 @@ CHECK
   scp "${SSH_OPTS[@]}" -P "$VM_PORT" "$transport/parent/report.json" "$transport/parent/environment.json" "root@127.0.0.1:$remote/parent/" >> "$transport/upload.log" 2>&1
   runner_args+=(--recheck-from "$remote/parent")
   shift 2
+ elif [[ "$1" == --student-source || "$1" == --student-source=* ]]; then
+  if [[ -n "$student_source" ]]; then echo 'Supply --student-source only once' >&2; exit 2; fi
+  if [[ "$1" == --student-source ]]; then
+   if (( $# < 2 )); then echo '--student-source requires a file' >&2; exit 2; fi
+   student_source="$2"
+   shift 2
+  else
+   student_source="${1#*=}"
+   shift
+  fi
+  if [[ -z "$student_source" ]]; then echo '--student-source requires a file' >&2; exit 2; fi
+  if [[ "$student_source" != /* ]]; then student_source="$caller_dir/$student_source"; fi
+  if [[ ! -f "$student_source" ]]; then echo 'Student source file does not exist' >&2; exit 2; fi
+  runner_args+=(--student-source "$remote/student.c")
  elif [[ "$1" == --output || "$1" == --output=* ]]; then
   echo "retest.sh owns output placement to guarantee retrieval" >&2; exit 2
  else
@@ -61,12 +77,19 @@ CHECK
   shift
  fi
 done
+source_check=''
+if [[ -n "$student_source" ]]; then
+ cp -- "$student_source" "$transport/student.c"
+ (cd -- "$transport" && sha256sum student.c > student-source.sha256)
+ scp "${SSH_OPTS[@]}" -P "$VM_PORT" "$transport/student.c" "$transport/student-source.sha256" "root@127.0.0.1:$remote/" >> "$transport/upload.log" 2>&1
+ source_check='sha256sum -c student-source.sha256; '
+fi
 extra=''
 if (( ${#runner_args[@]} )); then printf -v extra ' %q' "${runner_args[@]}"; fi
 # Retrieve this transfer's outputs even when the runner exits nonzero.
 rc=0
 stage=guest_execution
-ssh "${SSH_OPTS[@]}" -p "$VM_PORT" root@127.0.0.1 "set -e; cd '$remote'; tar xzf source.tar.gz; VMOBSERVE_CONTEXT=qemu-tcg python3 run_all.py --require-openeuler $extra" > "$transport/guest-run.log" 2>&1 || rc=$?
+ssh "${SSH_OPTS[@]}" -p "$VM_PORT" root@127.0.0.1 "set -e; cd '$remote'; ${source_check}tar xzf source.tar.gz; VMOBSERVE_CONTEXT=qemu-tcg python3 run_all.py --require-openeuler $extra" > "$transport/guest-run.log" 2>&1 || rc=$?
 stage=retrieval
 retrieval_rc=0
 scp -r "${SSH_OPTS[@]}" -P "$VM_PORT" "root@127.0.0.1:$remote/runs/" "$transport/" > "$transport/retrieval.log" 2>&1 || retrieval_rc=$?

@@ -20,13 +20,15 @@ def summarize(checks):
     return "ready"
 
 
-def diagnose(profile="replay", *, require_openeuler=False, connect=False, probe=None, root=None):
+def diagnose(profile="replay", *, require_openeuler=False, connect=False, guest_lab=None, probe=None, root=None):
     if profile not in PROFILES:
         raise ValueError("unknown diagnostic profile")
     if connect and profile != "vm":
         raise ValueError("--connect 只适用于 --profile vm")
     if require_openeuler and profile in ("replay", "vm"):
         raise ValueError("--require-openeuler 只适用于本机 Linux 采集检查")
+    if guest_lab is not None and (guest_lab != "student" or profile != "vm" or not connect):
+        raise ValueError("--guest-lab student 需要 --profile vm --connect")
     probe = probe or Probe()
     project_work = Path(root) / "work" if root is not None else WORK
     root = project_work.parent
@@ -70,7 +72,7 @@ def diagnose(profile="replay", *, require_openeuler=False, connect=False, probe=
     if profile == "replay":
         _replay(root, add)
     elif profile == "vm":
-        _vm(root, probe, add, connect)
+        _vm(root, probe, add, connect, guest_lab)
     else:
         if probe.system != "Linux":
             add("linux", "unsupported", f"当前系统为 {probe.system}，不能直接进行 Linux 采集",
@@ -114,11 +116,14 @@ def diagnose(profile="replay", *, require_openeuler=False, connect=False, probe=
             except OSError as exc:
                 add("disk", "not_checked", str(exc), required=False)
 
-    return dict(schema_version="vmobserve.doctor/v1", profile=profile,
-                checked_at=datetime.now(timezone.utc).isoformat(),
-                host=dict(system=probe.system, kernel=probe.kernel),
-                status=summarize(checks), checks=checks,
-                scope="环境必要条件检查；未编译或运行实验，ready 不保证实验成功或观察到大页。")
+    result = dict(schema_version="vmobserve.doctor/v1", profile=profile,
+                  checked_at=datetime.now(timezone.utc).isoformat(),
+                  host=dict(system=probe.system, kernel=probe.kernel),
+                  status=summarize(checks), checks=checks,
+                  scope="环境必要条件检查；未编译或运行实验，ready 不保证实验成功或观察到大页。")
+    if guest_lab:
+        result["guest_lab"] = guest_lab
+    return result
 
 
 def _replay(root, add):
@@ -205,7 +210,7 @@ def _memory(probe, read, add, profile):
             "cgroup v1、自定义挂载和祖先限额请另外检查；不以系统 MemAvailable 代替容器余量。", required=False)
 
 
-def _vm(root, probe, add, connect):
+def _vm(root, probe, add, connect, guest_lab):
     vm = root / "work/openeuler-vm"
     for name in ("config.sh", "status.sh", "start.sh", "retest.sh"):
         add("vm.file." + name, "passed" if probe.exists(vm / name) else "missing", name,
@@ -265,11 +270,17 @@ def _vm(root, probe, add, connect):
         version = guest["python_version"]
         add("vm.guest.python", "passed" if tuple(version) >= (3, 10) else "unsupported",
             ".".join(map(str, version)), "客体需要 Python 3.10 或更高版本。")
-        for name in ("python3", "gcc", "strace", "file", "ldd", "readelf"):
+        required_tools = ("python3", "gcc") if guest_lab == "student" else ("python3", "gcc", "strace", "file", "ldd", "readelf")
+        for name in required_tools:
             found = guest["tools"].get(name)
             add("vm.guest.tool." + name, "passed" if found else "missing", "可定位" if found else "未找到",
                 "在客体中准备此工具，连接成功不代表采集依赖完整。")
         add("vm.guest.smaps", "passed" if guest["smaps"] else "missing", "可读" if guest["smaps"] else "不可读")
-        add("vm.scope", "warning", "只检查工具可定位和自身 smaps；未验证编译、静态链接、THP 或传输", required=False)
+        if guest_lab == "student":
+            page_bytes = guest.get("page_bytes")
+            valid = type(page_bytes) is int and page_bytes > 0
+            add("vm.guest.page_size", "passed" if valid else "failed",
+                f"客体基础页 {page_bytes} 字节" if valid else "无法读取客体基础页尺寸")
+        add("vm.scope", "warning", "只核对客体的必要条件；未验证编译、静态链接、THP 或传输", required=False)
     except (ValueError, TypeError, AttributeError) as exc:
         add("vm.guest", "failed", f"无法解析客体诊断：{exc}")

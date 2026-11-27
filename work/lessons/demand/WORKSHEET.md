@@ -23,7 +23,14 @@ python3 -B work/run_all.py --suite course --course-code student --student-source
 
 第一次先用空白模板看失败，改完后重跑。自动判题用独立缓冲区检查空阶段、首个位置、前缀是否被重写、4096 和 65536 字节步长下是否只修改要求的字节。通过后用同一份源码跑 1、256、1024、16384 KiB 的真实采样。网页的「C 编程实战」区可以选择判题记录，把通过的实测绑定到作答笔记，并进入原始证据。使用默认输出目录 `work/runs` 便于同一项目的网页发现记录。
 
-在已配置的 openEuler 客体内也可运行上面 Linux 命令。若用 Windows 的 `vm.ps1 retest` 打包进入客体，可在自己的独立检出中编辑模板并传 `--suite course --course-code student`。只运行自己编写或可信的代码，当前 C 执行器是本地工具。
+在已配置的 openEuler 客体内可运行上面的 Linux 命令。也可以在 Windows 直接把自己的 C 文件交给客体，采样会取回到 `work/openeuler-vm/guest-runs`：
+
+```powershell
+python work/doctor.py --profile vm --connect --guest-lab student
+.\work\vm.ps1 retest -StudentSource .\student.c --suite course --course-code student --repeats 1
+```
+
+Windows 入口在客体编译前校验上传文件的 SHA256，回传报告也包含实际参与判题与采样的源码哈希。在负责运行 QEMU 的 Linux 中，可用 `bash work/openeuler-vm/retest.sh --suite course --course-code student --student-source ./student.c --repeats 1`。只运行自己编写或可信的代码。
 
 未填写的起始文件应检查失败。先看失败项，再自己改。参考实现位于 ../../proj5-course/access_pattern.h；按需查看，不要求先看答案。
 

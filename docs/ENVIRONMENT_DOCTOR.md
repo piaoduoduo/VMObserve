@@ -25,13 +25,14 @@ GCC 定位到 `libc.a` 只说明库文件存在，不能证明启动对象、其
 
 ```powershell
 python work/doctor.py --profile vm --connect
+python work/doctor.py --profile vm --connect --guest-lab student
 ```
 
 此选项可能启动配置的 WSL 发行版，但不启动或重建 QEMU VM。Windows 启动器、本地服务和环境诊断共用 `VMOBSERVE_WSL_DISTRO`，默认 `Ubuntu`。配置不同发行版时，先用 `wsl -l -q` 核对实际名称，再设置 `$env:VMOBSERVE_WSL_DISTRO = '实际名称'`。它使用现有 `config.sh` 的端口、密钥路径和 known_hosts 配置，通过固定的回环地址连接已有客体，只读取系统信息、自身 smaps 和工具可定位性。
 
 连接强制 `StrictHostKeyChecking=yes`、`UpdateHostKeys=no` 和非交互认证，不接受新主机密钥，也不写入 known_hosts。若尚无信任记录，应先按既有 VM 配置流程核对主机密钥。Windows 使用 `wsl --exec bash -s`，通过标准输入传送脚本；路径和远端命令使用 shell 转义，避免中间 shell 提前解释变量。
 
-默认 `--profile vm` 仅在 Windows 上调用 `wsl --list --quiet`，不会启动发行版、连接 SSH、读取私钥内容或查询客体。由于客体条件没有验证，正常情况下结果是 `incomplete`。连接后还会核对 openEuler、GCC、Python、strace、file、ldd、readelf 和 smaps；不测试编译、静态链接、SCP 传输或大页驻留。
+默认 `--profile vm` 仅在 Windows 上调用 `wsl --list --quiet`，不会启动发行版、连接 SSH、读取私钥内容或查询客体。由于客体条件没有验证，正常情况下结果是 `incomplete`。连接后会核对 openEuler、GCC、Python、strace、file、ldd、readelf 和 smaps。仅准备学生 C 实战时，加 `--guest-lab student`，按该实验的实际需求检查 openEuler、GCC、Python、smaps 和客体基础页尺寸。编译与测量以实跑记录为准。
 
 每条本地命令超时 5 秒，连接命令超时 20 秒。超时会报告失败；Windows 终止 WSL 客户端不等同于证明远端进程树已清理。这里的远端命令仅进行短暂的只读检查，SSH 本身另有连接和保活时限。
 

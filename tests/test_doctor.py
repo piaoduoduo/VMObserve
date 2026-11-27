@@ -243,6 +243,22 @@ class DoctorTests(unittest.TestCase):
         guest["python_version"] = [3, 9, 9]
         self.assertEqual(item(report(guest), "vm.guest.python")["status"], "unsupported")
 
+    def test_guest_student_needs_compiler_smaps_and_page_size(self):
+        guest = dict(system="Linux", kernel="6.6.0-test", distribution="openeuler", smaps=True,
+                     python_version=[3, 11, 0], page_bytes=4096,
+                     tools={"gcc": True, "python3": True, "strace": False})
+        def report():
+            response = {"status": "passed", "detail": json.dumps(guest)}
+            with patch("vmobserve.doctor.vm.inspect_guest", return_value=response):
+                return diagnose("vm", probe=Host(), connect=True, guest_lab="student")
+        self.assertEqual(report()["status"], "ready")
+        self.assertEqual(report()["guest_lab"], "student")
+        guest["tools"]["gcc"] = False
+        self.assertEqual(report()["status"], "blocked")
+        guest["tools"]["gcc"] = True
+        guest["page_bytes"] = None
+        self.assertEqual(item(report(), "vm.guest.page_size")["status"], "failed")
+
     def test_ssh_connection_is_strict_bounded_and_paths_are_quoted(self):
         host = Host()
         inspect_guest(host, PurePosixPath("/tmp/VM Observe/$test"))

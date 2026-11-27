@@ -19,6 +19,7 @@ def main(argv=None):
     parser.add_argument("--profile", choices=PROFILES, default="replay")
     parser.add_argument("--require-openeuler", action="store_true", help="要求真正 openEuler 用户态及内核")
     parser.add_argument("--connect", action="store_true", help="显式连接已有 VM；可能启动配置的 WSL 发行版")
+    parser.add_argument("--guest-lab", choices=("student",), help="仅检查指定实验在客体中的依赖")
     parser.add_argument("--json", action="store_true", help="向标准输出写 JSON")
     parser.add_argument("--output", type=Path, help="另存 JSON；拒绝覆盖已有文件")
     args = parser.parse_args(argv)
@@ -26,7 +27,9 @@ def main(argv=None):
         parser.error("--connect 只适用于 --profile vm")
     if args.require_openeuler and args.profile in ("replay", "vm"):
         parser.error("--require-openeuler 只适用于 student/sequence/group3/thp")
-    report = diagnose(args.profile, require_openeuler=args.require_openeuler, connect=args.connect)
+    if args.guest_lab and (args.profile != "vm" or not args.connect):
+        parser.error("--guest-lab student 需要 --profile vm --connect")
+    report = diagnose(args.profile, require_openeuler=args.require_openeuler, connect=args.connect, guest_lab=args.guest_lab)
     payload = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.json:
         print(payload, end="")
