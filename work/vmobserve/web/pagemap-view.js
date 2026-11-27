@@ -157,11 +157,51 @@ export function checkHugePageContiguity(entries, pfnAccess, pageBytes = 4096, hu
 }
 
 /**
+ * 根据当前案例的校验状态和后端 diagnosis.findings 判断教学页是否允许给出“确认/实锤”结论。
+ * 保证教学页永远不会在案例校验失败或后端诊断为证据不足时给出相反结论。
+ * @param {object|null|undefined} context { caseRecord?, peerCaseRecord?, findings? }
+ * @param {Array<string>} rules 需核对的后端诊断规则名列表
+ * @returns {{hasContext: boolean, caseInvalid: boolean, caseBlocked: boolean, blocked: boolean, confirmed: boolean|null, finding: object|null}}
+ */
+export function resolveDiagnosisGuard(context, rules = []) {
+  if (!context || typeof context !== 'object') {
+    return { hasContext: false, caseInvalid: false, caseBlocked: false, blocked: false, confirmed: null, finding: null };
+  }
+  const records = [context.caseRecord, context.peerCaseRecord].filter(Boolean);
+  const caseIds = new Set(records.map(item => item.id).filter(Boolean));
+  const caseInvalid = records.some(item =>
+    (item.status && item.status !== 'completed') ||
+    item.integrity === 'failed' ||
+    ['failed', 'insufficient_evidence'].includes(item.validation?.status)
+  );
+  const findings = Array.isArray(context.findings) ? context.findings : [];
+  const matchesCase = finding => {
+    if (!caseIds.size) return true;
+    const ev = Array.isArray(finding?.evidence) ? finding.evidence : [];
+    return ev.some(item => item && caseIds.has(item.case_id));
+  };
+  const incomplete = findings.find(f => f?.rule === 'incomplete_evidence' && matchesCase(f)) || null;
+  const matched = rules.length
+    ? (findings.find(f => rules.includes(f?.rule) && matchesCase(f)) || null)
+    : null;
+
+  if (caseInvalid || incomplete) {
+    return { hasContext: true, caseInvalid, caseBlocked: true, blocked: true, confirmed: false, finding: incomplete || matched };
+  }
+  if (matched) {
+    const isConfirmed = matched.confidence === 'confirmed';
+    return { hasContext: true, caseInvalid: false, caseBlocked: false, blocked: !isConfirmed, confirmed: isConfirmed, finding: matched };
+  }
+  return { hasContext: records.length > 0 || findings.length > 0, caseInvalid: false, caseBlocked: false, blocked: false, confirmed: null, finding: null };
+}
+
+/**
  * 分析 3.3 按需调页单次采样的页表项状态。
  * @param {object|null|undefined} sample
+ * @param {object|null|undefined} context 可选 { caseRecord, findings }
  * @returns {object|null}
  */
-export function inspectDemandPagemap(sample) {
+export function inspectDemandPagemap(sample, context = null) {
   const pm = normalizePagemap(sample);
   if (!pm) return null;
   const written = pm.entries.filter(e => e.expected_written === true);
@@ -169,9 +209,14 @@ export function inspectDemandPagemap(sample) {
   const writtenPresent = written.filter(e => e.present).length;
   const unwrittenAbsent = unwritten.filter(e => !e.present).length;
   const hugeBlocks = checkHugePageContiguity(pm.entries, pm.pfn_access, pm.page_bytes);
+  const guard = resolveDiagnosisGuard(context, ['demand_pte_present']);
 
   let verdict = '';
-  if (pm.status === 'unmapped') {
+  if (guard.caseBlocked && pm.status === 'available') {
+    verdict = guard.finding?.explanation
+      ? `本案例校验未通过或证据不足（${guard.finding.title}）：${guard.finding.explanation} 以下仅展示原始页表读数。`
+      : '本案例校验未通过或证据不足，以下仅展示原始页表读数，不作为按需建表确认依据。';
+  } else if (pm.status === 'unmapped') {
     verdict = '当前阶段目标映射尚未建立或已经释放，不读取页表项。';
   } else if (pm.status !== 'available') {
     verdict = `未能读取 ${pm.source}（${pm.reason || pm.status}），本步维持仅凭 smaps 观测。`;
@@ -181,12 +226,20 @@ export function inspectDemandPagemap(sample) {
     verdict = `本步有 ${pm.present_count} 个抽样页驻留，${pm.swapped_count} 个已换出。换出的页没有可比较的驻留页帧号。`;
   } else if (pm.present_count === 0) {
     verdict = `抽样的 ${pm.sampled_count} 个哨兵虚拟页 Present 位全部为 0——Linux 只登记了虚拟区间，尚未分配物理页帧。`;
-  } else if (written.length && unwritten.length && writtenPresent === written.length && unwrittenAbsent === unwritten.length) {
+  } else if (!guard.blocked && written.length && unwritten.length && writtenPresent === written.length && unwrittenAbsent === unwritten.length) {
     verdict = `这一步，已写的 ${written.length} 个抽样页都是 Present = 1，未写的 ${unwritten.length} 个都是 Present = 0。`;
   } else if (pm.present_count === pm.sampled_count) {
     verdict = `抽样的 ${pm.sampled_count} 个哨兵页 Present 位已全部为 1（均已建立物理页表映射）。`;
   } else {
     verdict = `本步 ${pm.sampled_count} 个哨兵页中已有 ${pm.present_count} 页 Present = 1，其余 ${pm.sampled_count - pm.present_count} 页尚未建立物理映射。`;
+  }
+
+  // 案例本身通过校验、仅因整轮（如原版 malloc 首尾页/大页覆盖）未按纯按需确认时，保留本步客观读数并附注整轮边界
+  if (!guard.caseBlocked && guard.blocked && pm.status === 'available' && pm.sampled_count > 0 && guard.finding) {
+    const note = guard.finding.explanation
+      ? `${guard.finding.title}（${guard.finding.explanation}）`
+      : guard.finding.title;
+    verdict += ` 注：整轮未按纯按需确认——${note}`;
   }
 
   return {
@@ -197,6 +250,8 @@ export function inspectDemandPagemap(sample) {
     unwritten_total: unwritten.length,
     unwritten_absent: unwrittenAbsent,
     huge_blocks: hugeBlocks,
+    case_blocked: guard.caseBlocked,
+    diagnosis_blocked: guard.blocked,
     verdict
   };
 }
@@ -206,9 +261,10 @@ export function inspectDemandPagemap(sample) {
  * @param {object|null|undefined} sample 当前视角采样
  * @param {object|null|undefined} peerSample 对侧进程采样（仅 fork_shared / child_write 存在）
  * @param {object|null|undefined} cowInfo 案例级 data.cow 元数据
+ * @param {object|null|undefined} context 可选 { caseRecord, findings }
  * @returns {object|null}
  */
-export function compareCowPagemap(sample, peerSample = null, cowInfo = null) {
+export function compareCowPagemap(sample, peerSample = null, cowInfo = null, context = null) {
   const current = normalizePagemap(sample);
   const peer = normalizePagemap(peerSample);
   if (!current && !peer) return null;
@@ -220,20 +276,39 @@ export function compareCowPagemap(sample, peerSample = null, cowInfo = null) {
     const presentPfns = pm.entries.filter(e => e.present && e.pfn).map(e => e.pfn);
     const uniquePfns = [...new Set(presentPfns)];
     const allSamePfn = pm.pfn_access === 'visible' && presentPfns.length >= 2 && uniquePfns.length === 1;
-    const isReadAllZero = allSamePfn && pm.present_count === pm.sampled_count && sample?.phase === 'read_all' && (sample.rss_kib == null || sample.rss_kib === 0);
+    const guard = resolveDiagnosisGuard(context, sample?.phase === 'read_all' ? ['anonymous_zero_page'] : []);
+    const initialReadSum = context?.caseRecord?.data?.value_check?.initial_read_sum;
+    const readSumOk = initialReadSum == null || initialReadSum === 0;
+    const privateDirtyOk = sample?.private_dirty_kib == null || sample.private_dirty_kib === 0;
+    const isReadAllZero = !guard.blocked && readSumOk && privateDirtyOk &&
+      allSamePfn && pm.present_count === pm.sampled_count &&
+      sample?.phase === 'read_all' && (sample.rss_kib == null || sample.rss_kib === 0);
     let verdict = '';
     if (pm.status !== 'available') {
       verdict = `本步未能读取页表项（${pm.reason || pm.status}）。`;
+    } else if (guard.caseBlocked) {
+      const diagDetail = guard.finding?.explanation ? `${guard.finding.title}：${guard.finding.explanation}` : '当前案例校验未通过或后端诊断为证据不足。';
+      verdict = `未确认该阶段结论（${diagDetail}）。以下仅展示原始页表读数（${pm.present_count}/${pm.sampled_count} 页 Present = 1${allSamePfn ? `，抽样 PFN 均为 ${formatHex(uniquePfns[0])}` : pm.pfn_access === 'masked' ? '，PFN 已被内核屏蔽' : ''}）。`;
     } else if (pm.present_count === 0) {
       verdict = `抽样的 ${pm.sampled_count} 页 Present 全部为 0，物理页尚未分配。`;
+    } else if (pm.pfn_access === 'masked') {
+      verdict = `抽样的 ${pm.sampled_count} 页中 ${pm.present_count} 页 Present = 1；当前非特权采集下内核屏蔽了 PFN，需在 openEuler 虚拟机或 root 环境下核对具体物理页帧号。`;
+      if (sample?.phase === 'read_all' && guard.finding?.confidence === 'probable') {
+        verdict += '（结合只读阶段 0 KiB RSS 与次缺页，现象与共享零页机制相符，但尚缺直接 PFN 证据。）';
+      }
+    } else if (guard.blocked) {
+      const diagDetail = guard.finding?.explanation ? `${guard.finding.title}：${guard.finding.explanation}` : '后端诊断未确认该阶段结论。';
+      verdict = `未确认该阶段结论（${diagDetail}）。以下仅展示原始页表读数（${pm.present_count}/${pm.sampled_count} 页 Present = 1${allSamePfn ? `，抽样 PFN 均为 ${formatHex(uniquePfns[0])}` : ''}）。`;
     } else if (isReadAllZero) {
       verdict = `实锤共享零页：${presentPfns.length} 个抽样虚拟页 Present = 1 且全部指向同一个物理页帧 ${formatHex(uniquePfns[0])}，内核未为只读匿名页分配独立物理内存。`;
+    } else if (sample?.phase === 'read_all' && allSamePfn && (!readSumOk || !privateDirtyOk)) {
+      verdict = `抽样的 ${presentPfns.length} 个已驻留页虽指向同一物理页帧 ${formatHex(uniquePfns[0])}，但只读字节和或驻留计账与零页条件不符，未确认共享零页。`;
     } else if (allSamePfn) {
       verdict = `抽样的 ${presentPfns.length} 个已驻留页全部指向同一个物理页帧 ${formatHex(uniquePfns[0])}。`;
     } else if (pm.pfn_access === 'visible') {
       verdict = `抽样的 ${pm.present_count} 个已驻留页映射到 ${uniquePfns.length} 个物理页帧${uniquePfns.length < pm.present_count ? '（部分未写页仍共指同一物理帧，已写页已分配独立页帧）' : '（各自拥有独立物理页帧）'}。`;
     } else {
-      verdict = `抽样的 ${pm.sampled_count} 页中 ${pm.present_count} 页 Present = 1；当前非特权采集下内核屏蔽了 PFN，需在 openEuler 虚拟机或 root 环境下核对具体物理页帧号。`;
+      verdict = `抽样的 ${pm.sampled_count} 页中 ${pm.present_count} 页 Present = 1；当前未能读取物理页帧号。`;
     }
     return {
       mode: 'single',
@@ -242,6 +317,7 @@ export function compareCowPagemap(sample, peerSample = null, cowInfo = null) {
       all_same_pfn: allSamePfn,
       shared_zero_confirmed: isReadAllZero,
       shared_zero_pfn: isReadAllZero ? uniquePfns[0] : null,
+      diagnosis_blocked: guard.blocked,
       verdict
     };
   }
@@ -269,9 +345,7 @@ export function compareCowPagemap(sample, peerSample = null, cowInfo = null) {
   const pMap = new Map(parentPm.entries.map(e => [e.page_index, e]));
   const cMap = new Map(childPm.entries.map(e => [e.page_index, e]));
   const indices = [...new Set([...pMap.keys(), ...cMap.keys()])].sort((a, b) => a - b);
-  const pairAccess = parentPm.pfn_access === 'visible' && childPm.pfn_access === 'visible'
-    ? 'visible'
-    : (parentPm.pfn_access === 'masked' || childPm.pfn_access === 'masked' ? 'masked' : 'not_applicable');
+  const pairAccess = pairedPfnAccess([parentPm, childPm]);
 
   const rows = indices.map(idx => {
     const pe = pMap.get(idx) || null;
@@ -306,6 +380,32 @@ export function compareCowPagemap(sample, peerSample = null, cowInfo = null) {
   const notPresentCount = rows.filter(r => r.relation === 'not_present').length;
   const partialCount = rows.filter(r => r.relation === 'partial').length;
 
+  // 按相同页号逐一比较父子 Present 驻留位（普通用户看不到 PFN 时仍可严谨比对 Present）
+  const parentOnlyPresentPages = rows
+    .filter(r => r.parent?.present === true && r.child?.present === false)
+    .map(r => r.page_index);
+  const childOnlyPresentPages = rows
+    .filter(r => r.parent?.present === false && r.child?.present === true)
+    .map(r => r.page_index);
+  const partialPages = rows
+    .filter(r => !r.parent || !r.child)
+    .map(r => r.page_index);
+  const presentAllEqual = rows.length > 0 &&
+    parentOnlyPresentPages.length === 0 &&
+    childOnlyPresentPages.length === 0 &&
+    partialPages.length === 0;
+
+  const formatPresentComparison = () => {
+    if (presentAllEqual) {
+      return `父子抽样的 ${rows.length} 个虚拟页 Present 位均已核对（驻留一致，父子均为 ${parentPm.present_count}/${parentPm.sampled_count} 页驻留）`;
+    }
+    const diffs = [];
+    if (parentOnlyPresentPages.length) diffs.push(`第 ${parentOnlyPresentPages.join('、')} 页只有父进程驻留`);
+    if (childOnlyPresentPages.length) diffs.push(`第 ${childOnlyPresentPages.join('、')} 页只有子进程驻留`);
+    if (partialPages.length) diffs.push(`第 ${partialPages.join('、')} 页仅单侧有采样`);
+    return `父进程 ${parentPm.present_count}/${parentPm.sampled_count} 页驻留，子进程 ${childPm.present_count}/${childPm.sampled_count} 页驻留${diffs.length ? '，' + diffs.join('，') : ''}`;
+  };
+
   const writtenRows = rows.filter(r => r.expected_written === true);
   const unwrittenRows = rows.filter(r => r.expected_written === false);
   const expectedMatch = pairAccess === 'visible' && rows.length > 0 &&
@@ -313,11 +413,27 @@ export function compareCowPagemap(sample, peerSample = null, cowInfo = null) {
     writtenRows.every(r => r.relation === 'split_diff_pfn') &&
     unwrittenRows.every(r => r.relation === 'shared_same_pfn');
 
+  const guard = resolveDiagnosisGuard(context, ['cow_pfn_split', 'cow_pfn_shared_control']);
+  const rawPairSummary = pairAccess === 'visible'
+    ? `${splitCount} 页 PFN 不同，${sharedCount} 页 PFN 相同${presentAllEqual ? '' : `（${formatPresentComparison()}）`}`
+    : pairAccess === 'masked'
+      ? `${formatPresentComparison()}，且 PFN 已被内核屏蔽`
+      : formatPresentComparison();
   let verdict = '';
   if (parentPm.status !== 'available' || childPm.status !== 'available') {
     verdict = '父子进程中至少一侧未能成功读取 /proc/<pid>/pagemap，本步暂以 PSS 对照为准。';
+  } else if (guard.caseBlocked) {
+    const diagDetail = guard.finding?.explanation ? `${guard.finding.title}：${guard.finding.explanation}` : '当前案例校验未通过或后端诊断为证据不足。';
+    verdict = `未确认父子页帧结论（${diagDetail}）。下方仅展示原始抽样读数：${rawPairSummary}。`;
   } else if (pairAccess === 'masked') {
-    verdict = `父子抽样的 ${rows.length} 个虚拟页 Present 位均已核对（驻留一致），但内核已屏蔽非特权 PFN（需 CAP_SYS_ADMIN / openEuler 虚拟机采集以直接比对父子物理页帧号）。`;
+    verdict = presentAllEqual
+      ? `${formatPresentComparison()}，但内核已屏蔽非特权 PFN（需 CAP_SYS_ADMIN / openEuler 虚拟机采集以直接比对父子物理页帧号）。`
+      : `${formatPresentComparison()}。当前非特权采集下内核屏蔽了 PFN，仅能按页核对 Present 驻留位（需 CAP_SYS_ADMIN / openEuler 虚拟机采集以直接比对父子物理页帧号）。`;
+  } else if (guard.blocked) {
+    const diagDetail = guard.finding?.explanation ? `${guard.finding.title}：${guard.finding.explanation}` : '当前案例后端诊断未确认父子页帧关系。';
+    verdict = `未确认父子页帧结论（${diagDetail}）。下方仅展示原始抽样读数：${rawPairSummary}。`;
+  } else if (!presentAllEqual) {
+    verdict = rawPairSummary + '。';
   } else if (parentSample.phase === 'fork_shared') {
     verdict = splitCount === 0 && sharedCount === rows.length && rows.length > 0
       ? `物理页帧实锤：fork 后父子 ${sharedCount}/${rows.length} 个抽样页的 PFN 完全一致——虽然各有独立页表，底层仍指向同一批物理页框。`
@@ -346,9 +462,36 @@ export function compareCowPagemap(sample, peerSample = null, cowInfo = null) {
     masked_count: maskedCount,
     not_present_count: notPresentCount,
     partial_count: partialCount,
-    expected_match: expectedMatch,
+    parent_present_count: parentPm.present_count,
+    child_present_count: childPm.present_count,
+    present_all_equal: presentAllEqual,
+    parent_only_present_pages: parentOnlyPresentPages,
+    child_only_present_pages: childOnlyPresentPages,
+    expected_match: !guard.blocked && expectedMatch,
+    diagnosis_blocked: guard.blocked,
     verdict
   };
+}
+
+/**
+ * 格式化单侧页表采样状态：严格区分“未采到”（读取失败/无样本）与“0/N 页驻留”（实测为零）。
+ * @param {object|null} pm
+ * @param {string} label
+ * @returns {string}
+ */
+function formatSideCapture(pm, label) {
+  if (!pm) return `${label}未采到`;
+  if (pm.status === 'unmapped') return `${label}无目标映射`;
+  if (pm.status !== 'available' || pm.sampled_count === 0) {
+    return `${label}未采到${pm.reason ? `（${pm.reason}）` : ''}`;
+  }
+  return `${label} ${pm.present_count}/${pm.sampled_count} 页驻留`;
+}
+
+function pairedPfnAccess(sides) {
+  const observed = sides.filter(pm => pm?.status === 'available' && pm.present_count > 0);
+  if (observed.some(pm => pm.pfn_access === 'masked')) return 'masked';
+  return observed.some(pm => pm.pfn_access === 'visible') ? 'visible' : 'not_applicable';
 }
 
 /**
@@ -356,22 +499,29 @@ export function compareCowPagemap(sample, peerSample = null, cowInfo = null) {
  * @param {object|null|undefined} offSample 关闭/禁止组采样
  * @param {object|null|undefined} onSample 开启/允许组采样
  * @param {Array<string>} labels 两侧组别标签
+ * @param {object|null|undefined} context 可选 { caseRecord, peerCaseRecord, findings }
  * @returns {object|null}
  */
-export function compareThpPagemap(offSample, onSample, labels = ['关闭大页', '请求大页']) {
+export function compareThpPagemap(offSample, onSample, labels = ['关闭大页', '请求大页'], context = null) {
   const offPm = normalizePagemap(offSample);
   const onPm = normalizePagemap(onSample);
   if (!offPm && !onPm) return null;
 
-  const offMap = new Map((offPm?.entries || []).map(e => [e.page_index, e]));
-  const onMap = new Map((onPm?.entries || []).map(e => [e.page_index, e]));
+  const offAvailable = Boolean(offPm && offPm.status === 'available' && offPm.sampled_count > 0);
+  const onAvailable = Boolean(onPm && onPm.status === 'available' && onPm.sampled_count > 0);
+  const guard = resolveDiagnosisGuard(context);
+  const allowHugeAttribution = !guard.caseBlocked && offAvailable && onAvailable;
+
+  const offMap = new Map((offAvailable ? offPm.entries : []).map(e => [e.page_index, e]));
+  const onMap = new Map((onAvailable ? onPm.entries : []).map(e => [e.page_index, e]));
   const indices = [...new Set([...offMap.keys(), ...onMap.keys()])].sort((a, b) => a - b);
 
   const rows = indices.map(idx => {
     const offEntry = offMap.get(idx) || null;
     const onEntry = onMap.get(idx) || null;
     const expectedWritten = onEntry?.expected_written ?? offEntry?.expected_written ?? null;
-    const collateralHugeResident = expectedWritten === false && Boolean(onEntry?.present) && offEntry?.present === false;
+    const collateralHugeResident = offAvailable && onAvailable &&
+      expectedWritten === false && Boolean(onEntry?.present) && offEntry?.present === false;
     return {
       page_index: idx,
       label: onEntry?.label || offEntry?.label || `第 ${idx} 页`,
@@ -382,33 +532,34 @@ export function compareThpPagemap(offSample, onSample, labels = ['关闭大页',
     };
   });
 
-  const offBlocks = offPm ? checkHugePageContiguity(offPm.entries, offPm.pfn_access, offPm.page_bytes) : [];
-  const onBlocks = onPm ? checkHugePageContiguity(onPm.entries, onPm.pfn_access, onPm.page_bytes) : [];
+  const offBlocks = offAvailable ? checkHugePageContiguity(offPm.entries, offPm.pfn_access, offPm.page_bytes) : [];
+  const onBlocks = onAvailable ? checkHugePageContiguity(onPm.entries, onPm.pfn_access, onPm.page_bytes) : [];
   const onContiguousCount = onBlocks.filter(b => b.status === 'contiguous_2mib_verified').length;
   const collateralCount = rows.filter(r => r.collateral_huge_resident).length;
 
-  const statuses = [offPm?.status, onPm?.status].filter(Boolean);
-  const overallStatus = statuses.every(s => s === 'unmapped')
-    ? 'unmapped'
-    : statuses.some(s => s === 'available')
-      ? 'available'
-      : (statuses[0] || 'unavailable');
+  let overallStatus = 'unavailable';
+  if (offAvailable && onAvailable) overallStatus = 'available';
+  else if (offAvailable || onAvailable) overallStatus = 'partial';
+  else if (offPm?.status === 'unmapped' && onPm?.status === 'unmapped') overallStatus = 'unmapped';
 
   let verdict = '';
   if (overallStatus === 'unmapped') {
     verdict = '当前阶段两组目标映射尚未建立或已经释放，不读取页表项。';
-  } else if (overallStatus !== 'available') {
-    verdict = '两组均未能成功读取 /proc/<pid>/pagemap，本步暂以 smaps 对照为准。';
+  } else if (!offAvailable && !onAvailable) {
+    verdict = `${formatSideCapture(offPm, labels[0])}，${formatSideCapture(onPm, labels[1])}。这一步没有可比较的页表读数，可以查看 smaps 原文。`;
+  } else if (offAvailable !== onAvailable) {
+    const invalidHint = guard.caseBlocked ? '本组对照的证据不完整。' : '';
+    verdict = `${formatSideCapture(offPm, labels[0])}，${formatSideCapture(onPm, labels[1])}。${invalidHint}下方列出了采到的那一组，供逐页查看。`;
+  } else if (guard.caseBlocked) {
+    verdict = '至少一侧案例校验未通过或证据不完整，下方仅并排展示原始抽样页表读数，不作为大页驻留或对照确认依据。';
   } else if (collateralCount > 0) {
     verdict = `有 ${collateralCount} 个未写的邻页，在「${labels[0]}」组 Present = 0，在「${labels[1]}」组 Present = 1。`;
     if (onSample.huge_kib > 0) verdict += `后者的 smaps 同时记录了 ${onSample.huge_kib} KiB 匿名大页。`;
   } else if (onContiguousCount > 0) {
     verdict = `「${labels[1]}」组在 ${onContiguousCount} 个 2 MiB 区间里，抽到的页帧号都与各页的偏移吻合。`;
     if (onSample.huge_kib > 0) verdict += `该映射的 AnonHugePages 为 ${onSample.huge_kib} KiB。`;
-  } else if (offPm && onPm) {
-    verdict = `两组抽样驻留页数分别为「${labels[0]}」${offPm.present_count}/${offPm.sampled_count}、「${labels[1]}」${onPm.present_count}/${onPm.sampled_count}。`;
   } else {
-    verdict = '仅一侧包含页表项采样，可展开下方明细查看单侧位段。';
+    verdict = `${formatSideCapture(offPm, labels[0])}，${formatSideCapture(onPm, labels[1])}。`;
   }
 
   return {
@@ -416,11 +567,15 @@ export function compareThpPagemap(offSample, onSample, labels = ['关闭大页',
     labels,
     off: offPm,
     on: onPm,
+    off_available: offAvailable,
+    on_available: onAvailable,
     rows,
     off_blocks: offBlocks,
     on_blocks: onBlocks,
     on_contiguous_count: onContiguousCount,
     collateral_count: collateralCount,
+    allow_huge_attribution: allowHugeAttribution,
+    diagnosis_blocked: guard.caseBlocked,
     verdict
   };
 }
@@ -430,6 +585,7 @@ export function compareThpPagemap(offSample, onSample, labels = ['关闭大页',
  */
 function accessBadge(status, pfnAccess) {
   if (status === 'unmapped') return '<span class="pte-badge is-muted">无目标映射</span>';
+  if (status === 'partial') return '<span class="pte-badge is-warn">单侧 pagemap 未采到</span>';
   if (status !== 'available') return '<span class="pte-badge is-warn">pagemap 不可读</span>';
   if (pfnAccess === 'visible') return '<span class="pte-badge is-ok">Present + PFN 可见（CAP_SYS_ADMIN）</span>';
   if (pfnAccess === 'masked') return '<span class="pte-badge is-info">状态位可读 · PFN 已被内核屏蔽</span>';
@@ -504,16 +660,17 @@ function legacyPagemapNote(hint) {
  * @returns {string}
  */
 export function renderDemandPagemapPanel(sample, options = {}) {
-  const { pairSamples = null, pairLabels = ['禁用大页建议', '使用大页建议'] } = options;
+  const { pairSamples = null, pairLabels = ['禁用大页建议', '使用大页建议'], caseRecord = null, peerCaseRecord = null, findings = null } = options;
+  const context = (caseRecord || peerCaseRecord || findings) ? { caseRecord, peerCaseRecord, findings } : null;
   if (pairSamples && pairSamples.length === 2) {
-    const compared = compareThpPagemap(pairSamples[0], pairSamples[1], pairLabels);
+    const compared = compareThpPagemap(pairSamples[0], pairSamples[1], pairLabels, context);
     if (!compared) {
       return legacyPagemapNote('新版探针采集后将在此并排展示两组哨兵页 Present 状态与 2 MiB PFN 连续性核验。');
     }
-    return renderThpPagemapPanel(pairSamples, pairLabels, '3.3 页表项（PTE）双组核验');
+    return renderThpPagemapPanel(pairSamples, pairLabels, '3.3 页表项（PTE）双组核验', context);
   }
 
-  const info = inspectDemandPagemap(sample);
+  const info = inspectDemandPagemap(sample, context);
   if (!info) {
     return legacyPagemapNote('新版探针采集后将在此展示各哨兵页的驻留位（Present）与物理页帧（PFN）变化。');
   }
@@ -549,7 +706,7 @@ export function renderDemandPagemapPanel(sample, options = {}) {
       ${info.swapped_count ? `<span>Swapped：<strong>${info.swapped_count}</strong> 页</span>` : ''}
     </div>` : ''}
     ${grid}
-    ${hugeContiguityNote(info.huge_blocks)}
+    ${info.case_blocked ? '' : hugeContiguityNote(info.huge_blocks)}
     ${rawEntriesTable(info.entries, info.pfn_access)}
   </section>`;
 }
@@ -561,8 +718,8 @@ export function renderDemandPagemapPanel(sample, options = {}) {
  * @param {object|null} cowInfo 案例 data.cow
  * @returns {string}
  */
-export function renderCowPagemapPanel(sample, peerSample = null, cowInfo = null) {
-  const result = compareCowPagemap(sample, peerSample, cowInfo);
+export function renderCowPagemapPanel(sample, peerSample = null, cowInfo = null, context = null) {
+  const result = compareCowPagemap(sample, peerSample, cowInfo, context);
   if (!result) {
     return legacyPagemapNote('新版探针采集后将在此直接比对父子进程同一虚拟地址的 PFN，实锤共享零页与写时物理页分裂。');
   }
@@ -570,7 +727,7 @@ export function renderCowPagemapPanel(sample, peerSample = null, cowInfo = null)
   if (result.mode === 'single') {
     const grid = result.entries.length
       ? `<ol class="pte-grid" aria-label="COW 单进程抽样页状态">${result.entries.map(e => {
-        const cls = !e.present ? 'is-absent' : (result.all_same_pfn ? 'is-zero-shared' : 'is-present');
+        const cls = !e.present ? 'is-absent' : (result.shared_zero_confirmed ? 'is-zero-shared' : 'is-present');
         const pfnText = !e.present
           ? '无物理页'
           : result.pfn_access === 'visible' && e.pfn
@@ -604,18 +761,28 @@ export function renderCowPagemapPanel(sample, peerSample = null, cowInfo = null)
     partial: { cls: 'is-absent', symbol: '单侧缺失', short: '缺失' }
   };
 
+  const relationSymbolFor = row => {
+    if (row.relation === 'not_present') {
+      if (row.parent?.present && !row.child?.present) return '仅父驻留';
+      if (!row.parent?.present && row.child?.present) return '仅子驻留';
+      return '均未驻留';
+    }
+    return (relationMeta[row.relation] || relationMeta.partial).symbol;
+  };
+
   const matrix = result.rows.length
     ? `<ol class="cow-pfn-grid" aria-label="父子进程同址 PFN 对照">${result.rows.map(row => {
       const meta = relationMeta[row.relation] || relationMeta.partial;
-      const pPfn = !row.parent?.present ? 'P=0' : (result.pfn_access === 'visible' ? compactPfn(row.parent.pfn) : 'P=1 · 屏蔽');
-      const cPfn = !row.child?.present ? 'P=0' : (result.pfn_access === 'visible' ? compactPfn(row.child.pfn) : 'P=1 · 屏蔽');
+      const symbol = relationSymbolFor(row);
+      const pPfn = !row.parent ? '缺失' : !row.parent.present ? 'P=0' : (result.pfn_access === 'visible' ? compactPfn(row.parent.pfn) : 'P=1 · 屏蔽');
+      const cPfn = !row.child ? '缺失' : !row.child.present ? 'P=0' : (result.pfn_access === 'visible' ? compactPfn(row.child.pfn) : 'P=1 · 屏蔽');
       const writeTag = row.expected_written === true ? '<span class="pte-write-tag is-written">子进程改写</span>'
         : row.expected_written === false ? '<span class="pte-write-tag">未改写</span>' : '';
       return `<li class="cow-pfn-card ${meta.cls}">
         <div class="pte-cell-head"><span class="pte-idx">第 ${row.page_index} 页</span>${writeTag}</div>
         <div class="cow-pfn-pair">
           <div class="cow-pfn-side"><span>父 PFN</span><code title="${esc(formatHex(row.parent?.pfn))}">${esc(pPfn)}</code></div>
-          <div class="cow-pfn-link" aria-label="${esc(meta.symbol)}">${esc(meta.symbol)}</div>
+          <div class="cow-pfn-link" aria-label="${esc(symbol)}">${esc(symbol)}</div>
           <div class="cow-pfn-side"><span>子 PFN</span><code title="${esc(formatHex(row.child?.pfn))}">${esc(cPfn)}</code></div>
         </div>
       </li>`;
@@ -631,7 +798,7 @@ export function renderCowPagemapPanel(sample, peerSample = null, cowInfo = null)
     row.expected_written === null ? '—' : (row.expected_written ? '子进程改写' : '保持原样'),
     formatCowSide(row.parent),
     formatCowSide(row.child),
-    (relationMeta[row.relation] || relationMeta.partial).symbol
+    relationSymbolFor(row)
   ]);
 
   const pairCounters = [
@@ -642,7 +809,7 @@ export function renderCowPagemapPanel(sample, peerSample = null, cowInfo = null)
     ] : result.pfn_access === 'masked' ? [
       `<span>PFN 屏蔽：<strong>${result.masked_count}</strong> 页</span>`
     ] : []),
-    ...(result.not_present_count ? [`<span>未驻留：<strong>${result.not_present_count}</strong> 页</span>`] : []),
+    ...(result.not_present_count ? [`<span>至少一方未驻留：<strong>${result.not_present_count}</strong> 页</span>`] : []),
     ...(result.partial_count ? [`<span>单侧缺失：<strong>${result.partial_count}</strong> 页</span>`] : [])
   ].join('');
 
@@ -668,60 +835,69 @@ export function renderCowPagemapPanel(sample, peerSample = null, cowInfo = null)
  * @param {string} heading 标题
  * @returns {string}
  */
-export function renderThpPagemapPanel(samples, labels = ['关闭大页', '请求大页'], heading = '跨 2 MiB 边界哨兵页表对照') {
-  const compared = compareThpPagemap(samples?.[0], samples?.[1], labels);
+export function renderThpPagemapPanel(samples, labels = ['关闭大页', '请求大页'], heading = '跨 2 MiB 边界哨兵页表对照', context = null) {
+  const compared = compareThpPagemap(samples?.[0], samples?.[1], labels, context);
   if (!compared) {
     return legacyPagemapNote('新版探针采集后将在此并排展示同一 2 MiB 块内未写邻页的 Present 扩散与 PFN 连续对齐核验。');
   }
 
-  const activeSides = [compared.off, compared.on].filter(pm => pm && pm.status === 'available');
-  const pfnStatus = activeSides.length && activeSides.every(pm => pm.pfn_access === 'visible')
-    ? 'visible'
-    : (activeSides.some(pm => pm.pfn_access === 'masked') ? 'masked' : 'not_applicable');
+  const pfnStatus = pairedPfnAccess([compared.off, compared.on]);
+  const allowHuge = compared.allow_huge_attribution;
 
   const rowsHtml = compared.rows.map(row => {
-    const cell = (entry, pm) => {
-      if (!entry) return '<span class="thp-pte-pill is-absent">无记录</span>';
+    const cell = (entry, pm, available) => {
+      if (!available) return `<span class="thp-pte-pill is-absent">${pm?.status === 'unmapped' ? '无映射' : '未采到'}</span>`;
+      if (!entry) return '<span class="thp-pte-pill is-absent">缺失</span>';
       if (!entry.present) return '<span class="thp-pte-pill is-absent">P = 0</span>';
       const pfnPart = pm?.pfn_access === 'visible' && entry.pfn ? ` · ${compactPfn(entry.pfn)}` : '';
-      const highlight = row.collateral_huge_resident && pm === compared.on ? ' is-collateral' : ' is-present';
+      const highlight = allowHuge && row.collateral_huge_resident && pm === compared.on ? ' is-collateral' : ' is-present';
       return `<span class="thp-pte-pill${highlight}" title="${esc(formatHex(entry.pfn))}">P = 1${esc(pfnPart)}</span>`;
     };
     const tag = row.expected_written === true
       ? '<span class="pte-write-tag is-written">程序已写</span>'
-      : row.collateral_huge_resident
+      : (allowHuge && row.collateral_huge_resident)
         ? `<span class="pte-write-tag is-huge">${samples[1]?.huge_kib > 0 ? '未写 · 随大页驻留' : '未写 · 已驻留'}</span>`
         : row.expected_written === false
           ? '<span class="pte-write-tag">未写邻页</span>'
           : '';
-    return `<li class="thp-pte-row${row.collateral_huge_resident ? ' is-collateral-row' : ''}">
+    return `<li class="thp-pte-row${allowHuge && row.collateral_huge_resident ? ' is-collateral-row' : ''}">
       <div class="thp-pte-page"><strong>#${row.page_index}</strong><span>${esc(row.label)}</span>${tag}</div>
       <div class="thp-pte-pair">
-        <div><small>${esc(labels[0])}</small>${cell(row.off, compared.off)}</div>
-        <div><small>${esc(labels[1])}</small>${cell(row.on, compared.on)}</div>
+        <div><small>${esc(labels[0])}</small>${cell(row.off, compared.off, compared.off_available)}</div>
+        <div><small>${esc(labels[1])}</small>${cell(row.on, compared.on, compared.on_available)}</div>
       </div>
     </li>`;
   }).join('');
 
+  const formatSideDetail = (entry, pm, available) => {
+    if (!available) return pm?.status === 'unmapped' ? '无映射' : '未采到';
+    if (!entry) return '—';
+    return entry.present ? `P=1${pm?.pfn_access === 'visible' && entry.pfn ? ' · ' + formatHex(entry.pfn) : ''}` : 'P=0';
+  };
   const diffLabel = row => {
+    if (!compared.off_available && !compared.on_available) return '双侧未采到';
+    if (!compared.off_available || !compared.on_available) return '单侧未采到';
     if (!row.off && !row.on) return '双侧缺失';
     if (!row.off || !row.on) return '单侧缺失';
-    if (row.collateral_huge_resident) return samples[1]?.huge_kib > 0 ? '随大页驻留的邻页' : '仅请求组驻留';
-    return row.off.present === row.on.present ? '两侧一致' : '驻留不同';
+    if (allowHuge && row.collateral_huge_resident) return samples[1]?.huge_kib > 0 ? '随大页驻留的邻页' : '仅请求组驻留';
+    if (row.off.present === row.on.present) return '两侧一致';
+    return `${labels[0]} Present=${row.off.present ? 1 : 0}，${labels[1]} Present=${row.on.present ? 1 : 0}`;
   };
   const detailRows = compared.rows.map(row => [
     pageTitle(row.page_index, row.label),
     row.expected_written === null ? '—' : (row.expected_written ? '程序写入' : '未写邻页'),
-    !row.off ? '—' : (row.off.present ? `P=1${compared.off?.pfn_access === 'visible' && row.off.pfn ? ' · ' + formatHex(row.off.pfn) : ''}` : 'P=0'),
-    !row.on ? '—' : (row.on.present ? `P=1${compared.on?.pfn_access === 'visible' && row.on.pfn ? ' · ' + formatHex(row.on.pfn) : ''}` : 'P=0'),
+    formatSideDetail(row.off, compared.off, compared.off_available),
+    formatSideDetail(row.on, compared.on, compared.on_available),
     diffLabel(row)
   ]);
 
   const offNonContig = compared.off_blocks.some(b => b.status === 'non_contiguous_4k');
   const onVerified = compared.on_blocks.find(b => b.status === 'contiguous_2mib_verified');
-  const contiguityHtml = offNonContig && onVerified
-    ? `<p class="pte-contiguity is-huge"><strong>双组 2 MiB 物理连续性对照</strong>。「${esc(labels[0])}」组的抽样 PFN 未全部符合对齐关系。「${esc(labels[1])}」组区间 ${onVerified.blockIndex} 中，${onVerified.sampled} 个抽样 PFN 都等于对齐基址 <code>${esc(formatHex(onVerified.basePfn))}</code> 加页内序号。</p>`
-    : hugeContiguityNote(compared.on_blocks);
+  const contiguityHtml = !allowHuge
+    ? ''
+    : (offNonContig && onVerified
+      ? `<p class="pte-contiguity is-huge"><strong>双组 2 MiB 物理连续性对照</strong>。「${esc(labels[0])}」组的抽样 PFN 未全部符合对齐关系。「${esc(labels[1])}」组区间 ${onVerified.blockIndex} 中，${onVerified.sampled} 个抽样 PFN 都等于对齐基址 <code>${esc(formatHex(onVerified.basePfn))}</code> 加页内序号。</p>`
+      : hugeContiguityNote(compared.on_blocks));
 
   return `<section class="pagemap-panel" data-pagemap-state="${esc(compared.status)}" data-thp-pagemap="pair" aria-label="透明大页页表项对照">
     <div class="pagemap-head">

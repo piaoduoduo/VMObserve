@@ -14,6 +14,13 @@ LABELS = {"confirmed": "已确认", "probable": "可能原因", "insufficient_ev
 PROCESS_EVIDENCE_SCHEMA = "vmobserve.demand-process-evidence/v1"
 
 
+def csv_cell(value):
+    """Keep spreadsheet formula prefixes in text cells literal, without changing numbers."""
+    if isinstance(value, str) and (value.lstrip().startswith(("=", "+", "-", "@")) or value.startswith(("\t", "\r", "\n"))):
+        return "'" + value
+    return value
+
+
 def demand_sample_export(sample):
     """Keep raw event count while giving tabular metrics their measured meaning."""
     if not sample:
@@ -51,15 +58,16 @@ def csv_text(report):
                 s = {**s, "pagemap_status": pm["status"], "pagemap_pfn_access": pm["pfn_access"],
                      "pagemap_sampled": pm["sampled_count"],
                      "pagemap_present": pm["present_count"] if pm["status"] == "available" else None}
-            writer.writerow(dict(run_id=report["run_id"], data_origin=report["data_origin"], view_mode=report["view_mode"],
-                                 run_status=report["status"], case_status=c["status"],
-                                 validation_status=c["validation"]["status"],
-                                 run_integrity=report["integrity"]["status"], case_integrity=c.get("integrity"),
-                                 kernel=report.get("environment", {}).get("kernel"),
-                                 environment_issue="; ".join(e for e in report["integrity"].get("errors", []) if "environment" in e),
-                                 recheck_environment=((report.get("related_run") or {}).get("environment_comparison") or {}).get("status"),
-                                 case_id=c["id"], suite=c["suite"], cow_fraction=cow.get("fraction"),
-                                 cow_written_pages=cow.get("written_pages"), cow_total_pages=cow.get("total_pages"), **extra, **s))
+            row = dict(
+                run_id=report["run_id"], data_origin=report["data_origin"], view_mode=report["view_mode"],
+                run_status=report["status"], case_status=c["status"], validation_status=c["validation"]["status"],
+                run_integrity=report["integrity"]["status"], case_integrity=c.get("integrity"),
+                kernel=report.get("environment", {}).get("kernel"),
+                environment_issue="; ".join(e for e in report["integrity"].get("errors", []) if "environment" in e),
+                recheck_environment=((report.get("related_run") or {}).get("environment_comparison") or {}).get("status"),
+                case_id=c["id"], suite=c["suite"], cow_fraction=cow.get("fraction"),
+                cow_written_pages=cow.get("written_pages"), cow_total_pages=cow.get("total_pages"), **extra, **s)
+            writer.writerow({key: csv_cell(value) for key, value in row.items()})
     return out.getvalue()
 
 
@@ -107,10 +115,7 @@ def demand_pair_csv(report, case_id):
                    int(present), sample["rss_kib"], sample["huge_kib"],
                    sample["action_minor"], smaps, report["artifacts"][smaps],
                    case["data"]["condition"].get("process_thp"), case["data"]["condition"].get("process_thp_disabled")]
-            # Quoting a CSV field alone does not neutralize a spreadsheet formula.
-            writer.writerow(["'" + cell if isinstance(cell, str)
-                             and (cell.lstrip()[:1] in ("=", "+", "-", "@") or cell[:1] in ("\t", "\r", "\n"))
-                             else cell for cell in row])
+            writer.writerow([csv_cell(value) for value in row])
     return out.getvalue()
 
 

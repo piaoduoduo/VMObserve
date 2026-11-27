@@ -521,7 +521,7 @@ function demandPolicyPanel(c, sample, rounds, practice) {
     }))}
     <p>${esc(interpretation)}</p>
     </details>
-    ${pair.length === 2 ? renderDemandPagemapPanel(sample, { pairSamples: readings, pairLabels: ['禁用大页建议', '使用大页建议'] }) : (sample ? renderDemandPagemapPanel(sample) : '')}
+    ${pair.length === 2 ? renderDemandPagemapPanel(sample, { pairSamples: readings, pairLabels: ['禁用大页建议', '使用大页建议'], caseRecord: pair[0], peerCaseRecord: pair[1], findings: state.report?.diagnosis?.findings }) : (sample ? renderDemandPagemapPanel(sample, { caseRecord: c, findings: state.report?.diagnosis?.findings }) : '')}
     ${process && sample ? demandProcessPanel() : ''}
     ${demandTimeline(c, pair, phase)}
     ${demandRepeatReview(rounds, phase, c.parameters)}
@@ -596,7 +596,7 @@ function renderMemorySteps(c, cases) {
       ['目标映射 RSS', demand && !sample.mapping_present ? '—' : kib(sample.rss_kib)],
       ...(controlled ? [['本步次缺页', `${sample.action_minor} 次`]] : [])
     ]) : ''}
-    ${demand && !controlled && sample ? renderDemandPagemapPanel(sample) : ''}
+    ${demand && !controlled && sample ? renderDemandPagemapPanel(sample, { caseRecord: c, findings: state.report?.diagnosis?.findings }) : ''}
     ${step ? `<details class="secondary-fold"><summary>查看这一步的原文</summary><div class="raw-links">${evidenceButtons(c, rawOpts, ['jsonl','smaps','pagemap','kernel'])}</div></details>` : ''}
     ${step && c.validation?.status !== 'passed' ? `<p class="integrity-warning">本次实测与预期有差异。<a href="/#${new URLSearchParams({run:state.id,topic:'evidence'})}">查看核对结果</a></p>` : ''}
     ${controlled ? '</details>' : ''}

@@ -1,0 +1,25 @@
+VMObserve · 重点任务可视化实验台
+© 2026 怎么分都队及 VMObserve 贡献者
+
+队伍原创源代码采用木兰宽松许可证第 2 版（MulanPSL-2.0），全文见随附 LICENSE。
+队伍原创的实验讲义、技术文档和答辩材料采用 CC BY-SA 4.0。
+协议地址 https://creativecommons.org/licenses/by-sa/4.0/
+项目地址 https://github.com/piaoduoduo/VMObserve
+
+课程材料
+
+华中科技大学操作系统课程《应用层实验－学生版》代码包提供了以下原件。
+下列路径相对于仓库的 work 目录。独立源码包以该目录为根。
+
+  course-labs/group12/basics/hello.c
+  course-labs/group12/basics/zero.c
+  course-labs/group12/container/Dockerfile
+  course-labs/group12/container/hello.c
+
+course-labs/group4 中的 fork_exec_wait.c、pthread_test.c、user_thread_test.c、
+pipe_communication.c 和 thread_communication.c 由队伍在课程骨架上改编。
+上述原件和改编中沿用的课程内容保留原权利归属，公开再分发授权待课程组确认。
+队伍独立编写的代码适用木兰宽松许可证第 2 版。
+
+实验记录中的源码副本沿用对应源文件的许可。课件、赛会文件及引用的图文
+按各自来源的授权使用。课程包原始路径与改编记录见仓库 docs/SOURCES.md。

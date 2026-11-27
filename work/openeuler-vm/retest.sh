@@ -30,16 +30,28 @@ scp "${SSH_OPTS[@]}" -P "$VM_PORT" "$transport/experiments.tar.gz" "root@127.0.0
 runner_args=()
 while (( $# )); do
  if [[ "$1" == --recheck-from ]]; then
-  test "$#" -ge 2 && test -f "$2/report.json"
-  PYTHONPATH="$WORK_DIR" python3 - "$2" <<'CHECK'
+  test "$#" -ge 2
+  PYTHONPATH="$WORK_DIR" python3 - "$2" "$transport/parent" <<'CHECK'
 import sys
-from vmobserve.replay import load_run
-r=load_run(sys.argv[1])
-if r['integrity']['status']!='verified' or r['data_origin']!='real_execution':
- raise SystemExit('Refusing recheck: parent evidence is not a verified real v1 record')
+from pathlib import Path
+from shutil import copyfile
+from vmobserve.common import digest
+from vmobserve.replay import load_run, safe_child
+
+parent, staging = map(Path, sys.argv[1:])
+report = load_run(parent)
+if report["integrity"]["status"] != "verified" or report["data_origin"] != "real_execution":
+    raise SystemExit("Recheck needs a verified real v1 record")
+staging.mkdir()
+for name, expected in (("report.json", report["original_report_sha256"]),
+                       ("environment.json", report["artifacts"]["environment.json"])):
+    target = staging / name
+    copyfile(safe_child(parent, name), target)
+    if digest(target) != expected:
+        raise SystemExit(f"Parent record changed while preparing {name}")
 CHECK
   ssh "${SSH_OPTS[@]}" -p "$VM_PORT" root@127.0.0.1 "mkdir -p '$remote/parent'"
-  scp "${SSH_OPTS[@]}" -P "$VM_PORT" "$2/report.json" "$2/environment.json" "root@127.0.0.1:$remote/parent/" >> "$transport/upload.log" 2>&1
+  scp "${SSH_OPTS[@]}" -P "$VM_PORT" "$transport/parent/report.json" "$transport/parent/environment.json" "root@127.0.0.1:$remote/parent/" >> "$transport/upload.log" 2>&1
   runner_args+=(--recheck-from "$remote/parent")
   shift 2
  elif [[ "$1" == --output || "$1" == --output=* ]]; then

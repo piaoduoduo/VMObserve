@@ -87,11 +87,17 @@ class Workbench:
     def catalog(self):
         items = []
         for group, root in self.roots.items():
-            for path in sorted(root.glob("*/report.json"), reverse=True):
+            for entry in sorted(root.glob("*"), reverse=True):
                 try:
-                    data = read_json(path)
-                    env, issue = recorded_environment(path.parent, data)
-                    items.append({"id": f"{group}--{path.parent.name}", "run_id": path.parent.name,
+                    directory = safe_child(root, entry.name)
+                    if not directory.is_dir():
+                        continue
+                    manifest = safe_child(directory, "report.json")
+                    if not manifest.is_file():
+                        continue
+                    data = read_json(manifest)
+                    env, issue = recorded_environment(directory, data)
+                    items.append({"id": f"{group}--{entry.name}", "run_id": entry.name,
                                   "group": group, "kernel": env.get("kernel", "unknown"),
                                   "distribution": env.get("distribution", {}).get("PRETTY_NAME") or env.get("system") or "环境未核验",
                                   "execution_context": env.get("execution_context"),
@@ -108,7 +114,7 @@ class Workbench:
                                   "data_origin": data.get("data_origin", "real_execution"),
                                   "legacy": "schema_version" not in data})
                 except (OSError, ValueError, TypeError, KeyError, AttributeError):
-                    items.append({"id": f"{group}--{path.parent.name}", "run_id": path.parent.name,
+                    items.append({"id": f"{group}--{entry.name}", "run_id": entry.name,
                                   "group": group, "distribution": "记录损坏", "status": "unreadable", "count": 0})
         return items
 
@@ -117,7 +123,7 @@ class Workbench:
         if not sep or group not in self.roots or not name or "/" in name or "\\" in name:
             raise ValueError("unknown run")
         path = safe_child(self.roots[group], name)
-        if not (path / "report.json").is_file():
+        if not safe_child(path, "report.json").is_file():
             raise ValueError("unknown run")
         return path
 
@@ -175,12 +181,18 @@ class Workbench:
             names = [Path(line[len(prefix):]).name for line in stdout.read_text(encoding="utf-8", errors="replace").splitlines()
                      if line.startswith(prefix)] if stdout.exists() else []
             group = "openeuler" if vm else "local"
-            ids = [f"{group}--{name}" for name in names if (self.roots[group] / name / "report.json").is_file()]
-            self.job["new_run_ids"] = ids
+            reports = {}
+            for name in names:
+                identifier = f"{group}--{name}"
+                try:
+                    reports[identifier] = read_json(safe_child(self.directory(identifier), "report.json")).get("status")
+                except (OSError, ValueError, AttributeError):
+                    continue
+            self.job["new_run_ids"] = list(reports)
             # Exit 3 is the runner's completed-with-deviations result. Require
             # its saved report as well, so an unrelated transport exit stays failed.
             if (result.get("status") == "failed" and result.get("exit_code") == 3 and
-                    len(ids) == 1 and read_json(self.directory(ids[0]) / "report.json").get("status") == "completed_with_deviations"):
+                    list(reports.values()) == ["completed_with_deviations"]):
                 self.job.update(status="completed_with_deviations", error=None)
             # Failed transport stdout/stderr are visible as errors, never substituted with old success.
             self.job["log"] = "\n".join(p.read_text(encoding="utf-8", errors="replace")[-10000:] for p in (folder / "stdout.log", folder / "stderr.log") if p.exists())

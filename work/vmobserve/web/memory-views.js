@@ -1,5 +1,5 @@
 import { $, state, esc, kib, table, runTargetLabel, evidenceButtons, stepNavigation, stepExplanation, stepControls, sampleReadings, lessonPractice, missingReading, thpPairs } from './ui.js';
-import { renderCowPagemapPanel, renderThpPagemapPanel } from './pagemap-view.js';
+import { renderCowPagemapPanel, renderThpPagemapPanel, resolveDiagnosisGuard } from './pagemap-view.js';
 
 function renderTHP() {
   const groups = thpPairs(state.report.cases);
@@ -16,6 +16,8 @@ function renderTHP() {
   const conditions = sides.map(c => c?.data?.condition);
   const samples = sides.map(c => c?.data?.samples.find(s => s.phase === phase));
   const values = sides.map(c => c?.data?.value_check);
+  const context = { caseRecord: sides[0], peerCaseRecord: sides[1], findings: state.report.diagnosis?.findings };
+  const readings = step === 0 ? conditions : step === 3 ? values : samples;
   const describe = (records, f) => records.map((v, i) => labels[i] + (v ? f(v) : '：未采到')).join('；') + '。';
   const bytesLabel = n => n == null ? '—' : kib(n / 1024);
   const rows = labels.map((name, i) => {
@@ -43,7 +45,7 @@ function renderTHP() {
       `看下方两个 RSS 与前两列：` + describe(samples, s => `组 RSS ${kib(s.rss_kib)}（匿名大页 ${kib(s.huge_kib)}）`) +
       (samples[0]?.rss_kib > 0 && samples[1]?.rss_kib > samples[0].rss_kib ? `${labels[1]}组是${labels[0]}组的 ${Number((samples[1].rss_kib / samples[0].rss_kib).toFixed(2))} 倍。` : ''));
     headers = ['组别', '驻留 RSS', '其中匿名大页', '写入时次缺页'];
-    if (samples[0] && samples[1]) {
+    if (samples.every(Boolean) && !resolveDiagnosisGuard(context).caseBlocked) {
       const pageKib = Math.round((conditions[0]?.page_bytes || 4096) / 1024);
       const hugeKib = Math.round((conditions[1]?.huge_bytes || 2097152) / 1024);
       const r0 = samples[0].rss_kib || 0, r1 = samples[1].rss_kib || 0;
@@ -100,8 +102,8 @@ function renderTHP() {
     <h1>同样的写法，为什么用的物理内存会不同？</h1></header>
     ${selector}${stepNavigation(titles, step, 'data-course-step')}
     <section id="sequence-result" class="seq-panel"><h2>${titles[step]}</h2>
-    ${complete ? explanation : missingReading()}${compareVisual}${table(headers, rows)}
-    ${(step === 1 || step === 2) && complete ? renderThpPagemapPanel(samples, labels) : ''}
+    ${readings.some(Boolean) ? explanation : missingReading()}${compareVisual}${table(headers, rows)}
+    ${(step === 1 || step === 2) && samples.some(Boolean) ? renderThpPagemapPanel(samples, labels, undefined, context) : ''}
     <details class="secondary-fold"><summary>查看两组原文</summary>${evidence}</details>
     ${step === titles.length - 1 ? lessonPractice('thp', '再跑一组，比较大页占用', observation, settings, `选好开关与写入方式后点按钮，将在${runTargetLabel()}实跑 1 对大页对照进程（约数秒）；如果一直停在这一步，跑完会自动切到新记录并与本次对照`) : ''}
     <div class="seq-navigation">${stepControls(step, titles.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>')}</div></section></section>`;
@@ -180,7 +182,7 @@ function renderBaseline() {
     <p>父进程先写满 ${esc(c.parameters.mib)} MiB，fork 后观察子进程${fraction === '0' ? '保持原样' : '改写 ' + esc(fraction) + ' 的页'}。用父子进程各自的 PSS 看它们总共占了多少物理内存。</p></header>
     ${sample ? stepNavigation(steps.map(st => st[0]), state.phase, 'data-course-step') : ''}
     <section class="seq-panel" id="sequence-result"><h2>${esc(selected?.[0] || '缺少采样')}</h2>
-    ${sample ? stepExplanation(...selected.slice(1)) + sampleReadings(readings) + pssFormula + renderCowPagemapPanel(sample, peer, c.data?.cow) : missingReading()}
+    ${sample ? stepExplanation(...selected.slice(1)) + sampleReadings(readings) + pssFormula + renderCowPagemapPanel(sample, peer, c.data?.cow, { caseRecord: c, findings: state.report?.diagnosis?.findings }) : missingReading()}
     ${sample ? `<details class="secondary-fold"><summary>查看这一步的原文</summary><div class="raw-links">${evidenceButtons(c, {phase: sample.phase, role: sample.role, stepLabel: selected[0]}, ['jsonl','smaps','pagemap','stderr'])}</div></details>` : ''}
     ${state.phase === steps.length - 1 || !sample ? lessonPractice('lesson-cow', '再跑一次，比较父子 PSS', observation, settings, `选好比例后点按钮，将在${runTargetLabel()}实跑 1 组新的 COW 父子进程（约数秒）；如果一直停在这一步，跑完会自动切到新记录并与本次父子 PSS 对照`) : ''}
     ${sample ? `<div class="seq-navigation">${stepControls(state.phase, steps.length, '<a class="btn-link primary" href="/labs/extensions">返回拓展实验</a>')}</div>` : ''}</section></section>`;

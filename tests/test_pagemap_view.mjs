@@ -15,7 +15,8 @@ import {
   pagemapReportSummary
 } from '../work/vmobserve/web/pagemap-view.js';
 import { learningReport } from '../work/vmobserve/web/learning-report.js';
-import { humanizeFinding } from '../work/vmobserve/web/ui.js';
+import { humanizeFinding, state } from '../work/vmobserve/web/ui.js';
+import { renderTHP } from '../work/vmobserve/web/memory-views.js';
 
 function makeEntry(pageIndex, { present = true, pfn = null, expectedWritten = null, label = null, swapped = false } = {}) {
   const baseVaddr = 0x7f8a10000000n + BigInt(pageIndex) * 4096n;
@@ -396,4 +397,385 @@ test('humanizeFinding never rewrites insufficient_evidence pagemap findings into
     explanation: 'fork 后 8 个抽样页逐一相同。'
   });
   assert.match(confirmedCow.title, /实锤/);
+});
+
+test('COW read_all with failed validation or non-zero initial_read_sum never claims confirmed zero page', () => {
+  const readAll = {
+    phase: 'read_all',
+    role: 'parent',
+    rss_kib: 0,
+    private_dirty_kib: 0,
+    pagemap: {
+      source: '/proc/100/pagemap',
+      status: 'available',
+      pfn_access: 'visible',
+      page_bytes: 4096,
+      entries: [0, 1, 2, 3, 4, 5, 6, 7].map(i => makeEntry(i, { present: true, pfn: '1a2b3c' }))
+    }
+  };
+  // 复现 2026-11-27 复查场景：把 initial_read_sum 从 0 改为 1，后端判案例 failed + incomplete_evidence
+  const failedCase = {
+    id: 'baseline-16MiB-1',
+    status: 'completed',
+    integrity: 'verified',
+    validation: { status: 'failed' },
+    data: { value_check: { initial_read_sum: 1, ok: false } }
+  };
+  const findings = [{
+    rule: 'incomplete_evidence',
+    confidence: 'insufficient_evidence',
+    title: '本次实验证据不足',
+    explanation: '执行、采集或证据校验未完成，不能从缺失指标推断内存机制。',
+    evidence: [{ case_id: 'baseline-16MiB-1' }]
+  }];
+
+  const res = compareCowPagemap(readAll, null, null, { caseRecord: failedCase, findings });
+  assert.equal(res.all_same_pfn, true);
+  assert.equal(res.shared_zero_confirmed, false);
+  assert.equal(res.shared_zero_pfn, null);
+  assert.equal(res.diagnosis_blocked, true);
+  assert.doesNotMatch(res.verdict, /实锤共享零页/);
+  assert.match(res.verdict, /未确认该阶段结论/);
+
+  const html = renderCowPagemapPanel(readAll, null, null, { caseRecord: failedCase, findings });
+  assert.doesNotMatch(html, /实锤共享零页|共享零页物理帧核验|is-zero-shared/);
+
+  // 即使不传 findings，仅 initial_read_sum === 1 也不得宣称共享零页
+  const sumMismatch = compareCowPagemap(readAll, null, null, {
+    caseRecord: { id: 'c2', status: 'completed', validation: { status: 'passed' }, data: { value_check: { initial_read_sum: 1 } } }
+  });
+  assert.equal(sumMismatch.shared_zero_confirmed, false);
+  assert.doesNotMatch(sumMismatch.verdict, /实锤共享零页/);
+});
+
+test('COW pair and 3.3 / THP panels follow backend diagnosis when case validation fails or finding is unconfirmed', () => {
+  const parentSample = {
+    phase: 'child_write', role: 'parent',
+    pagemap: {
+      source: '/proc/100/pagemap', status: 'available', pfn_access: 'visible', page_bytes: 4096,
+      entries: [
+        makeEntry(0, { present: true, pfn: '200100', expectedWritten: true }),
+        makeEntry(1, { present: true, pfn: '200101', expectedWritten: false })
+      ]
+    }
+  };
+  const childSample = {
+    phase: 'child_write', role: 'child',
+    pagemap: {
+      source: '/proc/101/pagemap', status: 'available', pfn_access: 'visible', page_bytes: 4096,
+      entries: [
+        makeEntry(0, { present: true, pfn: '300900', expectedWritten: true }),
+        makeEntry(1, { present: true, pfn: '200101', expectedWritten: false })
+      ]
+    }
+  };
+  const unconfirmedFindings = [{
+    rule: 'cow_pfn_split',
+    confidence: 'insufficient_evidence',
+    title: '父子页帧关系待确认',
+    explanation: '前后页帧与本轮写入位置没有全部对应。',
+    evidence: [{ case_id: 'baseline-16MiB-1' }]
+  }];
+  const pairRes = compareCowPagemap(childSample, parentSample, { fraction: '1/4', written_pages: 1024 }, {
+    caseRecord: { id: 'baseline-16MiB-1', status: 'completed', validation: { status: 'passed' } },
+    findings: unconfirmedFindings
+  });
+  assert.equal(pairRes.diagnosis_blocked, true);
+  assert.equal(pairRes.expected_match, false);
+  assert.doesNotMatch(pairRes.verdict, /实锤/);
+  assert.match(pairRes.verdict, /父子页帧关系待确认/);
+
+  const demandSample = {
+    phase: 'write_quarter',
+    pagemap: {
+      source: '/proc/200/pagemap', status: 'available', pfn_access: 'visible', page_bytes: 4096,
+      entries: [
+        makeEntry(0, { present: true, pfn: '200000', expectedWritten: true }),
+        makeEntry(32768, { present: false, pfn: null, expectedWritten: false })
+      ]
+    }
+  };
+  const demandBlocked = inspectDemandPagemap(demandSample, {
+    caseRecord: { id: 'demand512-1', status: 'completed', validation: { status: 'failed' } }
+  });
+  assert.equal(demandBlocked.diagnosis_blocked, true);
+  assert.match(demandBlocked.verdict, /校验未通过/);
+
+  const thpBlocked = compareThpPagemap(demandSample, demandSample, ['关闭大页', '请求大页'], {
+    caseRecord: { id: 'thp-off', status: 'completed', validation: { status: 'passed' } },
+    peerCaseRecord: { id: 'thp-on', status: 'completed', validation: { status: 'failed' } }
+  });
+  assert.equal(thpBlocked.diagnosis_blocked, true);
+  assert.match(thpBlocked.verdict, /校验未通过/);
+});
+
+test('passed non-privileged COW and passed original malloc keep clear step verdicts without false failure banners', () => {
+  const maskedEntries = [0, 1, 2, 3].map(i => makeEntry(i, { present: true, pfn: null, expectedWritten: i === 0 }));
+  const maskedRead = {
+    phase: 'read_all', role: 'parent', rss_kib: 0, private_dirty_kib: 0,
+    pagemap: { source: '/proc/50/pagemap', status: 'available', pfn_access: 'masked', page_bytes: 4096, entries: maskedEntries }
+  };
+  const maskedParent = {
+    phase: 'child_write', role: 'parent',
+    pagemap: { source: '/proc/50/pagemap', status: 'available', pfn_access: 'masked', page_bytes: 4096, entries: maskedEntries }
+  };
+  const maskedChild = {
+    phase: 'child_write', role: 'child',
+    pagemap: { source: '/proc/51/pagemap', status: 'available', pfn_access: 'masked', page_bytes: 4096, entries: maskedEntries }
+  };
+  const passedCowCase = { id: 'baseline-16MiB-1', status: 'completed', validation: { status: 'passed' }, data: { value_check: { initial_read_sum: 0 } } };
+  const wslFindings = [
+    { rule: 'anonymous_zero_page', confidence: 'probable', title: '只读缺页与共享零页机制相符', explanation: '只读阶段发生次缺页', evidence: [{ case_id: 'baseline-16MiB-1' }] },
+    { rule: 'cow_pfn_split', confidence: 'insufficient_evidence', title: '父子页帧关系待确认', explanation: '内核屏蔽了页帧号。', evidence: [{ case_id: 'baseline-16MiB-1' }] }
+  ];
+
+  const readRes = compareCowPagemap(maskedRead, null, null, { caseRecord: passedCowCase, findings: wslFindings });
+  assert.equal(readRes.shared_zero_confirmed, false);
+  assert.match(readRes.verdict, /屏蔽了 PFN/);
+  assert.doesNotMatch(readRes.verdict, /未确认该阶段结论/);
+
+  const pairRes = compareCowPagemap(maskedChild, maskedParent, { fraction: '1/4', written_pages: 1024 }, { caseRecord: passedCowCase, findings: wslFindings });
+  assert.equal(pairRes.expected_match, false);
+  assert.match(pairRes.verdict, /屏蔽非特权 PFN/);
+  assert.doesNotMatch(pairRes.verdict, /0 页 PFN 不同/);
+
+  // 正常原版 malloc（案例校验 passed，但 demand_pte_present 未按纯按需确认）
+  const mallocAllocated = {
+    phase: 'allocated',
+    pagemap: {
+      source: '/proc/60/pagemap', status: 'available', pfn_access: 'visible', page_bytes: 4096,
+      entries: [
+        makeEntry(0, { present: true, pfn: '200000', expectedWritten: false }),
+        makeEntry(1, { present: false, pfn: null, expectedWritten: false })
+      ]
+    }
+  };
+  const mallocRes = inspectDemandPagemap(mallocAllocated, {
+    caseRecord: { id: 'demand512-1', status: 'completed', validation: { status: 'passed' } },
+    findings: [{ rule: 'demand_pte_present', confidence: 'insufficient_evidence', title: '抽样页未完整呈现按写入顺序驻留', explanation: '第一次程序写入之前已有抽样页驻留。', evidence: [{ case_id: 'demand512-1' }] }]
+  });
+  assert.equal(mallocRes.case_blocked, false);
+  assert.equal(mallocRes.diagnosis_blocked, true);
+  assert.match(mallocRes.verdict, /本步 2 个哨兵页中已有 1 页 Present = 1/);
+  assert.doesNotMatch(mallocRes.verdict, /本案例校验未通过/);
+
+  // THP 仅靠 incomplete_evidence finding 也应拦截并隐藏 2 MiB 对齐高亮横幅
+  const hugeOn = {
+    phase: 'after_write', huge_kib: 32768,
+    pagemap: {
+      source: '/proc/70/pagemap', status: 'available', pfn_access: 'visible', page_bytes: 4096,
+      entries: [
+        makeEntry(0, { present: true, pfn: '200000', expectedWritten: true }),
+        makeEntry(1, { present: true, pfn: '200001', expectedWritten: false })
+      ]
+    }
+  };
+  const thpIncompleteHtml = renderThpPagemapPanel([hugeOn, hugeOn], ['关闭大页', '请求大页'], undefined, {
+    caseRecord: { id: 'thp-off' },
+    peerCaseRecord: { id: 'thp-on' },
+    findings: [{ rule: 'incomplete_evidence', confidence: 'insufficient_evidence', title: '本次实验证据不足', evidence: [{ case_id: 'thp-on' }] }]
+  });
+  assert.match(thpIncompleteHtml, /至少一侧案例校验未通过或证据不完整/);
+  assert.doesNotMatch(thpIncompleteHtml, /抽样 PFN 符合 2 MiB 对齐关系/);
+});
+
+test('THP failed validation removes all huge-page attribution across verdict, badges, highlights and detail table', () => {
+  const offSample = {
+    phase: 'after_write',
+    huge_kib: 0,
+    pagemap: {
+      status: 'available', pfn_access: 'visible', page_bytes: 4096,
+      entries: [
+        makeEntry(0, { present: true, pfn: '100000', expectedWritten: true, label: '第 1 块首' }),
+        makeEntry(1, { present: false, pfn: null, expectedWritten: false, label: '第 1 块次页' }),
+        makeEntry(256, { present: false, pfn: null, expectedWritten: false, label: '第 1 块中间' }),
+        makeEntry(511, { present: false, pfn: null, expectedWritten: false, label: '第 1 块末页' }),
+        makeEntry(512, { present: true, pfn: '100200', expectedWritten: true, label: '第 2 块首' }),
+        makeEntry(513, { present: false, pfn: null, expectedWritten: false, label: '第 2 块次页' })
+      ]
+    }
+  };
+  const onSample = {
+    phase: 'after_write',
+    huge_kib: 32768,
+    pagemap: {
+      status: 'available', pfn_access: 'visible', page_bytes: 4096,
+      entries: [
+        makeEntry(0, { present: true, pfn: '200000', expectedWritten: true, label: '第 1 块首' }),
+        makeEntry(1, { present: true, pfn: '200001', expectedWritten: false, label: '第 1 块次页' }),
+        makeEntry(256, { present: true, pfn: '200100', expectedWritten: false, label: '第 1 块中间' }),
+        makeEntry(511, { present: true, pfn: '2001ff', expectedWritten: false, label: '第 1 块末页' }),
+        makeEntry(512, { present: true, pfn: '200200', expectedWritten: true, label: '第 2 块首' }),
+        makeEntry(513, { present: true, pfn: '200201', expectedWritten: false, label: '第 2 块次页' })
+      ]
+    }
+  };
+  const failedContext = {
+    caseRecord: { id: 'thp-sparse-off-1', status: 'completed', validation: { status: 'passed' } },
+    peerCaseRecord: { id: 'thp-sparse-on-1', status: 'completed', validation: { status: 'failed' } },
+    findings: [{ rule: 'incomplete_evidence', confidence: 'insufficient_evidence', title: '本次实验证据不足', evidence: [{ case_id: 'thp-sparse-on-1' }] }]
+  };
+
+  const failedHtml = renderThpPagemapPanel([offSample, onSample], ['关闭大页', '请求大页'], undefined, failedContext);
+  assert.match(failedHtml, /至少一侧案例校验未通过或证据不完整/);
+  assert.doesNotMatch(failedHtml, /随大页驻留|is-huge|is-collateral-row|is-collateral|抽样 PFN 符合 2 MiB 对齐关系/);
+  // 校验失败时仍应客观呈现“未写邻页”与关闭组 P=0 / 请求组 P=1 原始读数
+  assert.match(failedHtml, /未写邻页/);
+  assert.match(failedHtml, /关闭大页 Present=0，请求大页 Present=1/);
+
+  // 校验通过时则正常恢复 4 处大页归因标签与 2 MiB 对齐说明
+  const passedContext = {
+    caseRecord: { id: 'thp-sparse-off-1', status: 'completed', validation: { status: 'passed' } },
+    peerCaseRecord: { id: 'thp-sparse-on-1', status: 'completed', validation: { status: 'passed' } },
+    findings: [{ rule: 'thp_sparse_control', confidence: 'confirmed', evidence: [{ case_id: 'thp-sparse-on-1' }] }]
+  };
+  const passedHtml = renderThpPagemapPanel([offSample, onSample], ['关闭大页', '请求大页'], undefined, passedContext);
+  assert.equal((passedHtml.match(/未写 · 随大页驻留/g) || []).length, 4);
+  assert.equal((passedHtml.match(/随大页驻留的邻页/g) || []).length, 4);
+  assert.match(passedHtml, /抽样 PFN 符合 2 MiB 对齐关系/);
+});
+
+test('COW masked pair compares Present bit page-by-page and only claims consistent residency when every page matches', () => {
+  const parentEntries = [0, 1, 2, 3, 4, 5, 6, 7].map(i => makeEntry(i, { present: true, pfn: null, expectedWritten: i % 4 === 0 }));
+  const childEntriesDiff = [0, 1, 2, 3, 4, 5, 6, 7].map(i => makeEntry(i, { present: i !== 0, pfn: null, expectedWritten: i % 4 === 0 }));
+  const parentSample = {
+    phase: 'child_write', role: 'parent',
+    pagemap: { source: '/proc/50/pagemap', status: 'available', pfn_access: 'masked', page_bytes: 4096, entries: parentEntries }
+  };
+  const childDiffSample = {
+    phase: 'child_write', role: 'child',
+    pagemap: { source: '/proc/51/pagemap', status: 'available', pfn_access: 'masked', page_bytes: 4096, entries: childEntriesDiff }
+  };
+  const context = {
+    caseRecord: { id: 'baseline-16MiB-1', status: 'completed', validation: { status: 'passed' } },
+    findings: [{ rule: 'cow_pfn_split', confidence: 'insufficient_evidence', title: '父子页帧关系待确认', evidence: [{ case_id: 'baseline-16MiB-1' }] }]
+  };
+
+  const diffRes = compareCowPagemap(childDiffSample, parentSample, { fraction: '1/4', written_pages: 1024 }, context);
+  assert.equal(diffRes.present_all_equal, false);
+  assert.equal(diffRes.parent_present_count, 8);
+  assert.equal(diffRes.child_present_count, 7);
+  assert.deepEqual(diffRes.parent_only_present_pages, [0]);
+  assert.match(diffRes.verdict, /父进程 8\/8 页驻留，子进程 7\/8 页驻留，第 0 页只有父进程驻留/);
+  assert.doesNotMatch(diffRes.verdict, /驻留一致/);
+
+  const diffHtml = renderCowPagemapPanel(childDiffSample, parentSample, { fraction: '1/4', written_pages: 1024 }, context);
+  assert.match(diffHtml, /仅父驻留/);
+  assert.match(diffHtml, /至少一方未驻留：<strong>1<\/strong>/);
+
+  // 即使父子均为 7/8，但缺页号不同（父缺第 0 页、子缺第 1 页），也绝不能称“驻留一致”
+  const pMiss0 = {
+    ...parentSample,
+    pagemap: { ...parentSample.pagemap, entries: [0, 1, 2, 3, 4, 5, 6, 7].map(i => makeEntry(i, { present: i !== 0, pfn: null })) }
+  };
+  const cMiss1 = {
+    ...childDiffSample,
+    pagemap: { ...childDiffSample.pagemap, entries: [0, 1, 2, 3, 4, 5, 6, 7].map(i => makeEntry(i, { present: i !== 1, pfn: null })) }
+  };
+  const swappedDiff = compareCowPagemap(cMiss1, pMiss0, { fraction: '1/4', written_pages: 1024 }, context);
+  assert.equal(swappedDiff.present_all_equal, false);
+  assert.match(swappedDiff.verdict, /第 1 页只有父进程驻留，第 0 页只有子进程驻留/);
+  assert.doesNotMatch(swappedDiff.verdict, /驻留一致/);
+
+  // 仅当每一对应页 Present 完全一致时才显示“驻留一致”
+  const childSameSample = {
+    ...childDiffSample,
+    pagemap: { ...childDiffSample.pagemap, entries: parentEntries }
+  };
+  const sameRes = compareCowPagemap(childSameSample, parentSample, { fraction: '1/4', written_pages: 1024 }, context);
+  assert.equal(sameRes.present_all_equal, true);
+  assert.match(sameRes.verdict, /驻留一致/);
+});
+
+test('THP distinguishes unavailable capture from measured 0/6 residency independently per side', () => {
+  const off2of6 = {
+    phase: 'after_write',
+    pagemap: {
+      status: 'available', pfn_access: 'visible', page_bytes: 4096,
+      entries: [
+        makeEntry(0, { present: true, pfn: '100000', expectedWritten: true }),
+        makeEntry(1, { present: false, pfn: null, expectedWritten: false }),
+        makeEntry(256, { present: false, pfn: null, expectedWritten: false }),
+        makeEntry(511, { present: false, pfn: null, expectedWritten: false }),
+        makeEntry(512, { present: true, pfn: '100200', expectedWritten: true }),
+        makeEntry(513, { present: false, pfn: null, expectedWritten: false })
+      ]
+    }
+  };
+  const onUnavailable = {
+    phase: 'after_write',
+    pagemap: { status: 'unavailable', pfn_access: 'not_applicable', reason: 'errno=13', page_bytes: 4096, entries: [] }
+  };
+
+  const partial = compareThpPagemap(off2of6, onUnavailable, ['关闭组', '请求组']);
+  assert.equal(partial.status, 'partial');
+  assert.equal(partial.off_available, true);
+  assert.equal(partial.on_available, false);
+  assert.match(partial.verdict, /关闭组 2\/6 页驻留，请求组未采到/);
+  assert.doesNotMatch(partial.verdict, /0\/0/);
+
+  const partialHtml = renderThpPagemapPanel([off2of6, onUnavailable], ['关闭组', '请求组']);
+  assert.match(partialHtml, /单侧 pagemap 未采到/);
+  assert.match(partialHtml, /<td>未采到<\/td>/);
+  assert.match(partialHtml, /<td>单侧未采到<\/td>/);
+
+  // 反向：关闭组读取失败，请求组成功采到 6/6，也必须明确标“关闭组未采到”，不能误写 0/0
+  const onAll = { ...off2of6, pagemap: { ...off2of6.pagemap, entries:
+    off2of6.pagemap.entries.map(e => makeEntry(e.page_index, { expectedWritten: e.expected_written, pfn: '100200' })) } };
+  const reverse = compareThpPagemap(onUnavailable, onAll, ['关闭组', '请求组']);
+  assert.equal(reverse.status, 'partial');
+  assert.match(reverse.verdict, /关闭组未采到.*请求组 6\/6 页驻留/);
+  const offZeroOfSix = {
+    phase: 'untouched',
+    pagemap: {
+      status: 'available', pfn_access: 'not_applicable', page_bytes: 4096,
+      entries: [0, 1, 256, 511, 512, 513].map(i => makeEntry(i, { present: false, pfn: null, expectedWritten: false }))
+    }
+  };
+  const measuredZero = compareThpPagemap(offZeroOfSix, offZeroOfSix, ['关闭组', '请求组']);
+  assert.equal(measuredZero.status, 'available');
+  assert.match(measuredZero.verdict, /关闭组 0\/6 页驻留，请求组 0\/6 页驻留/);
+  assert.doesNotMatch(measuredZero.verdict, /未采到/);
+});
+
+test('THP distinguishes a missing capture from a partner with no target mapping', () => {
+  const unmapped = { pagemap: { status: 'unmapped', pfn_access: 'not_applicable', entries: [] } };
+  const mixed = compareThpPagemap(unmapped, null);
+  assert.equal(mixed.status, 'unavailable');
+  assert.match(mixed.verdict, /关闭大页无目标映射，请求大页未采到/);
+  assert.equal(compareThpPagemap(unmapped, unmapped).status, 'unmapped');
+});
+
+test('a measured empty side leaves the other side’s visible frames and Present counts intact', () => {
+  const empty = { role: 'child', phase: 'fork_shared', pagemap: {
+    status: 'available', pfn_access: 'not_applicable', page_bytes: 4096, entries: [makeEntry(0, { present: false })] } };
+  const resident = { role: 'parent', phase: 'fork_shared', pagemap: {
+    status: 'available', pfn_access: 'visible', page_bytes: 4096, entries: [makeEntry(0, { pfn: '100200' })] } };
+  const thp = renderThpPagemapPanel([empty, resident]);
+  assert.match(thp, /Present \+ PFN 可见/);
+  assert.doesNotMatch(thp, /尚无驻留页/);
+  const cow = compareCowPagemap(empty, resident);
+  assert.equal(cow.pfn_access, 'visible');
+  assert.match(cow.verdict, /父进程 1\/1 页驻留，子进程 0\/1 页驻留/);
+});
+
+test('THP lesson keeps a sole group on screen alongside its original readings', t => {
+  const previousDocument = globalThis.document;
+  const saved = { report: state.report, selected: state.selected, phase: state.phase };
+  const content = {};
+  globalThis.document = { querySelector: () => content };
+  t.after(() => {
+    if (previousDocument) globalThis.document = previousDocument;
+    else delete globalThis.document;
+    Object.assign(state, saved);
+  });
+  const sample = { phase: 'after_write', rss_kib: 2048, huge_kib: 2048,
+    pagemap: { status: 'available', pfn_access: 'masked', page_bytes: 4096, entries: [makeEntry(0)] } };
+  const on = { id: 'thp-on', suite: 'thp', parameters: { pattern: 'sparse', repeat: 1, thp: 'on' },
+    data: { samples: [sample] } };
+  Object.assign(state, { report: { cases: [on] }, selected: 0, phase: 2 });
+  renderTHP();
+  assert.match(content.innerHTML, /data-pagemap-state="partial"/);
+  assert.match(content.innerHTML, /关闭大页未采到，请求大页 1\/1 页驻留/);
+  assert.match(content.innerHTML, /2 MiB/);
 });

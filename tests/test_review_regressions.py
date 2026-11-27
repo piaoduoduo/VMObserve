@@ -14,8 +14,8 @@ sys.path.insert(0, str(ROOT / "work"))
 from vmobserve.common import digest, read_json, write_json
 from vmobserve.diagnosis import diagnose
 from vmobserve.evidence import validate_measurements
-from vmobserve.export import csv_text
-from vmobserve.replay import legacy_report, load_run
+from vmobserve.export import csv_text, demand_pair_csv
+from vmobserve.replay import legacy_report, load_run, read_evidence, safe_child
 from vmobserve.server import Workbench
 from vmobserve.runner import compare_thp_environment
 
@@ -179,6 +179,43 @@ class ReviewRegressions(unittest.TestCase):
             self.assertEqual(row["validation_status"], "failed")
             self.assertEqual(row["run_integrity"], "failed")
             self.assertEqual(row["case_integrity"], "legacy_partial")
+
+    def test_report_entries_use_the_record_directory_before_reading_the_manifest(self):
+        with tempfile.TemporaryDirectory(dir=TEST_TMP) as tmp:
+            group = Path(tmp).resolve()
+            record = group / "ordinary"
+            write_json(record / "report.json", {"cases": []})
+            app = Workbench("local", {"local": group})
+
+            def policy(root, relative):
+                if Path(root) == record and relative == "report.json":
+                    raise ValueError("manifest denied by test policy")
+                return safe_child(root, relative)
+
+            with patch("vmobserve.server.safe_child", side_effect=policy) as guard:
+                self.assertEqual(app.catalog()[0]["status"], "unreadable")
+                guard.assert_any_call(group, "ordinary")
+                with self.assertRaisesRegex(ValueError, "manifest denied"):
+                    app.directory("local--ordinary")
+            with patch("vmobserve.replay.safe_child", side_effect=policy):
+                with self.assertRaisesRegex(ValueError, "manifest denied"):
+                    load_run(record)
+                with self.assertRaisesRegex(ValueError, "manifest denied"):
+                    read_evidence(record, "ordinary", "jsonl")
+
+    def test_csv_keeps_labels_literal_and_negative_measurements_numeric_in_both_exports(self):
+        report = load_run(ROOT / "examples/20261120T120355.446473Z")
+        case = next(c for c in report["cases"] if c["parameters"].get("thp_advice") == "off")
+        sample = case["data"]["samples"][0]
+        report["run_id"] = "@上午组"
+        sample["action_minor"] = -2
+        for output, column in ((csv_text(report), "action_minor"),
+                               (demand_pair_csv(report, case["id"]), "process_minor_delta")):
+            rows = list(csv.DictReader(io.StringIO(output)))
+            row = next(r for r in rows if r["case_id"] == case["id"] and r["phase"] == sample["phase"])
+            self.assertEqual(row["run_id"], "'@上午组")
+            self.assertEqual(row[column], "-2")
+        self.assertEqual(report["run_id"], "@上午组")
 
     def test_csv_retains_failed_cases_without_inventing_samples(self):
         report = copy.deepcopy(self.report)

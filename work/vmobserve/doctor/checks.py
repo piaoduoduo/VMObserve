@@ -122,7 +122,7 @@ def diagnose(profile="replay", *, require_openeuler=False, connect=False, probe=
 
 def _replay(root, add):
     try:
-        from ..replay import load_run
+        from ..replay import load_run, safe_child
     except (ImportError, SyntaxError) as exc:
         add("replay.engine", "failed", str(exc), "恢复完整的回放模块和依赖后重试。")
         return
@@ -131,7 +131,7 @@ def _replay(root, add):
         add("examples", "missing", "没有内置实验记录", "完整检出 examples 目录。")
     for path in reports:
         try:
-            report = load_run(path.parent)
+            report = load_run(safe_child(root / "examples", path.parent.name))
             integrity = report["integrity"]["status"]
             passed = all(c.get("validation", {}).get("status") == "passed" for c in report["cases"])
             status = "failed" if integrity == "failed" or not passed or not report["cases"] else (

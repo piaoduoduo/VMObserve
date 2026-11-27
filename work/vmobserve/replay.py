@@ -1,6 +1,7 @@
 """Read-only reconstruction. Never execute saved source or trust cached diagnoses."""
 import copy
 import hashlib
+import json
 from pathlib import Path
 
 from . import SCHEMA_VERSION
@@ -15,6 +16,11 @@ def safe_child(root, relative):
     if not path.is_relative_to(root) or path == root:
         raise ValueError("artifact path escapes its run directory")
     return path
+
+
+def read_hashed_report(directory):
+    payload = safe_child(directory, "report.json").read_bytes()
+    return json.loads(payload.decode("utf-8")), hashlib.sha256(payload).hexdigest()
 
 
 def legacy_report(root, old):
@@ -54,7 +60,7 @@ def recorded_environment(root, report):
 def read_evidence(directory, case_id, kind, limit=2 * 1024 * 1024):
     """Read and verify only the requested raw artifact, without replaying cases."""
     root = Path(directory).resolve()
-    report = read_json(root / "report.json")
+    report = read_json(safe_child(root, "report.json"))
     legacy = "schema_version" not in report
     if not legacy and report["schema_version"] != SCHEMA_VERSION:
         raise ValueError("unsupported result schema")
@@ -79,12 +85,12 @@ def read_evidence(directory, case_id, kind, limit=2 * 1024 * 1024):
 
 def load_run(directory):
     root = Path(directory).resolve()
-    original = read_json(root / "report.json")
+    original, report_hash = read_hashed_report(root)
     legacy = "schema_version" not in original
     if not legacy and original["schema_version"] != SCHEMA_VERSION:
         raise ValueError("unsupported result schema")
     report = legacy_report(root, original) if legacy else copy.deepcopy(original)
-    report.update(view_mode="historical_replay", replayed_at=timestamp(), original_report_sha256=digest(root / "report.json"))
+    report.update(view_mode="historical_replay", replayed_at=timestamp(), original_report_sha256=report_hash)
     source_errors = []
     for rel, sha in report.get("sources", {}).items():
         try:

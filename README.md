@@ -54,10 +54,17 @@ python3 work/run_all.py --suite sequence
 
 [对照当期指导书、课程目标和报告要求](docs/COURSE_ALIGNMENT.md) · [回放原版 512 MiB 的五个暂停点](http://127.0.0.1:8765/lesson#original-demand)。
 
-当前本地版本 **0.8.3**。[公开仓库](https://github.com/piaoduoduo/VMObserve) · [参赛承诺和开源待办](docs/COMPETITION_COMMITMENTS.md) · [往届作品对照](docs/NATIONAL_REFERENCE_STUDY_20261116.md)。
+当前本地版本 **0.8.3**。[公开仓库](https://github.com/piaoduoduo/VMObserve) · [参赛承诺](docs/COMPETITION_COMMITMENTS.md) · [往届作品对照](docs/NATIONAL_REFERENCE_STUDY_20261116.md)。
 
 ## 参赛材料
 
 演示视频（百度网盘）：待录制，发布后在这里填写分享链接。当前可用的设计、测试和同类作品对照见[交付材料清单](docs/GEMINI_REVIEW_20261119.md)。
 
-队伍原创的作品文档采用[知识共享署名－相同方式共享 4.0 国际许可协议](https://creativecommons.org/licenses/by-sa/4.0/deed.zh-hans)。引用的课程材料、赛会文件及第三方作品按各自来源和授权使用。[来源清单](docs/SOURCES.md)
+## 许可证
+
+© 2026 怎么分都队及 VMObserve 贡献者。
+
+- 队伍原创源代码采用[木兰宽松许可证第 2 版（MulanPSL-2.0）](LICENSE)。
+- 队伍原创的实验讲义、技术文档和答辩材料采用[知识共享署名－相同方式共享 4.0 国际许可协议（CC BY-SA 4.0）](https://creativecommons.org/licenses/by-sa/4.0/deed.zh-hans)。
+
+课内示例、教学骨架和引用的第三方材料保留各自的权利归属。复用时可按文件查阅[授权说明](NOTICE)和[课程来源对照](docs/SOURCES.md#课程代码来源)。

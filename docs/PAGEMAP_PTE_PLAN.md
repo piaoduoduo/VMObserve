@@ -143,7 +143,7 @@ Gemini 设计了展示和数据契约。Codex 已接入 C 探针、Python 回放
 
 ## 4. 前端实现规划（本轮由 Gemini 完成）
 
-1. **新增独立前端模块 [pagemap-view.js](file:///d:/Work/CodexWorkspace/2026-11-10/ba/work/vmobserve/web/pagemap-view.js)**（并在 [server.py](file:///d:/Work/CodexWorkspace/2026-11-10/ba/work/vmobserve/server.py) `WEB_PAGES` 中注册 `/pagemap-view.js`）：
+1. **新增独立前端模块 [pagemap-view.js](../work/vmobserve/web/pagemap-view.js)**（并在 [server.py](../work/vmobserve/server.py) `WEB_PAGES` 中注册 `/pagemap-view.js`）：
    - **纯计算导出函数**（便于 Node 单元测试，无 DOM 依赖）：
      - `inspectDemandPagemap(sample)`：汇总哨兵页 `Present` 数量、已写/未写页命中率、2 MiB 块 PFN 连续对齐判定（`contiguous2MiB`）。
      - `compareCowPagemap(parentSample, childSample, cowInfo)`：按 `page_index` 严格配对父子抽样页，区分 `shared_same_pfn`、`split_diff_pfn`、`pfn_masked`、`not_present`、`mismatch`，并识别单进程阶段的同零页模式（`allSamePfn`）。
@@ -154,10 +154,10 @@ Gemini 设计了展示和数据契约。Codex 已接入 C 探针、Python 回放
      - `renderThpPagemapPanel(samples, labels)`：接入 THP 第 ②、③ 步，并排对比两组 6 个跨 2 MiB 边界哨兵页的 `Present` 格阵与 2 MiB 连续对齐实锤。
    - **历史旧记录零干扰兼容**：当旧记录没有 `sample.pagemap` 时，不捏造任何数字，仅在折叠原文区域旁或页表位置克制降级（完全不占用首屏、不破坏已有布局与测试）。
 2. **接入页面与样式**：
-   - [course-views.js](file:///d:/Work/CodexWorkspace/2026-11-10/ba/work/vmobserve/web/course-views.js)：在 3.3 单步与受控对照视图挂载 `renderDemandPagemapPanel`。
-   - [memory-views.js](file:///d:/Work/CodexWorkspace/2026-11-10/ba/work/vmobserve/web/memory-views.js)：在 COW 挂载 `renderCowPagemapPanel`，在 THP 挂载 `renderThpPagemapPanel`。
-   - [ui.js](file:///d:/Work/CodexWorkspace/2026-11-10/ba/work/vmobserve/web/ui.js) / [app.js](file:///d:/Work/CodexWorkspace/2026-11-10/ba/work/vmobserve/web/app.js) / [learning-report.js](file:///d:/Work/CodexWorkspace/2026-11-10/ba/work/vmobserve/web/learning-report.js)：预留 `pagemap` 原文按钮中文名与学习报告页表摘要输出（存在时自动带出）。
-   - [style.css](file:///d:/Work/CodexWorkspace/2026-11-10/ba/work/vmobserve/web/style.css)：延续现有一致的 Slate + Cobalt Blue 语义色板（绿 = `Present=1`/共享同 PFN，琥珀橙 = COW 分裂不同 PFN，紫 = 2 MiB 连续大页对齐，浅灰 = `Present=0` 未驻留），适配桌面与手机窄屏。
+   - [course-views.js](../work/vmobserve/web/course-views.js)：在 3.3 单步与受控对照视图挂载 `renderDemandPagemapPanel`。
+   - [memory-views.js](../work/vmobserve/web/memory-views.js)：在 COW 挂载 `renderCowPagemapPanel`，在 THP 挂载 `renderThpPagemapPanel`。
+   - [ui.js](../work/vmobserve/web/ui.js) / [app.js](../work/vmobserve/web/app.js) / [learning-report.js](../work/vmobserve/web/learning-report.js)：预留 `pagemap` 原文按钮中文名与学习报告页表摘要输出（存在时自动带出）。
+   - [style.css](../work/vmobserve/web/style.css)：延续现有一致的 Slate + Cobalt Blue 语义色板（绿 = `Present=1`/共享同 PFN，琥珀橙 = COW 分裂不同 PFN，紫 = 2 MiB 连续大页对齐，浅灰 = `Present=0` 未驻留），适配桌面与手机窄屏。
 3. **前端单元测试**：新建 `tests/test_pagemap_view.mjs`，覆盖 3.3、COW、THP、无权限屏蔽、旧记录降级、共享零页与 2 MiB 对齐校验全部路径。
 
 ---
@@ -198,10 +198,10 @@ GPT 接手后端时只需按第 2、3 节契约逐项补齐，前端无需修改
 - **透明大页。** 程序每个 2 MiB 区间只写首字节。两个环境关闭大页时只有第 0、512 页驻留，共 2/6。请求大页时 6/6 驻留，smaps 记录 32 MiB 匿名大页。openEuler 的六个 PFN 与各自在 2 MiB 区间中的偏移吻合。每次实际读取六个位置。
 - **原文与权限。** 页表项是内核通过 pagemap 导出的 64 位字。只读固定抽样页，COW 还读取本实验正在等管道的子进程。原版 malloc 的起点向下对齐到基础页，首尾可能与分配器共页。每个条目的 `vaddr` 是真实虚拟页首。配对 COW 阶段的 `expected_written` 表示子进程在 fork 之后改写过该页。
 
-进入 COW 的「刚 fork」和「子进程改写」两步，点「查看这一步的原文」里的「页表项采样 pagemap」，会在同一份 JSONL 里高亮对应阶段和进程的行。旧记录按原有 RSS、PSS 和缺页数回放。Edge 实际核对了这两个步骤、普通用户的 8 个屏蔽项、3.3 的逐步读数、THP 的 4 个未写邻页和一份旧记录。随后补齐 `humanizeFinding` 非 `confirmed` 防误写守卫、诊断空集/零页边界与 `pagemap_probe.h` 缓冲与零长数组加固，117 项 Python 与 60 项 Node 回归测试全部通过。[浏览器验收结果](../output/playwright/pagemap-20261126/browser-result.json)
+进入 COW 的「刚 fork」和「子进程改写」两步，点「查看这一步的原文」里的「页表项采样 pagemap」，会在同一份 JSONL 里高亮对应阶段和进程的行。旧记录按原有 RSS、PSS 和缺页数回放。Edge 实际核对了这两个步骤、普通用户的 8 个屏蔽项、3.3 的逐步读数、THP 的 4 个未写邻页和一份旧记录。随后补齐 `humanizeFinding` 非 `confirmed` 防误写守卫、诊断空集/零页边界与 `pagemap_probe.h` 缓冲与零长数组加固，117 项 Python 与 60 项 Node 回归测试全部通过（本机浏览器验收原始 JSON 归档于被 Git 忽略的 `output/playwright/pagemap-20261126/browser-result.json`）。
 
 课程动作沿用本期 512 MiB 实验的步长和 A、B、C 三段写入。[当期课程任务对照](COURSE_ALIGNMENT.md) 本轮也检索了[往届华科实验仓库](https://github.com/lyf1984/HUST_OS_LAB)和 [1037 资料站](https://1037.wiki/)。后者可打开检索首页，两处均未取得与本期 3.3 对应的报告正文。上表数字全部取自本轮运行。
 
 第一次用 WSL 普通用户往 Windows 挂载盘归档时，复制文件后恢复修改时间触发了 `EPERM`，记录 `20261126T123659.465803Z` 在采集前终止。运行器现在在内容复制成功后单独尝试恢复文件属性，仍逐文件计算 SHA-256。表中的普通用户 COW 和 THP 都通过默认归档入口复测。
 
-本机可用 `python work/launch.py` 打开实验台。采集可选 `python3 work/run_all.py --suite demand512-thp --repeats 1`、`--suite baseline --baseline-mib 16 --cow-fraction 1/4 --repeats 1` 或 `--suite thp --pattern sparse --repeats 1`。保存的每份报告都有本轮源文件和原始数据的哈希。[本机验收清单](../output/verification/pagemap-20261126/acceptance.json) · [COW 实测截图](../output/playwright/pagemap-20261126/cow-openEuler.png)
+本机可用 `python work/launch.py` 打开实验台。采集可选 `python3 work/run_all.py --suite demand512-thp --repeats 1`、`--suite baseline --baseline-mib 16 --cow-fraction 1/4 --repeats 1` 或 `--suite thp --pattern sparse --repeats 1`。保存的每份报告都有本轮源文件和原始数据的哈希（本机验收清单与实测截图留存于被 Git 忽略的 `output/verification/pagemap-20261126/acceptance.json` 及 `output/playwright/pagemap-20261126/cow-openEuler.png`）。

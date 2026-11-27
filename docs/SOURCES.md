@@ -1,5 +1,18 @@
 # 来源与阅读记录
 
+## 课程代码来源
+
+下表列出与华中科技大学操作系统课程《应用层实验－学生版》代码包逐份核对、SHA-256 相同的四份文件。
+
+| 仓库文件 | 课程代码包中的原始路径 |
+| --- | --- |
+| [第 1 组 hello.c](../work/course-labs/group12/basics/hello.c) | `lab1/lab1_2/hello.c` |
+| [第 2 组 zero.c](../work/course-labs/group12/basics/zero.c) | `lab2/lab2_2/zero.c` |
+| [容器 Dockerfile](../work/course-labs/group12/container/Dockerfile) | `lab2/lab2_3/Dockerfile` |
+| [容器 hello.c](../work/course-labs/group12/container/hello.c) | `lab2/lab2_3/hello.c` |
+
+第 4 组在课程包 `lab4/lab4_1` 至 `lab4/lab4_4` 的五份骨架上改编，新增了 `child_prog.c`。原件和沿用的骨架部分保留课程材料的权利归属，公开再分发授权待课程组确认。团队原创代码和文档的许可见[授权说明](../NOTICE)。[第 4 组改编记录](GROUP4_COMPLETION_20261116.md)
+
 ## 2026-11-16 全国功能赛优秀作品
 
 - [赛事官方 2021–2025 部分功能赛获奖索引](https://github.com/oscomp/os-competition-info/blob/main/os-funtion-winners.md)：逐行读取，定位全国获奖作品；原 GitLab 部分不可访问，使用 oscomp 的公开归档。

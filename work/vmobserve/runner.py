@@ -8,12 +8,12 @@ import shutil
 import sys
 
 from . import SCHEMA_VERSION, __version__
-from .common import digest, execute, read_json, run_id, timestamp, write_json
+from .common import digest, execute, run_id, timestamp, write_json
 from .cow import COW_CHOICES, cow_fractions
 from .diagnosis import diagnose
 from .evidence import parse_case, validate_measurements
 from .pagemap import cap_sys_admin
-from .replay import recorded_environment
+from .replay import read_hashed_report, recorded_environment
 from . import group3, group4, systems
 
 WORK = Path(__file__).resolve().parents[1]
@@ -66,6 +66,16 @@ def source_files():
     files += sorted((WORK / "openeuler-vm").glob("*.sh"))
     files += [p for p in (WORK / "course-labs/group4").rglob("*") if p.is_file() and p.suffix in (".c", ".h", ".sh", ".py", ".md")]
     return files
+
+
+def source_entries():
+    """Yield the source path and its name in a VM bundle or run snapshot."""
+    for source in source_files():
+        yield source, source.relative_to(WORK)
+    # In the VM the bundle is unpacked next to run_all.py.
+    license_dir = WORK if (WORK / "LICENSE").is_file() else WORK.parent
+    for name in ("LICENSE", "NOTICE"):
+        yield license_dir / name, Path(name)
 
 
 def plan_cases(args):
@@ -168,20 +178,19 @@ def run(args):
     print(f"RUN_DIRECTORY={out}", flush=True)
     try:
         if args.recheck_from:
-            previous = read_json(args.recheck_from / "report.json")
+            previous, parent_hash = read_hashed_report(args.recheck_from)
             if previous.get("schema_version") != SCHEMA_VERSION or previous.get("data_origin") != "real_execution" or not any(c.get("suite") == "thp" for c in previous.get("cases", [])):
                 raise ValueError("recheck requires a v1 real THP execution record")
             parent_env, conflict = recorded_environment(args.recheck_from, previous)
             if conflict:
                 raise ValueError(conflict)
-            report["related_run"] = {"run_id": previous["run_id"], "report_sha256": digest(args.recheck_from / "report.json"),
+            report["related_run"] = {"run_id": previous["run_id"], "report_sha256": parent_hash,
                                      "environment_comparison": compare_thp_environment(parent_env, report["environment"]),
                                      "recipe": "thp_" + (args.pattern if args.pattern != "all" else "sparse") + ("_process_pair" if args.recheck_kind == "process" else "_pair"), "relation": "new_controlled_recheck"}
             args.suite, args.pattern, args.thp = "thp", args.pattern if args.pattern != "all" else "sparse", "both"
             if args.recheck_kind == "process":
                 args.thp, args.thp_process = "on", "pair"
-        for src in source_files():
-            relative = src.relative_to(WORK)
+        for src, relative in source_entries():
             target = out / "source" / relative
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(src, target)
