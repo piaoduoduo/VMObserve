@@ -12,6 +12,8 @@ python work/launch.py
 
 首页的「开始 3.2」会带你进入第一步。页顶的圆圈按程序执行顺序排列，点哪一步，就看哪一步的程序动作、Linux 处理和实测结果。[网页重点任务目录](http://127.0.0.1:8765/labs/focus) · [重点任务说明](docs/重点任务/README.md)
 
+首页还可以直接看两次 openEuler 页表实测。申请 512 MiB 后，页号 1 的 Present 为 0，写完前四分之一时变为 1。另一份记录逐行对照父子进程的物理页帧号。刚 fork 时抽查的 8 页全部共享，子进程每 4 页写 1 页后，页号 0 和 4 分开。两处都能点进采样发生的那一步。[按需调页原文](examples/20261126T124107.942264Z/cases/demand512-1/stdout.jsonl) · [写时复制原文](examples/20261126T123621.058829Z/cases/baseline-16MiB-1/stdout.jsonl)
+
 | 想弄清楚什么 | 从哪里开始 |
 | --- | --- |
 | 三次 malloc 为什么只看到两段映射？ | [3.2 的 6 步回放](http://127.0.0.1:8765/labs/3.2?replay=sequence)。点第 4 步，看两次 mmap 的地址怎样相接，再打开 smaps 核对驻留量。 |
@@ -30,7 +32,7 @@ python work/launch.py
 python -B work/verify_submission.py
 ```
 
-这条命令核对七份随仓库交付的实测记录。3.2 从原始 `smaps` 重算三次分配的驻留量。3.3 分别用 openEuler 和 WSL2 的原文核对两种大页建议，以及进程允许、禁用大页的对照。每份报告与原文都校验 SHA-256。通过后输出 JSON，失败时指出哪份证据有问题并返回非零退出码。回放只需要 Python 3.10 及以上。[样例和实测读数](docs/FOCUS_BASELINE.md)
+这条命令核对九份随仓实测。3.2 从原始 `smaps` 重算驻留量。3.3 核对 openEuler 和 WSL2 两套内核上的大页对照。首页的两份页表样例逐项比对原始 JSONL 与回放，核对同一地址的 Present 变化和父子 PFN 的分合。每份报告和原文都校验 SHA-256。通过后输出 JSON，失败时指出具体记录并返回非零退出码。[样例和实测读数](docs/FOCUS_BASELINE.md)
 
 下载 3.3 的同屏对照证据后，可离线复核单个文件。在项目根目录运行 `python -B work/verify_submission.py --process-evidence demand-process-evidence.json`。如果原始运行目录放在仓库以外，用 `--records` 指向包含这些运行目录的上一级。命令会从原报告重新生成对照，并列出与下载文件不一致的字段。
 

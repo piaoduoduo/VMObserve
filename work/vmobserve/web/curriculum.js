@@ -1,5 +1,6 @@
 import { $, state, api, esc, url, table, evidenceButtons, friendlyDistro, friendlyTime, labels, loadOriginalPs, canCollect } from './ui.js';
 import { renderLabFlow } from './experiment-flow.js';
+import { showFeaturedPagemap } from './featured-pagemap.js';
 
 const groups = ['实验环境与工具', '系统调用与容器', '内存管理', '进程与线程', '同步与互斥', '文件系统', '设备与 I/O'];
 // In the order of the current 27-page course guide. Page ranges refer to its PDF.
@@ -257,6 +258,7 @@ export function renderHome() {
         <p>调用 <code>malloc</code> 申请一块内存、再往里写数据时，Linux 在后台到底做了什么？这里把真实运行抓下来的记录按步骤拆开，带你看清每一步的来龙去脉。</p>
       </header>
       <a class="btn-link primary" href="/labs/3.2?replay=sequence">开始 3.2 · 连续三次 malloc →</a>
+      <section class="overview-guide featured-pagemap" aria-label="openEuler 页表实测"></section>
       <section class="overview-guide"><h2>怎么看懂一次实验</h2>
         <dl><div><dt>看程序做了什么</dt><dd>从目录选一个实验，点顶上的步骤按钮，停在某一次申请、写入或释放后。</dd></div>
         <div><dt>看 Linux 做了什么</dt><dd>对照这一步前后的变化：虚拟内存映射有没有新增或合并、真正占用的物理内存（RSS）涨了多少、又触发了几次缺页。</dd></div>
@@ -264,6 +266,7 @@ export function renderHome() {
       </section>
       <p class="overview-foot">这里优先做透最容易混淆的虚拟内存实验；如果想按章节复习进程、同步或文件与设备，打开「完整课程目录」即可。页面里的数字全来自真实的系统运行记录，随时可以反复回放，也可以在环境就绪后重新采集并导出报告。</p>
     </article>`;
+  showFeaturedPagemap($('.featured-pagemap'));
 }
 
 export function renderTaskDirectory(id) {

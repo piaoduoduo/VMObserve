@@ -29,6 +29,8 @@ BASELINE = "20261118T013159.221864Z"
 PAIRED = ("20261120T120355.446473Z", "20261120T113225.827429Z")
 PROCESS_PAIRED = {"allow": "20261125T110630.221939Z", "disable": "20261125T110657.478995Z"}
 OPENEULER_PROCESS_PAIRED = {"allow": "20261126T111928.837850Z", "disable": "20261126T112012.869310Z"}
+COW_PAGEMAP = "20261126T123621.058829Z"
+DEMAND_PAGEMAP = "20261126T124107.942264Z"
 REPORT_HASHES = {
     BASELINE: "7471631ce89130bfcf0caef4bacb0ef6de291ce11405d17279d76ac922c880a8",
     PAIRED[0]: "53118ce1664fbc55b7884aac42794065de71a22cee14cd39649b319ec4f9fea0",
@@ -37,6 +39,8 @@ REPORT_HASHES = {
     PROCESS_PAIRED["disable"]: "7ece2455ac84c941f6a8eb2ae8b1b4c4c3635060987c8e1570cb2737202123ff",
     OPENEULER_PROCESS_PAIRED["allow"]: "24f2a4f0a1e60358e5c7ee0b62c5119835090b566b7a53e3f42e3b9be90b8859",
     OPENEULER_PROCESS_PAIRED["disable"]: "ca0eedb69eb4809148aae0609c1f2f9c2dc1de613d1feb8e98b0bee36b95185f",
+    COW_PAGEMAP: "38098ba44d0815b58cd3027571d38b3bdb5330d19cb69a7f8ab58d7773d708eb",
+    DEMAND_PAGEMAP: "66e00ca6c8098178071c1ca3b27e97100f15e8582c8e87f87de5348d9b02be93",
 }
 
 
@@ -87,6 +91,46 @@ def verify_sequence(get):
 
 def csv_rows(payload):
     return list(csv.DictReader(io.StringIO(payload.decode("utf-8-sig"))))
+
+
+def checked_pages(get, run, case_id):
+    report = report_for(get, run)
+    case = next(c for c in report["cases"] if c["id"] == case_id)
+    require(report["environment"]["distribution"]["ID"] == "openEuler"
+            and case["validation"]["status"] == "passed", f"{run}: expected a validated openEuler case")
+    raw = [json.loads(line) for line in get("evidence", run, case=case_id, kind="jsonl").splitlines()]
+    events = {(e["phase"], e["role"]): e for e in raw if e["kind"] == "pagemap"}
+    stages = {}
+    for sample in case["data"]["samples"]:
+        key = sample["phase"], sample["role"]
+        event = events[key]
+        require(event["entries"] == sample["pagemap"]["entries"], f"{run} {key}: replay differs from pagemap JSONL")
+        stages[key] = {e["page_index"]: e for e in event["entries"]}
+    return stages
+
+
+def verify_pagemap(get):
+    cow = checked_pages(get, COW_PAGEMAP, "baseline-16MiB-1")
+    split = {}
+    for phase in ("fork_shared", "child_write"):
+        parent, child = cow[phase, "parent"], cow[phase, "child"]
+        require(parent.keys() == child.keys() == set(range(8)), f"{phase}: expected eight paired pages")
+        split[phase] = []
+        for idx in sorted(parent):
+            p, c = parent[idx], child[idx]
+            require(p["vaddr"] == c["vaddr"] and p["present"] and c["present"] and p["pfn"] and c["pfn"],
+                    f"{phase}: page {idx} lacks paired visible PFNs")
+            if p["pfn"] != c["pfn"]:
+                split[phase].append(idx)
+    require(split["fork_shared"] == [] and split["child_write"] == [0, 4], "unexpected COW PFN transitions")
+    demand = checked_pages(get, DEMAND_PAGEMAP, "demand512-1")
+    before, after = (demand[phase, "parent"][1] for phase in ("allocated", "write_quarter"))
+    require(before["vaddr"] == after["vaddr"] and before["present"] is False and after["present"] is True,
+            "demand page 1: expected Present 0 to 1 at the same address")
+    return {"cow": {"run_id": COW_PAGEMAP, "report_sha256": REPORT_HASHES[COW_PAGEMAP],
+                    "fork_shared_count": len(cow["fork_shared", "parent"]), "split_after_write": split["child_write"]},
+            "demand": {"run_id": DEMAND_PAGEMAP, "report_sha256": REPORT_HASHES[DEMAND_PAGEMAP],
+                       "page_index": 1, "vaddr": after["vaddr"], "present": [before["present"], after["present"]]}}
 
 
 def verify_demand(get, run, process=None):
@@ -265,7 +309,8 @@ def verify_bundled():
                       "python": platform.python_version(), "sequence": verify_sequence(get),
                       "demand": [verify_demand(get, run) for run in PAIRED],
                       "process_demand": verify_process_controls(get, PROCESS_PAIRED),
-                      "openeuler_process_demand": verify_process_controls(get, OPENEULER_PROCESS_PAIRED)}
+                      "openeuler_process_demand": verify_process_controls(get, OPENEULER_PROCESS_PAIRED),
+                      "pagemap": verify_pagemap(get)}
         except (OSError, ValueError, KeyError, StopIteration) as exc:
             print(f"Verification failed: {exc}", file=sys.stderr)
             return 1

@@ -23,7 +23,7 @@
 | 设计、测试、同类对比 | [设计与实现](ARCHITECTURE.md)、[课程目标和任务页码](COURSE_ALIGNMENT.md)、[测试与运行证据](VERIFICATION.md)、[页面试用路径](UI_VERIFICATION.md)、[往届全国获奖作品与源码对读](NATIONAL_REFERENCE_STUDY_20261116.md)。 | 已有报告素材。交付前还要按最终版本串起设计、测试结果、功能/性能/创新分析和同类对比。QEMU 结果用于验证机制，实机性能若要写须另有测量。 |
 | 代码、文档许可 | 队伍原创代码采用 [MulanPSL-2.0](../LICENSE)，原创文档及答辩材料采用 CC BY-SA 4.0。[项目许可证](../README.md#许可证) | 四份课程原件及改编中沿用的教学骨架待确认公开再分发授权。[来源对照](SOURCES.md#课程代码来源) |
 | AI 使用情况 | [AI 使用记录](AI_USAGE.md)已补 11 月 18–19 日的设计指令、角色、修改与验证。 | 最终报告据实际记录补可核实的工具版本、关键交互与队员各自完成的工作。 |
-| 队员贡献 | 在岑栋海账号 haaland0325 下找到[回放定位与证据搜索](https://github.com/piaoduoduo/VMObserve/commit/aef1edfd4515a49e957007e4afe18392750f0469)和[课程流程整合](https://github.com/piaoduoduo/VMObserve/commit/1d226c32a5c89548cb1e92b9c67a5d47e60bce99)。队长关于主线取舍和步骤设计的要求载于上述 AI 记录。 | 请成员补自己做过的改动或审阅、如何复现、如何解释。当前可见 Git 历史里还没找到能归给丁俊文的技术提交。 |
+| 队员贡献 | 岑栋海的[回放定位与证据搜索](https://github.com/piaoduoduo/VMObserve/commit/aef1edfd4515a49e957007e4afe18392750f0469)、丁俊文的[环境自检](https://github.com/piaoduoduo/VMObserve/commit/fe52ac87c187be6cab26e24a8815027e603c9971)均有原始提交。队长的主线集成和教学设计见[团队说明](TEAM_README.md)及 AI 记录。 | 各成员在答辩中结合自己的改动说明如何复现及解释结果。 |
 | 学生试用 | [十分钟独立试用单](V071_CLASSROOM.md#首次独立试用)已有预测、证据、解释和卡点栏。 | 表里还没有独立学生作答。先收一份原话、一条引用证据和一个卡点，再改对应步骤，请同学复看。2–3 人是审阅建议。 |
 | 视频 | 根 [README](../README.md#参赛材料) 已留百度网盘链接位置。下面有可用于录制的演示路径与截图。 | 在项目文档和输出目录中未找到成片或已发布链接。还需录制、上传和验证分享链接。 |
 | 课程 7.4 / 7.5 | [全部任务索引](../work/vmobserve/web/curriculum.js)有内核模块和 eBPF 的任务说明。[虚拟机工具检查](../output/verification/ordered-labs/kernel-tools.txt)记录了内核构建目录、clang、bpftool 等缺项。 | 两项没有实验回放，页面和 README 已标明。当前演示仍聚焦虚拟内存。 |

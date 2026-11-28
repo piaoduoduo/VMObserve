@@ -152,6 +152,7 @@ function studentResult(report, identifier) {
   })) : '';
   const first = cases.findIndex(item => item.validation?.status === 'passed' && item.data?.samples?.length);
   const worksheet = first >= 0 ? new URLSearchParams({run: identifier, case: cases[first].id}) : null;
+  if (worksheet && verification) worksheet.set('verification', '1');
   const targets = worksheet ? `<p><a href="/lesson?${esc(worksheet)}#case-observation">引用这次实测完成作答</a></p>` : '';
   return `<p><strong>写入契约 · ${status[grade.status] || '待核对'}</strong> · ${esc(report.run_id)}</p>
     ${rows.length ? table(headers, rows) : ''}

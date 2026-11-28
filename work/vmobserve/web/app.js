@@ -252,7 +252,11 @@ window.addEventListener('hashchange', () => {
     renderHome();
     return;
   }
-  if (pos.id && state.config) { ensureReplayChrome(); select(pos.id, true, pos); }
+  if (pos.id && state.config) {
+    if (!state.runs.length) return startReplay().catch(e => error(e.message));
+    ensureReplayChrome();
+    select(pos.id, true, pos);
+  }
   else if (Object.hasOwn(topics, pos.tab) && state.config) {
     if (state.runs.length) { ensureReplayChrome(); chooseTopic(pos.tab); }
     else startReplay().catch(e => error(e.message));

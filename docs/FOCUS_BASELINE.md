@@ -9,6 +9,12 @@
 
 2026-11-20 新增的 512 MiB 受控采集在 Ubuntu 24.04.5 LTS 的 WSL2 执行。[内置记录](../examples/20261120T113225.827429Z/report.json)为 `20261120T113225.827429Z`，报告 SHA-256 为 `9d7aa036cd908c7bbd110dc8f4755a594486e0a07d4073a2be3d43bcd5f9110e`，详见 [采集说明](../work/RUNNER.md#33-的-512-mib-透明大页对照)。三轮均在写到四分之一时记录到同样结果，两组映射 RSS 同为 128 MiB。禁用组记录 32768 次次缺页和 0 KiB 匿名大页，请求组记录 64 次次缺页和 128 MiB 匿名大页。
 
+## 首页的两份页表实测
+
+两份样例都在 openEuler 24.03 LTS 虚拟机中采集。3.3 的程序刚拿到指针时，8 个抽样页中只有页号 0 已驻留。页号 1 在写入前后的虚拟地址相同，Present 从 0 变为 1。[3.3 逐页原文](../examples/20261126T124107.942264Z/cases/demand512-1/stdout.jsonl)
+
+在另一份实测中，父进程先写满 16 MiB 后 fork。抽查的 8 页起初逐页共享。子进程每 4 页写 1 页后，页号 0、4 的父子 PFN 分开，其余 6 页仍共享。首页列出改写后的 8 对 PFN，点击可逐步回看。[COW 父子采样原文](../examples/20261126T123621.058829Z/cases/baseline-16MiB-1/stdout.jsonl)
+
 ## 进程级禁用反例
 
 同一台 WSL2 机器、同一份探针和同一全局设置 `always [madvise] never` 下，分别记录解除进程禁用和进程级完全禁用，各三轮。探针用 `PR_GET_THP_DISABLE` 读回设置，512 MiB 映射、写入步长和 `MADV_HUGEPAGE` 调用保持一致。两份记录的探针 C 文件与采样头文件哈希相同。设置仅作用于探针进程。 [Linux 内核 THP 文档](https://docs.kernel.org/admin-guide/mm/transhuge.html#process-thp-controls)

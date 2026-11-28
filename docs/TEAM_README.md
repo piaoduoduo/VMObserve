@@ -1,10 +1,12 @@
 # 队友从这里开始
 
-本页用于同步选题、代码和文档分工。更新于 2026-11-26。下面的分工供三人在群里认领。
+本页用于同步选题、代码和文档分工。更新于 2026-11-28。
 
 ## 这轮谁改哪一块
 
-11 月 25 日发布的主线是 [`7732437`](https://github.com/piaoduoduo/VMObserve/commit/7732437fa8d3dd2e32892ce2faffda0cb71c9ebf)。当天晚上，`cdh_version` 新增的 7 个提交（至 [`b89ca75`](https://github.com/piaoduoduo/VMObserve/compare/3c2edf2..b89ca75)）已在本地完成合入（`09b8c1c`）并补齐边界修复与全量验证，待同步推送主线。
+岑栋海的课程改动已合入主线。丁俊文的环境自检代码在 `91e8ff9` 手工合入，当时只记录了主线父节点。本次保留冻结版文件，再用双父合并接回其原始提交 `fe52ac8`。在仓库运行 `git shortlog -sn origin/main` 可核对三人的作者记录。
+
+11 月 28 日核对时，GitHub 将这条提交的 Git 作者列为 FoggyCry，账号关联为空。丁俊文可用 `git show -s --format=%ae fe52ac8` 查看原提交邮箱，再到自己账号的邮箱设置中关联。如果改用跨机复现 PR，请用本人已关联的邮箱提交实测环境和结果。[GitHub 贡献图说明](https://docs.github.com/en/repositories/viewing-activity-and-data-for-your-repository/viewing-a-projects-contributors)
 
 | 成员 | Git 上能对到的工作 | 建议这轮负责的文档和小任务 |
 | --- | --- | --- |
@@ -12,7 +14,7 @@
 | 丁俊文（FoggyCry） | [环境自检提交](https://github.com/piaoduoduo/VMObserve/commit/fe52ac87c187be6cab26e24a8815027e603c9971)已进主线，代码在 [doctor 模块](../work/vmobserve/doctor/)。 | [环境自检与复现](ENVIRONMENT_DOCTOR.md)。有空时从自己电脑的新目录按 README 启动一次，记下版本、命令和能否打开 3.2。先做内置样例回放即可。 |
 | 队长（piaoduoduo） | 主线集成、3.2 报告取数修复、3.3 笔记回跳修复。 | [技术总报告](FOCUS_TECHNICAL_REPORT.md)和[整体验证记录](VERIFICATION.md)。汇总前两块内容，维护共用后端与导出接口，处理分支重叠的文件。 |
 
-新任务从最新 `main` 开分支。现有工作保留在原分支，需要一起改同一个文件时，先在群里说一声。交付时发提交链接和一句验证结果即可。
+比赛代码已冻结。队友可以从最新 `main` 独立复现，把检出的提交、命令和结果补进参赛材料。
 
 已有[模拟评委量表](COMPETITION_JUDGE.md)，覆盖功能、特色、教学和文档，并已同步最新复评记录与扣分依据。下一轮可以沿用这张表，在合并后的同一版本上复评。
 
